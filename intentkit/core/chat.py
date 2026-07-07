@@ -138,11 +138,14 @@ def _get_cached_executor(agent_id: str):
     Does NOT build a new executor — returns None if not found.
     """
     # Check lead executor cache.
-    # Lead inbound messages use raw team_id as agent_id, so check directly.
+    # Lead inbound messages use raw team_id as agent_id; lead executors are
+    # cached per (team, user). Any of the team's executors works here — they
+    # share the DB checkpointer, and appending a message doesn't involve the
+    # per-user toolset.
     try:
-        from intentkit.core.lead.cache import lead_executors
+        from intentkit.core.lead.cache import any_lead_executor
 
-        executor = lead_executors.get(agent_id)
+        executor = any_lead_executor(agent_id)
         if executor:
             return executor
     except ImportError:

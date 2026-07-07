@@ -39,7 +39,7 @@ link_router = APIRouter()
 )
 async def list_links():
     """Get the whitelisted apps with the currently linked accounts."""
-    return await list_team_links(LEAD_TEAM_ID)
+    return await list_team_links(LEAD_TEAM_ID, LEAD_USER_ID)
 
 
 class LinkConnectResponse(BaseModel):
@@ -58,9 +58,15 @@ class LinkConnectResponse(BaseModel):
 async def connect_link(
     app: str = Path(..., description="Whitelisted app key (e.g. gmail)"),
 ):
-    """Initiate the link flow for a whitelisted app; returns the redirect URL."""
+    """Initiate the link flow for a whitelisted app; returns the redirect URL.
+
+    The single-user deployment has no team roles, so no level checks apply
+    (``verify_roles=False``); levels are still recorded on the link rows.
+    """
     try:
-        url = await initiate_team_link(LEAD_TEAM_ID, app, LEAD_USER_ID)
+        url = await initiate_team_link(
+            LEAD_TEAM_ID, app, LEAD_USER_ID, verify_roles=False
+        )
     except ComposioNotConfiguredError as e:
         raise IntentKitAPIError(
             status_code=400, key="ComposioNotConfigured", message=str(e)
@@ -89,7 +95,7 @@ async def delete_link(
 ):
     """Unlink an account: removed at Composio and locally."""
     try:
-        await delete_team_link(LEAD_TEAM_ID, link_id)
+        await delete_team_link(LEAD_TEAM_ID, link_id, LEAD_USER_ID, verify_roles=False)
     except LinkStateError as e:
         raise IntentKitAPIError(status_code=404, key="LinkNotFound", message=str(e))
     return Response(status_code=status.HTTP_204_NO_CONTENT)
@@ -121,11 +127,11 @@ async def complete_link(
     """Finish a link attempt; the account status is verified against Composio.
 
     The single-user deployment has no team roles, so only the pending-row
-    check applies (``verify_admin=False``).
+    check applies (``verify_roles=False``).
     """
     try:
         link = await complete_team_link(
-            LEAD_USER_ID, body.connected_account_id, verify_admin=False
+            LEAD_USER_ID, body.connected_account_id, verify_roles=False
         )
     except LinkStateError as e:
         raise IntentKitAPIError(status_code=400, key="InvalidLink", message=str(e))

@@ -10,6 +10,8 @@ from concurrent.futures import ProcessPoolExecutor
 
 import psycopg
 import pytest
+from alembic import command
+from alembic.config import Config as AlembicConfig
 from sqlalchemy import create_engine, inspect, text
 
 from intentkit.config.migration import find_script_location, run_migrations
@@ -105,11 +107,56 @@ def test_upgrade_head_on_fresh_database(fresh_db_url):
         assert "team_links" in tables
         index_names = {idx["name"] for idx in inspector.get_indexes("team_links")}
         assert "ix_team_links_connected_account" in index_names
+        link_columns = {col["name"] for col in inspector.get_columns("team_links")}
+        assert {"level", "user_id"} <= link_columns
 
         with engine.connect() as conn:
             version = conn.execute(
                 text("SELECT version_num FROM alembic_version_intentkit")
             ).scalar()
         assert version is not None
+    finally:
+        engine.dispose()
+
+
+def test_team_link_levels_normalizes_existing_rows(fresh_db_url):
+    """Rows created before the levels delta converge on the whitelist rules:
+    user-level apps bind to their initiator, unrecoverable rows are dropped,
+    team-level apps stay untouched."""
+    cfg = AlembicConfig()
+    cfg.set_main_option("script_location", str(find_script_location()))
+    cfg.attributes["database_url"] = fresh_db_url
+    # Build the schema as it was just before the levels delta.
+    command.upgrade(cfg, "f6a1d8c3b7e2")
+
+    engine = create_engine(fresh_db_url)
+    try:
+        with engine.begin() as conn:
+            conn.execute(
+                text(
+                    "INSERT INTO team_links "
+                    "(id, team_id, app, connected_account_id, status, created_by) "
+                    "VALUES "
+                    "('l1', 't1', 'gmail', 'ca_1', 'active', 'u1'), "
+                    "('l2', 't1', 'twitter', 'ca_2', 'active', 'u2'), "
+                    "('l3', 't1', 'gmail', 'ca_3', 'active', '')"
+                )
+            )
+
+        command.upgrade(cfg, "head")
+
+        with engine.connect() as conn:
+            rows = {
+                row.id: row
+                for row in conn.execute(
+                    text("SELECT id, level, user_id FROM team_links")
+                )
+            }
+        # gmail is user-level now: owned by whoever initiated it
+        assert (rows["l1"].level, rows["l1"].user_id) == ("user", "u1")
+        # twitter stays a shared team-level link
+        assert (rows["l2"].level, rows["l2"].user_id) == ("team", None)
+        # a user-level-app row with no recoverable owner is dropped
+        assert "l3" not in rows
     finally:
         engine.dispose()

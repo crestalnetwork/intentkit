@@ -1,9 +1,11 @@
-"""Team API: Links — external app accounts linked at team level (Composio).
+"""Team API: Links — external app accounts linked via Composio.
 
-Members can see the Links page; only admins can link/unlink. The complete
-endpoint is not team-scoped (the callback only carries the Composio connected
-account id, which routes to its pending link row); ``complete_team_link``
-authorizes the caller against that row's team.
+Members can see the Links page (team-level links plus their own user-level
+ones). Team-level apps are linked/unlinked by admins; user-level apps by each
+member for themselves — the level checks live in ``core.team.link``. The
+complete endpoint is not team-scoped (the callback only carries the Composio
+connected account id, which routes to its pending link row);
+``complete_team_link`` authorizes the caller against that row's team.
 """
 
 import logging
@@ -23,7 +25,7 @@ from intentkit.core.team.link import (
 )
 from intentkit.utils.error import IntentKitAPIError
 
-from app.team.auth import get_current_user, verify_team_admin, verify_team_member
+from app.team.auth import get_current_user, verify_team_member
 
 logger = logging.getLogger(__name__)
 
@@ -40,13 +42,14 @@ team_link_router = APIRouter()
 async def list_links(
     auth: tuple[str, str] = Depends(verify_team_member),
 ):
-    """Get the whitelisted apps with the team's linked accounts."""
-    _user_id, team_id = auth
-    return await list_team_links(team_id)
+    """Get the whitelisted apps with the accounts visible to the caller:
+    team-level links plus the caller's own user-level links."""
+    user_id, team_id = auth
+    return await list_team_links(team_id, user_id)
 
 
 class LinkConnectResponse(BaseModel):
-    """The Composio auth URL the admin's browser must visit to link."""
+    """The Composio auth URL the caller's browser must visit to link."""
 
     url: str
 
@@ -60,9 +63,13 @@ class LinkConnectResponse(BaseModel):
 )
 async def connect_link(
     app: str = Path(..., description="Whitelisted app key (e.g. gmail)"),
-    auth: tuple[str, str] = Depends(verify_team_admin),
+    auth: tuple[str, str] = Depends(verify_team_member),
 ):
-    """Initiate the link flow for a whitelisted app; returns the redirect URL."""
+    """Initiate the link flow for a whitelisted app; returns the redirect URL.
+
+    Any member may link user-level apps for themselves; team-level apps
+    require an admin (enforced in the core layer).
+    """
     user_id, team_id = auth
     try:
         url = await initiate_team_link(team_id, app, user_id)
@@ -72,6 +79,8 @@ async def connect_link(
         )
     except LinkStateError as e:
         raise IntentKitAPIError(status_code=400, key="InvalidLinkApp", message=str(e))
+    except LinkForbiddenError as e:
+        raise IntentKitAPIError(status_code=403, key="LinkForbidden", message=str(e))
     except Exception:
         logger.exception("Link initiation failed for team %s app %s", team_id, app)
         raise IntentKitAPIError(
@@ -91,20 +100,26 @@ async def connect_link(
 )
 async def delete_link(
     link_id: str = Path(..., description="Link ID"),
-    auth: tuple[str, str] = Depends(verify_team_admin),
+    auth: tuple[str, str] = Depends(verify_team_member),
 ):
-    """Unlink an account: removed at Composio and from the team."""
-    _user_id, team_id = auth
+    """Unlink an account: removed at Composio and from the team.
+
+    Team-level links require an admin; user-level links may be removed by
+    their owning user or an admin (enforced in the core layer).
+    """
+    user_id, team_id = auth
     try:
-        await delete_team_link(team_id, link_id)
+        await delete_team_link(team_id, link_id, user_id)
     except LinkStateError as e:
         raise IntentKitAPIError(status_code=404, key="LinkNotFound", message=str(e))
+    except LinkForbiddenError as e:
+        raise IntentKitAPIError(status_code=403, key="LinkForbidden", message=str(e))
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 class LinkCompleteRequest(BaseModel):
     """The ``connected_account_id`` from Composio's callback redirect, relayed
-    by the SPA's OAuth landing page on behalf of the signed-in admin."""
+    by the SPA's OAuth landing page on behalf of the signed-in user."""
 
     connected_account_id: str
 
@@ -130,18 +145,19 @@ async def complete_link(
     body: LinkCompleteRequest = Body(...),
     user_id: str = Depends(get_current_user),
 ):
-    """Finish a link attempt for the signed-in admin.
+    """Finish a link attempt for the signed-in user.
 
-    Completion requires the caller to be the admin who initiated the attempt,
-    and the account status is verified directly against Composio — nothing
-    from the redirect's query string is trusted.
+    Completion requires the caller to be the user who initiated the attempt
+    (an admin for team-level apps), and the account status is verified
+    directly against Composio — nothing from the redirect's query string is
+    trusted.
     """
     try:
         link = await complete_team_link(user_id, body.connected_account_id)
     except LinkStateError as e:
         raise IntentKitAPIError(status_code=400, key="InvalidLink", message=str(e))
     except LinkForbiddenError as e:
-        raise IntentKitAPIError(status_code=403, key="NotTeamAdmin", message=str(e))
+        raise IntentKitAPIError(status_code=403, key="LinkForbidden", message=str(e))
     except Exception:
         logger.exception("Link completion failed")
         raise IntentKitAPIError(

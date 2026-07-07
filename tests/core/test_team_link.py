@@ -23,6 +23,9 @@ from intentkit.core.team.link import (
 )
 from intentkit.models.team_link import (
     LINK_APPS,
+    LINK_CATEGORIES,
+    LINK_LEVEL_TEAM,
+    LINK_LEVEL_USER,
     LINK_STATUS_ACTIVE,
     LINK_STATUS_PENDING,
     TeamLink,
@@ -44,12 +47,22 @@ def _make_link(
     status=LINK_STATUS_ACTIVE,
     account_label=None,
     created_by="user1",
+    level=None,
+    user_id=None,
 ) -> TeamLink:
+    """Build a link row; level defaults to the app's whitelist level, and
+    user-level links default to being owned by their creator."""
+    if level is None:
+        level = LINK_APPS[app].level
+    if level == LINK_LEVEL_USER and user_id is None:
+        user_id = created_by
     now = datetime.now(UTC)
     return TeamLink(
         id=link_id,
         team_id=team_id,
         app=app,
+        level=level,
+        user_id=user_id,
         connected_account_id=connected_account_id,
         status=status,
         account_label=account_label,
@@ -72,13 +85,47 @@ def configured():
 
 class TestWhitelist:
     def test_whitelisted_apps(self):
-        assert set(LINK_APPS) == {"twitter", "notion", "gmail", "supabase"}
+        assert set(LINK_APPS) == {
+            # user-level
+            "gmail",
+            "outlook",
+            "googlecalendar",
+            "linkedin",
+            # team-level
+            "twitter",
+            "supabase",
+            "notion",
+            "airtable",
+            "googledocs",
+            "googlesheets",
+            "googleslides",
+            "googledrive",
+            "linear",
+            "github",
+            "jira",
+            "stripe",
+        }
+
+    def test_levels(self):
+        user_apps = {a for a, d in LINK_APPS.items() if d.level == LINK_LEVEL_USER}
+        assert user_apps == {"gmail", "outlook", "googlecalendar", "linkedin"}
+        for app_def in LINK_APPS.values():
+            assert app_def.level in (LINK_LEVEL_USER, LINK_LEVEL_TEAM)
 
     def test_defs_are_complete(self):
         for app_def in LINK_APPS.values():
             assert app_def.name
             assert app_def.description
             assert app_def.toolkit
+            assert app_def.categories
+
+    def test_categories_is_ordered_union(self):
+        assert list(LINK_CATEGORIES) == list(
+            dict.fromkeys(c for d in LINK_APPS.values() for c in d.categories)
+        )
+        for app_def in LINK_APPS.values():
+            for category in app_def.categories:
+                assert category in LINK_CATEGORIES
 
 
 class TestUrls:
@@ -99,6 +146,16 @@ class TestUrls:
 # ---------------------------------------------------------------------------
 
 
+def _initiate_client() -> MagicMock:
+    client = MagicMock()
+    client.get_or_create_auth_config = AsyncMock(return_value="ac_1")
+    client.initiate_link = AsyncMock(
+        return_value=MagicMock(connected_account_id="ca_new", redirect_url="https://go")
+    )
+    client.delete_connected_account = AsyncMock()
+    return client
+
+
 class TestInitiateTeamLink:
     @pytest.mark.asyncio
     async def test_unknown_app_rejected(self):
@@ -106,17 +163,17 @@ class TestInitiateTeamLink:
             await initiate_team_link("team1", "facebook", "user1")
 
     @pytest.mark.asyncio
-    async def test_happy_path(self):
-        client = MagicMock()
-        client.get_or_create_auth_config = AsyncMock(return_value="ac_1")
-        client.initiate_link = AsyncMock(
-            return_value=MagicMock(
-                connected_account_id="ca_new", redirect_url="https://go"
-            )
-        )
-        client.delete_connected_account = AsyncMock()
+    async def test_user_level_app_needs_membership_only(self):
+        """Any member may link a user-level app for themselves; the link row
+        is bound to that user."""
+        client = _initiate_client()
         with (
             patch(f"{MODULE}.get_composio_client", return_value=client),
+            patch(
+                f"{MODULE}.check_permission",
+                new_callable=AsyncMock,
+                return_value=True,
+            ) as mock_check,
             patch.object(
                 TeamLink,
                 "delete_pending_for_app",
@@ -128,13 +185,71 @@ class TestInitiateTeamLink:
             url = await initiate_team_link("team1", "gmail", "user1")
 
         assert url == "https://go"
+        from intentkit.models.team import TeamRole
+
+        mock_check.assert_awaited_once_with("team1", "user1", TeamRole.MEMBER)
         client.get_or_create_auth_config.assert_awaited_once_with("gmail")
         client.initiate_link.assert_awaited_once()
         assert client.initiate_link.await_args.args[0] == "team-team1"
-        mock_del.assert_awaited_once_with("team1", "gmail")
+        # A user's new attempt only supersedes their own pending rows
+        mock_del.assert_awaited_once_with("team1", "gmail", user_id="user1")
         # Superseded half-open accounts get cleaned up at Composio too
         client.delete_connected_account.assert_awaited_once_with("ca_stale")
-        mock_create.assert_awaited_once_with("team1", "gmail", "ca_new", "user1")
+        mock_create.assert_awaited_once_with(
+            "team1", "gmail", "ca_new", "user1", level="user", user_id="user1"
+        )
+
+    @pytest.mark.asyncio
+    async def test_team_level_app_requires_admin(self):
+        with patch(
+            f"{MODULE}.check_permission", new_callable=AsyncMock, return_value=False
+        ):
+            with pytest.raises(LinkForbiddenError):
+                await initiate_team_link("team1", "twitter", "user1")
+
+    @pytest.mark.asyncio
+    async def test_team_level_happy_path(self):
+        client = _initiate_client()
+        with (
+            patch(f"{MODULE}.get_composio_client", return_value=client),
+            patch(
+                f"{MODULE}.check_permission",
+                new_callable=AsyncMock,
+                return_value=True,
+            ),
+            patch.object(
+                TeamLink,
+                "delete_pending_for_app",
+                new_callable=AsyncMock,
+                return_value=[],
+            ) as mock_del,
+            patch.object(TeamLink, "create", new_callable=AsyncMock) as mock_create,
+        ):
+            url = await initiate_team_link("team1", "twitter", "user1")
+
+        assert url == "https://go"
+        mock_del.assert_awaited_once_with("team1", "twitter", user_id=None)
+        mock_create.assert_awaited_once_with(
+            "team1", "twitter", "ca_new", "user1", level="team", user_id=None
+        )
+
+    @pytest.mark.asyncio
+    async def test_verify_roles_false_skips_admin_check(self):
+        """The local single-user deployment has no roles."""
+        client = _initiate_client()
+        with (
+            patch(f"{MODULE}.get_composio_client", return_value=client),
+            patch(f"{MODULE}.check_permission", new_callable=AsyncMock) as mock_check,
+            patch.object(
+                TeamLink,
+                "delete_pending_for_app",
+                new_callable=AsyncMock,
+                return_value=[],
+            ),
+            patch.object(TeamLink, "create", new_callable=AsyncMock),
+        ):
+            await initiate_team_link("system", "twitter", "system", verify_roles=False)
+        mock_check.assert_not_called()
 
     @pytest.mark.asyncio
     async def test_initiate_failure_evicts_auth_config(self):
@@ -143,6 +258,11 @@ class TestInitiateTeamLink:
         client.initiate_link = AsyncMock(side_effect=ComposioError("stale"))
         with (
             patch(f"{MODULE}.get_composio_client", return_value=client),
+            patch(
+                f"{MODULE}.check_permission",
+                new_callable=AsyncMock,
+                return_value=True,
+            ),
             patch(f"{MODULE}.evict_auth_config") as mock_evict,
         ):
             with pytest.raises(ComposioError):
@@ -208,7 +328,56 @@ class TestCompleteTeamLink:
                 await complete_team_link("user2", "ca_123")
 
     @pytest.mark.asyncio
-    async def test_non_admin_rejected(self):
+    async def test_team_level_non_admin_rejected(self):
+        link = _make_link(app="twitter", status=LINK_STATUS_PENDING, created_by="user1")
+        with (
+            patch.object(
+                TeamLink,
+                "get_by_connected_account",
+                new_callable=AsyncMock,
+                return_value=link,
+            ),
+            patch(
+                f"{MODULE}.check_permission",
+                new_callable=AsyncMock,
+                return_value=False,
+            ) as mock_check,
+        ):
+            with pytest.raises(LinkForbiddenError):
+                await complete_team_link("user1", "ca_123")
+        from intentkit.models.team import TeamRole
+
+        mock_check.assert_awaited_once_with("team1", "user1", TeamRole.ADMIN)
+
+    @pytest.mark.asyncio
+    async def test_user_level_needs_membership_only(self):
+        """User-level completion checks membership, not admin."""
+        link = _make_link(status=LINK_STATUS_PENDING, created_by="user1")
+        client = MagicMock()
+        client.get_connected_account = AsyncMock(return_value={"status": "ACTIVE"})
+        with (
+            patch.object(
+                TeamLink,
+                "get_by_connected_account",
+                new_callable=AsyncMock,
+                return_value=link,
+            ),
+            patch(
+                f"{MODULE}.check_permission",
+                new_callable=AsyncMock,
+                return_value=True,
+            ) as mock_check,
+            patch(f"{MODULE}.get_composio_client", return_value=client),
+            patch.object(TeamLink, "set_status", new_callable=AsyncMock),
+            patch(f"{MODULE}._invalidate_lead_cache"),
+        ):
+            await complete_team_link("user1", "ca_123")
+        from intentkit.models.team import TeamRole
+
+        mock_check.assert_awaited_once_with("team1", "user1", TeamRole.MEMBER)
+
+    @pytest.mark.asyncio
+    async def test_user_level_non_member_rejected(self):
         link = _make_link(status=LINK_STATUS_PENDING, created_by="user1")
         with (
             patch.object(
@@ -264,7 +433,8 @@ class TestCompleteTeamLink:
         mock_set.assert_awaited_once_with(
             "link1", LINK_STATUS_ACTIVE, account_label="a@b.c"
         )
-        mock_invalidate.assert_called_once_with("team1")
+        # gmail is user-level: only the linking user's executor is dropped
+        mock_invalidate.assert_called_once_with("team1", "user1")
 
     @pytest.mark.asyncio
     async def test_failed_account_deletes_row_and_composio_account(self):
@@ -293,7 +463,7 @@ class TestCompleteTeamLink:
         client.delete_connected_account.assert_awaited_once_with("ca_123")
 
     @pytest.mark.asyncio
-    async def test_local_skips_admin_check(self):
+    async def test_local_skips_role_checks(self):
         link = _make_link(
             team_id="system", status=LINK_STATUS_PENDING, created_by="system"
         )
@@ -311,7 +481,7 @@ class TestCompleteTeamLink:
             patch.object(TeamLink, "set_status", new_callable=AsyncMock),
             patch(f"{MODULE}._invalidate_lead_cache"),
         ):
-            await complete_team_link("system", "ca_123", verify_admin=False)
+            await complete_team_link("system", "ca_123", verify_roles=False)
         mock_check.assert_not_called()
 
 
@@ -325,31 +495,105 @@ class TestDeleteTeamLink:
     async def test_missing_link_rejected(self):
         with patch.object(TeamLink, "get", new_callable=AsyncMock, return_value=None):
             with pytest.raises(LinkStateError):
-                await delete_team_link("team1", "link1")
+                await delete_team_link("team1", "link1", "user1")
 
     @pytest.mark.asyncio
     async def test_foreign_team_rejected(self):
         link = _make_link(team_id="other-team")
         with patch.object(TeamLink, "get", new_callable=AsyncMock, return_value=link):
             with pytest.raises(LinkStateError):
-                await delete_team_link("team1", "link1")
+                await delete_team_link("team1", "link1", "user1")
 
     @pytest.mark.asyncio
-    async def test_happy_path(self, configured):
-        link = _make_link()
+    async def test_admin_deletes_team_level_link(self, configured):
+        link = _make_link(app="twitter")
         client = MagicMock()
         client.delete_connected_account = AsyncMock()
         with (
             patch.object(TeamLink, "get", new_callable=AsyncMock, return_value=link),
+            patch(
+                f"{MODULE}.check_permission",
+                new_callable=AsyncMock,
+                return_value=True,
+            ),
             patch(f"{MODULE}.get_composio_client", return_value=client),
             patch.object(TeamLink, "delete", new_callable=AsyncMock) as mock_delete,
             patch(f"{MODULE}._invalidate_lead_cache") as mock_invalidate,
         ):
-            await delete_team_link("team1", "link1")
+            await delete_team_link("team1", "link1", "admin1")
 
         client.delete_connected_account.assert_awaited_once_with("ca_123")
         mock_delete.assert_awaited_once_with("link1")
-        mock_invalidate.assert_called_once_with("team1")
+        # Team-level change: every user's executor is dropped
+        mock_invalidate.assert_called_once_with("team1", None)
+
+    @pytest.mark.asyncio
+    async def test_member_cannot_delete_team_level_link(self):
+        link = _make_link(app="twitter")
+        with (
+            patch.object(TeamLink, "get", new_callable=AsyncMock, return_value=link),
+            patch(
+                f"{MODULE}.check_permission",
+                new_callable=AsyncMock,
+                return_value=False,
+            ),
+        ):
+            with pytest.raises(LinkForbiddenError):
+                await delete_team_link("team1", "link1", "member1")
+
+    @pytest.mark.asyncio
+    async def test_owner_deletes_own_user_level_link(self, configured):
+        """The owning user needs no admin role for their own account."""
+        link = _make_link(app="gmail", created_by="user1")
+        client = MagicMock()
+        client.delete_connected_account = AsyncMock()
+        with (
+            patch.object(TeamLink, "get", new_callable=AsyncMock, return_value=link),
+            patch(
+                f"{MODULE}.check_permission",
+                new_callable=AsyncMock,
+                return_value=False,
+            ) as mock_check,
+            patch(f"{MODULE}.get_composio_client", return_value=client),
+            patch.object(TeamLink, "delete", new_callable=AsyncMock) as mock_delete,
+            patch(f"{MODULE}._invalidate_lead_cache"),
+        ):
+            await delete_team_link("team1", "link1", "user1")
+        mock_check.assert_not_called()
+        mock_delete.assert_awaited_once_with("link1")
+
+    @pytest.mark.asyncio
+    async def test_other_member_cannot_delete_user_level_link(self):
+        link = _make_link(app="gmail", created_by="user1")
+        with (
+            patch.object(TeamLink, "get", new_callable=AsyncMock, return_value=link),
+            patch(
+                f"{MODULE}.check_permission",
+                new_callable=AsyncMock,
+                return_value=False,
+            ),
+        ):
+            with pytest.raises(LinkForbiddenError):
+                await delete_team_link("team1", "link1", "user2")
+
+    @pytest.mark.asyncio
+    async def test_admin_deletes_user_level_link(self, configured):
+        link = _make_link(app="gmail", created_by="user1")
+        client = MagicMock()
+        client.delete_connected_account = AsyncMock()
+        with (
+            patch.object(TeamLink, "get", new_callable=AsyncMock, return_value=link),
+            patch(
+                f"{MODULE}.check_permission",
+                new_callable=AsyncMock,
+                return_value=True,
+            ),
+            patch(f"{MODULE}.get_composio_client", return_value=client),
+            patch.object(TeamLink, "delete", new_callable=AsyncMock) as mock_delete,
+            patch(f"{MODULE}._invalidate_lead_cache"),
+        ):
+            await delete_team_link("team1", "link1", "admin1")
+        mock_delete.assert_awaited_once_with("link1")
 
     @pytest.mark.asyncio
     async def test_composio_failure_still_deletes_row(self, configured):
@@ -362,7 +606,7 @@ class TestDeleteTeamLink:
             patch.object(TeamLink, "delete", new_callable=AsyncMock) as mock_delete,
             patch(f"{MODULE}._invalidate_lead_cache"),
         ):
-            await delete_team_link("team1", "link1")
+            await delete_team_link("team1", "link1", "user1")
         mock_delete.assert_awaited_once_with("link1")
 
 
@@ -393,16 +637,59 @@ class TestListTeamLinks:
                 "list_for_team",
                 new_callable=AsyncMock,
                 return_value=links,
-            ),
+            ) as mock_list,
             patch(f"{MODULE}.get_composio_client", return_value=client),
         ):
-            result = await list_team_links("team1")
+            result = await list_team_links("team1", "user1")
 
+        mock_list.assert_awaited_once_with("team1")
         assert result.enabled is True
+        assert result.categories == list(LINK_CATEGORIES)
         by_app = {a.app: a for a in result.apps}
         assert set(by_app) == set(LINK_APPS)
         assert [link.id for link in by_app["gmail"].links] == ["l1"]
         assert by_app["twitter"].links == []
+        # Level and categories come from the whitelist
+        assert by_app["gmail"].level == LINK_LEVEL_USER
+        assert by_app["twitter"].level == LINK_LEVEL_TEAM
+        assert by_app["stripe"].categories == ["Finance & Accounting"]
+
+    @pytest.mark.asyncio
+    async def test_other_members_user_links_hidden_but_synced(self, configured):
+        """The sync covers all of the team's rows, but another member's
+        personal account never shows up in the viewer's response."""
+        mine = _make_link(link_id="l1", app="gmail", created_by="user1")
+        theirs = _make_link(
+            link_id="l2",
+            app="gmail",
+            connected_account_id="ca_2",
+            created_by="user2",
+            status=LINK_STATUS_ACTIVE,
+        )
+        team_row = _make_link(link_id="l3", app="twitter", connected_account_id="ca_3")
+        client = MagicMock()
+        client.list_connected_accounts = AsyncMock(
+            return_value=[{"id": "ca_2", "status": "EXPIRED"}]
+        )
+        with (
+            patch.object(
+                TeamLink,
+                "list_for_team",
+                new_callable=AsyncMock,
+                return_value=[mine, theirs, team_row],
+            ),
+            patch(f"{MODULE}.get_composio_client", return_value=client),
+            patch.object(TeamLink, "set_statuses", new_callable=AsyncMock) as mock_set,
+            patch(f"{MODULE}._invalidate_lead_cache"),
+        ):
+            result = await list_team_links("team1", "user1")
+
+        # user2's expired account was healed from user1's page view...
+        mock_set.assert_awaited_once_with({"l2": "expired"})
+        by_app = {a.app: a for a in result.apps}
+        # ...but never exposed to user1.
+        assert [link.id for link in by_app["gmail"].links] == ["l1"]
+        assert [link.id for link in by_app["twitter"].links] == ["l3"]
 
     @pytest.mark.asyncio
     async def test_status_sync_downgrades_expired(self, configured):
@@ -422,7 +709,7 @@ class TestListTeamLinks:
             patch.object(TeamLink, "set_statuses", new_callable=AsyncMock) as mock_set,
             patch(f"{MODULE}._invalidate_lead_cache") as mock_invalidate,
         ):
-            result = await list_team_links("team1")
+            result = await list_team_links("team1", "user1")
 
         mock_set.assert_awaited_once_with({"link1": "expired"})
         mock_invalidate.assert_called_once_with("team1")
@@ -444,7 +731,7 @@ class TestListTeamLinks:
             patch(f"{MODULE}.get_composio_client", return_value=client),
             patch.object(TeamLink, "set_statuses", new_callable=AsyncMock) as mock_set,
         ):
-            await list_team_links("team1")
+            await list_team_links("team1", "user1")
         mock_set.assert_not_awaited()
 
     @pytest.mark.asyncio
@@ -479,7 +766,7 @@ class TestListTeamLinks:
             ) as mock_set,
             patch(f"{MODULE}._invalidate_lead_cache") as mock_invalidate,
         ):
-            result = await list_team_links("team1")
+            result = await list_team_links("team1", "user1")
 
         mock_set.assert_awaited_once_with(
             "link1", LINK_STATUS_ACTIVE, account_label="a@b.c"
@@ -505,7 +792,7 @@ class TestListTeamLinks:
             patch(f"{MODULE}.get_composio_client", return_value=client),
             patch.object(TeamLink, "delete", new_callable=AsyncMock) as mock_delete,
         ):
-            result = await list_team_links("team1")
+            result = await list_team_links("team1", "user1")
 
         mock_delete.assert_awaited_once_with("link1")
         gmail = next(a for a in result.apps if a.app == "gmail")
@@ -525,7 +812,7 @@ class TestListTeamLinks:
             ),
             patch(f"{MODULE}.get_composio_client", return_value=client),
         ):
-            result = await list_team_links("team1")
+            result = await list_team_links("team1", "user1")
         gmail = next(a for a in result.apps if a.app == "gmail")
         assert gmail.links[0].status == LINK_STATUS_ACTIVE
 
@@ -537,7 +824,7 @@ class TestListTeamLinks:
                 TeamLink, "list_for_team", new_callable=AsyncMock, return_value=[]
             ),
         ):
-            result = await list_team_links("team1")
+            result = await list_team_links("team1", "user1")
         assert result.enabled is False
         assert len(result.apps) == len(LINK_APPS)
 
@@ -551,17 +838,18 @@ class TestBuildLeadLinkTools:
     @pytest.mark.asyncio
     async def test_unconfigured_returns_empty(self):
         with patch(f"{MODULE}.composio_configured", return_value=False):
-            assert await build_lead_link_tools("team1") == []
+            assert await build_lead_link_tools("team1", "user1") == []
 
     @pytest.mark.asyncio
     async def test_no_active_links_returns_empty(self, configured):
         with patch.object(
-            TeamLink, "list_for_team", new_callable=AsyncMock, return_value=[]
+            TeamLink, "list_visible", new_callable=AsyncMock, return_value=[]
         ):
-            assert await build_lead_link_tools("team1") == []
+            assert await build_lead_link_tools("team1", "user1") == []
 
     @pytest.mark.asyncio
     async def test_happy_path_pins_accounts(self, configured):
+        """Team-level and the user's own user-level accounts get pinned."""
         links = [
             _make_link(link_id="l1", app="gmail", connected_account_id="ca_1"),
             _make_link(link_id="l2", app="gmail", connected_account_id="ca_2"),
@@ -575,10 +863,10 @@ class TestBuildLeadLinkTools:
         with (
             patch.object(
                 TeamLink,
-                "list_for_team",
+                "list_visible",
                 new_callable=AsyncMock,
                 return_value=links,
-            ),
+            ) as mock_list,
             patch(f"{MODULE}.get_composio_client", return_value=client),
             patch(
                 "intentkit.tools.mcp.composio.build_composio_mcp_tools",
@@ -586,9 +874,10 @@ class TestBuildLeadLinkTools:
                 return_value=fake_tools,
             ) as mock_build,
         ):
-            tools = await build_lead_link_tools("team1")
+            tools = await build_lead_link_tools("team1", "user1")
 
         assert tools == fake_tools
+        mock_list.assert_awaited_once_with("team1", "user1", status=LINK_STATUS_ACTIVE)
         client.create_session.assert_awaited_once_with(
             "team-team1",
             ["gmail", "notion"],
@@ -604,13 +893,13 @@ class TestBuildLeadLinkTools:
         with (
             patch.object(
                 TeamLink,
-                "list_for_team",
+                "list_visible",
                 new_callable=AsyncMock,
                 return_value=links,
             ),
             patch(f"{MODULE}.get_composio_client", return_value=client),
         ):
-            assert await build_lead_link_tools("team1") == []
+            assert await build_lead_link_tools("team1", "user1") == []
 
 
 # ---------------------------------------------------------------------------
@@ -631,6 +920,9 @@ class TestBuildLinksSection:
         assert section.rstrip().endswith("- (none yet)")
         for app_def in LINK_APPS.values():
             assert app_def.name in section
+        # Both levels are explained
+        assert "Team-level apps" in section
+        assert "User-level apps" in section
 
     def test_lists_linked_accounts_at_end(self, configured):
         links = [
@@ -650,13 +942,14 @@ class TestBuildLinksSection:
             ),
         ]
         section = build_links_section("team1", links)
-        assert "Currently linked accounts:" in section
-        assert "- Gmail: a@b.c" in section
-        assert "- Twitter / X: @handle" in section
+        assert "Accounts linked in this conversation:" in section
+        # User-level accounts are marked as the current user's own
+        assert "- Gmail (current user's account): a@b.c" in section
+        assert "- Twitter / X (team account): @handle" in section
         # Non-active links are not presented as linked accounts
         assert "dead" not in section
         # The account list is the last part of the section
-        assert section.rstrip().endswith("- Twitter / X: @handle")
+        assert section.rstrip().endswith("- Twitter / X (team account): @handle")
 
 
 # ---------------------------------------------------------------------------

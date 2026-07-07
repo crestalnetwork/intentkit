@@ -640,6 +640,8 @@ export interface TeamLink {
   id: string;
   team_id: string;
   app: string;
+  level: "team" | "user";
+  user_id: string | null; // owning user for user-level links
   connected_account_id: string;
   status: string; // active | expired | revoked | ...
   account_label: string | null;
@@ -652,11 +654,14 @@ export interface LinkAppInfo {
   app: string;
   name: string;
   description: string;
+  level: "team" | "user";
+  categories: string[];
   links: TeamLink[];
 }
 
 export interface TeamLinksResponse {
   enabled: boolean;
+  categories: string[]; // ordered union of app categories, for filter tags
   apps: LinkAppInfo[];
 }
 

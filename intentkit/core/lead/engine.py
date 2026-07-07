@@ -18,6 +18,7 @@ from intentkit.core.executor import build_executor
 from intentkit.core.lead.cache import (
     cleanup_cache,
     lead_agents,
+    lead_cache_key,
     lead_cached_at,
     lead_executors,
 )
@@ -50,10 +51,18 @@ logger = logging.getLogger(__name__)
 
 
 async def get_lead_agent(team_id: str) -> Agent:
-    """Get the lead agent for a team, using cache if available."""
+    """Get the lead agent of a team in its user-agnostic form (team-level
+    links only), for display contexts like the lead info endpoint.
+
+    Cached under the bare team id; the per-user variants that back real
+    conversations live under lead_cache_key. invalidate_lead_cache drops
+    both, and cleanup_cache TTL-evicts them together.
+    """
     lead_agent = lead_agents.get(team_id)
     if not lead_agent:
         lead_agent = await _build_lead_agent(team_id)
+        lead_agents[team_id] = lead_agent
+        lead_cached_at[team_id] = datetime.now(timezone.utc)
     return lead_agent
 
 
@@ -64,7 +73,7 @@ async def stream_lead(
 
     await verify_team_membership(team_id, user_id)
 
-    executor, lead_agent, cold_start_cost = await _get_lead_executor(team_id)
+    executor, lead_agent, cold_start_cost = await _get_lead_executor(team_id, user_id)
 
     if not message.agent_id:
         message.agent_id = lead_agent.id
@@ -122,7 +131,10 @@ def _build_followed_agents_section(agents: list[Agent]) -> str:
     return "".join(lines)
 
 
-async def _build_lead_agent(team_id: str) -> Agent:
+async def _build_lead_agent(team_id: str, user_id: str | None = None) -> Agent:
+    """Build the lead agent. With ``user_id``, the prompt's Links section
+    covers the accounts visible in that user's conversations (team-level plus
+    their own user-level links); without it, team-level links only."""
     now = datetime.now(timezone.utc)
 
     prompt = (
@@ -181,7 +193,7 @@ async def _build_lead_agent(team_id: str) -> Agent:
         Team.get_owner(team_id),
         Team.get_lead_agent_config(team_id),
         get_followed_external_agents(team_id),
-        get_active_links(team_id),
+        get_active_links(team_id, user_id),
     )
     if not owner:
         raise IntentKitAPIError(
@@ -239,13 +251,16 @@ async def _build_lead_agent(team_id: str) -> Agent:
 
 
 async def _get_lead_executor(
-    team_id: str,
+    team_id: str, user_id: str
 ) -> tuple[CompiledStateGraph[AgentState, AgentContext, Any, Any], Agent, float]:
     now = datetime.now(timezone.utc)
     cleanup_cache(now)
 
-    executor = lead_executors.get(team_id)
-    lead_agent = lead_agents.get(team_id)
+    # Per (team, user): the Composio link tools and the prompt's Links
+    # section include the requesting user's own user-level links.
+    cache_key = lead_cache_key(team_id, user_id)
+    executor = lead_executors.get(cache_key)
+    lead_agent = lead_agents.get(cache_key)
     cold_start_cost = 0.0
 
     if not executor or not lead_agent:
@@ -254,23 +269,23 @@ async def _get_lead_executor(
         # The executor needs a real AgentData for DynamicPromptMiddleware.
         # When both the agent and executor are cold, fetch agent_data in
         # parallel with the build.
-        # The Composio MCP tools for the team's linked accounts ([] when the
-        # team has none) also load here, in the same gather — they hit the
-        # network, and this is the cold-start path. They are rebuilt per
-        # executor build so the toolset follows link changes (the link APIs
-        # invalidate this cache).
+        # The Composio MCP tools for the linked accounts usable in this
+        # user's conversations ([] when there are none) also load here, in
+        # the same gather — they hit the network, and this is the cold-start
+        # path. They are rebuilt per executor build so the toolset follows
+        # link changes (the link APIs invalidate this cache).
         if not executor:
             if not lead_agent:
                 lead_agent, agent_data, link_tools = await asyncio.gather(
-                    _build_lead_agent(team_id),
+                    _build_lead_agent(team_id, user_id),
                     AgentData.get(f"team-{team_id}"),
-                    build_lead_link_tools(team_id),
+                    build_lead_link_tools(team_id, user_id),
                 )
-                lead_agents[team_id] = lead_agent
+                lead_agents[cache_key] = lead_agent
             else:
                 agent_data, link_tools = await asyncio.gather(
                     AgentData.get(lead_agent.id),
-                    build_lead_link_tools(team_id),
+                    build_lead_link_tools(team_id, user_id),
                 )
 
             custom_tools: list[BaseTool] = [
@@ -287,15 +302,15 @@ async def _get_lead_executor(
                 agent_data,
                 custom_tools,
             )
-            lead_executors[team_id] = executor
+            lead_executors[cache_key] = executor
         elif not lead_agent:
-            lead_agent = await _build_lead_agent(team_id)
-            lead_agents[team_id] = lead_agent
+            lead_agent = await _build_lead_agent(team_id, user_id)
+            lead_agents[cache_key] = lead_agent
 
         cold_start_cost = time.perf_counter() - start
-        lead_cached_at[team_id] = now
-        logger.info("Initialized lead executor for team %s", team_id)
+        lead_cached_at[cache_key] = now
+        logger.info("Initialized lead executor for team %s user %s", team_id, user_id)
     else:
-        lead_cached_at[team_id] = now
+        lead_cached_at[cache_key] = now
 
     return executor, lead_agent, cold_start_cost

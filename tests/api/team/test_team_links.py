@@ -28,7 +28,8 @@ class TestListLinks:
         with patch(f"{MODULE}.list_team_links", new_callable=AsyncMock) as mock_list:
             mock_list.return_value = {"enabled": True, "apps": []}
             result = await list_links(auth=AUTH)
-        mock_list.assert_awaited_once_with("team-456")
+        # The caller's user id scopes user-level links to their own
+        mock_list.assert_awaited_once_with("team-456", "user-123")
         assert result == {"enabled": True, "apps": []}
 
 
@@ -69,6 +70,19 @@ class TestConnectLink:
         assert exc.value.key == "InvalidLinkApp"
 
     @pytest.mark.asyncio
+    async def test_forbidden_maps_to_403(self):
+        """A plain member starting a team-level link is rejected in core."""
+        with patch(
+            f"{MODULE}.initiate_team_link",
+            new_callable=AsyncMock,
+            side_effect=LinkForbiddenError("not admin"),
+        ):
+            with pytest.raises(IntentKitAPIError) as exc:
+                await connect_link(app="twitter", auth=AUTH)
+        assert exc.value.status_code == 403
+        assert exc.value.key == "LinkForbidden"
+
+    @pytest.mark.asyncio
     async def test_upstream_failure_maps_to_502(self):
         with patch(
             f"{MODULE}.initiate_team_link",
@@ -86,7 +100,7 @@ class TestDeleteLink:
     async def test_happy_path(self):
         with patch(f"{MODULE}.delete_team_link", new_callable=AsyncMock) as mock_delete:
             response = await delete_link(link_id="link-1", auth=AUTH)
-        mock_delete.assert_awaited_once_with("team-456", "link-1")
+        mock_delete.assert_awaited_once_with("team-456", "link-1", "user-123")
         assert isinstance(response, Response)
         assert response.status_code == 204
 
@@ -101,6 +115,19 @@ class TestDeleteLink:
                 await delete_link(link_id="link-1", auth=AUTH)
         assert exc.value.status_code == 404
         assert exc.value.key == "LinkNotFound"
+
+    @pytest.mark.asyncio
+    async def test_forbidden_maps_to_403(self):
+        """Neither the link's owner nor an admin: rejected in core."""
+        with patch(
+            f"{MODULE}.delete_team_link",
+            new_callable=AsyncMock,
+            side_effect=LinkForbiddenError("not owner"),
+        ):
+            with pytest.raises(IntentKitAPIError) as exc:
+                await delete_link(link_id="link-1", auth=AUTH)
+        assert exc.value.status_code == 403
+        assert exc.value.key == "LinkForbidden"
 
 
 class TestCompleteLink:
@@ -150,7 +177,7 @@ class TestCompleteLink:
                     user_id="user-123",
                 )
         assert exc.value.status_code == 403
-        assert exc.value.key == "NotTeamAdmin"
+        assert exc.value.key == "LinkForbidden"
 
     @pytest.mark.asyncio
     async def test_unexpected_failure_maps_to_400(self):
