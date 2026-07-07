@@ -167,7 +167,9 @@ def build_agent_manager(team_id: str) -> Agent:
         "enable_post": False,
         "enable_long_term_memory": False,
         "sub_agents": None,
-        "tools": ["ui_show_card", "ui_ask_user"],
+        # ui_show_card / ui_ask_user are interactive_only system tools now;
+        # ToolBindingMiddleware drops them per request for sub-agent runs
+        "tools": None,
         "created_at": now,
         "updated_at": now,
     }

@@ -1,10 +1,12 @@
-from typing import override
+"""System tool for presenting the user with clickable options."""
+
+from typing import Literal, override
 
 from langchain_core.tools import ArgsSchema
 from pydantic import BaseModel, Field
 
+from intentkit.core.system_tools.base import SystemTool
 from intentkit.models.chat import ChatMessageAttachment, ChatMessageAttachmentType
-from intentkit.tools.ui.base import UIBaseTool
 
 
 class AskUserInput(BaseModel):
@@ -25,16 +27,19 @@ class AskUserInput(BaseModel):
     )
 
 
-class UIAskUser(UIBaseTool):
+class UIAskUserTool(SystemTool):
     """Tool for presenting the user with a set of clickable options/choices."""
 
     name: str = "ui_ask_user"
-    title: str = "Ask User"
     description: str = (
         "Present the user with 2-3 clickable options to choose from. "
         "Each option has a title and description. The user can click an option to respond."
     )
     args_schema: ArgsSchema | None = AskUserInput
+    # Return a (content, artifact) tuple so the choice lands in attachments
+    response_format: Literal["content", "content_and_artifact"] = "content_and_artifact"
+    interactive_only: bool = True
+    # The turn ends here: the agent must wait for the user's pick
     return_direct: bool = True
 
     @override

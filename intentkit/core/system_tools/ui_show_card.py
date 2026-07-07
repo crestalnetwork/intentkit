@@ -1,10 +1,12 @@
-from typing import cast, override
+"""System tool for displaying a rich card to the user."""
+
+from typing import Literal, cast, override
 
 from langchain_core.tools import ArgsSchema
 from pydantic import BaseModel, Field
 
+from intentkit.core.system_tools.base import SystemTool
 from intentkit.models.chat import ChatMessageAttachment, ChatMessageAttachmentType
-from intentkit.tools.ui.base import UIBaseTool
 
 
 class ShowCardInput(BaseModel):
@@ -24,16 +26,18 @@ class ShowCardInput(BaseModel):
     )
 
 
-class UIShowCard(UIBaseTool):
+class UIShowCardTool(SystemTool):
     """Tool for displaying a rich card with title and optional description, image, label, and link."""
 
     name: str = "ui_show_card"
-    title: str = "Show Card"
     description: str = (
         "Display a rich card to the user. Only title is required. "
         "Optionally include description, image, action label, and a clickable URL."
     )
     args_schema: ArgsSchema | None = ShowCardInput
+    # Return a (content, artifact) tuple so the card lands in attachments
+    response_format: Literal["content", "content_and_artifact"] = "content_and_artifact"
+    interactive_only: bool = True
 
     @override
     async def _arun(

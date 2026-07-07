@@ -16,6 +16,8 @@ from intentkit.core.system_tools.recent_activities import RecentActivitiesTool
 from intentkit.core.system_tools.recent_posts import RecentPostsTool
 from intentkit.core.system_tools.search_web import WebSearchTool
 from intentkit.core.system_tools.store_image import StoreImageTool
+from intentkit.core.system_tools.ui_ask_user import UIAskUserTool
+from intentkit.core.system_tools.ui_show_card import UIShowCardTool
 from intentkit.core.system_tools.update_memory import UpdateMemoryTool
 
 __all__ = [
@@ -29,6 +31,8 @@ __all__ = [
     "recent_activities",
     "recent_posts",
     "store_image",
+    "ui_ask_user",
+    "ui_show_card",
     "update_memory",
     "web_search",
 ]
@@ -43,5 +47,7 @@ read_webpage_cloudflare = ReadWebpageCloudflareTool()
 recent_activities = RecentActivitiesTool()
 recent_posts = RecentPostsTool()
 store_image = StoreImageTool()
+ui_ask_user = UIAskUserTool()
+ui_show_card = UIShowCardTool()
 update_memory = UpdateMemoryTool()
 web_search = WebSearchTool()

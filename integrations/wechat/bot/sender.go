@@ -113,13 +113,37 @@ func (s *WechatSender) SendFile(ctx context.Context, url string, name string, ca
 	return nil
 }
 
+// sendCardImage sends the card image without SendImage's bare-URL text
+// fallback, so a failed image can be folded into the card text instead of
+// arriving as a separate raw-URL message.
+func (s *WechatSender) sendCardImage(ctx context.Context, imageURL string) error {
+	_, media, ciphertextSize, err := s.downloadAndUpload(ctx, imageURL, ilink.UploadMediaImage)
+	if err != nil {
+		return err
+	}
+	return s.client.SendImage(ctx, s.toUserID, s.contextToken, media, ciphertextSize)
+}
+
+// SendCard renders a card with the closest primitives the iLink API offers
+// (text/image/voice/file/video only — no card, button, or menu item types):
+// the card image is sent as a real image message, the rest as text.
 func (s *WechatSender) SendCard(ctx context.Context, title, description, imageURL, linkURL, label string) error {
+	imageFailed := false
+	if imageURL != "" {
+		if err := s.sendCardImage(ctx, imageURL); err != nil {
+			slog.Error("Failed to send card image, appending URL to card text", "error", err, "url", imageURL)
+			imageFailed = true
+		}
+	}
 	var parts []string
 	if title != "" {
 		parts = append(parts, "📋 "+title)
 	}
 	if description != "" {
 		parts = append(parts, description)
+	}
+	if imageFailed {
+		parts = append(parts, "🖼 "+imageURL)
 	}
 	if linkURL != "" {
 		linkText := linkURL

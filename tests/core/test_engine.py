@@ -228,6 +228,10 @@ async def test_build_executor_compatible_tools(mock_agent, mock_agent_data):
     assert "read_webpage_cloudflare" in keys
     assert "search_web_zai" not in keys
     assert "read_webpage_zai" not in keys
+    # interactive UI system tools are always bound; the middleware drops them
+    # per request for cron triggers and sub-agent calls
+    assert "ui_show_card" in keys
+    assert "ui_ask_user" in keys
 
 
 @pytest.mark.asyncio

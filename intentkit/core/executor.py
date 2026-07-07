@@ -155,6 +155,8 @@ async def build_executor(
         recent_activities,
         recent_posts,
         store_image,
+        ui_ask_user,
+        ui_show_card,
         update_memory,
         web_search,
     )
@@ -165,6 +167,13 @@ async def build_executor(
     # NOT use OpenRouter's openrouter:datetime server tool, so all agents share
     # the same time behaviour (formatted time plus a Unix timestamp).
     tools.append(current_time)
+
+    # interactive UI tools (cards, choice buttons): every chat surface renders
+    # them, so they are bound for all agents rather than user-selected. They
+    # are interactive_only — ToolBindingMiddleware drops them per request for
+    # cron-triggered runs and sub-agent calls, where no live user is watching.
+    tools.append(ui_show_card)
+    tools.append(ui_ask_user)
 
     # call_agent: only when sub-agents are configured. Open to guests —
     # sub-agent runs recompute their own access context per message.
@@ -290,13 +299,20 @@ async def build_executor(
     # uses before_model, so summarization always runs first regardless of list position.
     # The lower threshold (40%) ensures context editing handles moderate growth,
     # while summarization (60-80%) handles extreme cases.
+    # Interactive UI tool results carry the rendered card/choice payload, so
+    # they are never cleared.
     context_editing_trigger = int(llm_model.info.context_length * 0.4)
     middleware.append(
         ContextEditingMiddleware(
             edits=[
                 ClearToolUsesEdit(
                     trigger=context_editing_trigger,
-                    exclude_tools=["ui_show_card", "ui_ask_user"],
+                    exclude_tools=[
+                        t.name
+                        for t in tools
+                        if isinstance(t, BaseTool)
+                        and getattr(t, "interactive_only", False)
+                    ],
                 )
             ]
         )

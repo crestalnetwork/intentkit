@@ -18,6 +18,7 @@ from intentkit.abstracts.graph import AgentContext, AgentState
 from intentkit.core.prompt import build_system_prompt
 from intentkit.models.agent import Agent
 from intentkit.models.agent_data import AgentData
+from intentkit.models.chat import AuthorType
 from intentkit.models.llm import LLMModel
 
 logger = logging.getLogger(__name__)
@@ -78,11 +79,18 @@ class ToolBindingMiddleware(AgentMiddleware[AgentState, AgentContext]):
         # Tools are deduplicated at build time in executor.py. Tools marked
         # team_only (publishing, signing, spending) are hidden from guests of
         # a published agent; each such tool re-checks at execution time too.
+        # Tools marked interactive_only (UI cards, choice buttons) need a live
+        # user watching the conversation, so they are hidden from cron-
+        # triggered runs and sub-agent calls.
         # getattr covers dict-typed provider server tools too (no flag).
+        interactive_allowed = (
+            context.entrypoint != AuthorType.TRIGGER and not context.is_subagent
+        )
         tools: list[BaseTool | dict[str, Any]] = [
             t
             for t in self.all_tools
-            if context.is_own_team or not getattr(t, "team_only", False)
+            if (context.is_own_team or not getattr(t, "team_only", False))
+            and (interactive_allowed or not getattr(t, "interactive_only", False))
         ]
 
         model = await self.llm_model.create_instance(llm_params)

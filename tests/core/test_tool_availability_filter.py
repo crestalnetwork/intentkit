@@ -26,7 +26,7 @@ def test_unavailable_category_excluded_from_hierarchical_text(
     assert "**firecrawl**" not in text
 
 
-def test_ui_category_always_present() -> None:
-    """The UI category has no system-config gate, so it must always appear."""
+def test_http_category_always_present() -> None:
+    """The http category has no system-config gate, so it must always appear."""
     text = tool_registry.get_tools_hierarchical_text()
-    assert "**ui**" in text
+    assert "**http**" in text

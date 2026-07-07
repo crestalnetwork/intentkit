@@ -43,6 +43,12 @@ class SystemTool(BaseTool, metaclass=ABCMeta):
     a published agent never see them. Runtime code must still call
     ``ensure_own_team()`` as a second line of defense."""
 
+    interactive_only: bool = False
+    """Tools that render interactive UI components (cards, choice buttons)
+    need a live user watching the conversation. ToolBindingMiddleware drops
+    them for cron-triggered runs (entrypoint TRIGGER) and sub-agent calls,
+    where nobody can see or click the component."""
+
     def ensure_own_team(self) -> None:
         """Refuse execution unless the owning team is running the agent."""
         context = self.get_context()

@@ -21,14 +21,14 @@ async def test_create_agent_rejects_unknown_tool_name():
 
 @pytest.mark.bdd
 async def test_create_agent_rejects_fake_tool_in_known_category():
-    # Name uses a real category prefix ("ui_") but is not a real tool.
+    # Name uses a real category prefix ("http_") but is not a real tool.
     agent = AgentCreate(
         id="test-tool-val-2",
         name="Tool Test",
         model="gpt-4o-mini",
-        tools=["ui_fake_tool"],
+        tools=["http_fake_tool"],
     )
-    with pytest.raises(IntentKitAPIError, match="ui_fake_tool"):
+    with pytest.raises(IntentKitAPIError, match="http_fake_tool"):
         await create_agent(agent)
 
 
@@ -38,8 +38,8 @@ async def test_create_agent_accepts_valid_tools():
         id="test-tool-val-3",
         name="Tool Test Valid",
         model="gpt-4o-mini",
-        tools=["ui_show_card"],
+        tools=["http_get"],
     )
     created, _ = await create_agent(agent)
     assert created.tools is not None
-    assert "ui_show_card" in created.tools
+    assert "http_get" in created.tools

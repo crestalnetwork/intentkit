@@ -7,14 +7,24 @@ def test_get_tool_catalog_returns_categories():
     """Catalog must be keyed by category with the x-catalog wire shape inside."""
     catalog = get_tool_catalog()
     assert isinstance(catalog, dict)
-    ui = catalog["ui"]
-    assert isinstance(ui["title"], str) and ui["title"]
-    assert isinstance(ui["description"], str)
-    assert isinstance(ui["x-tags"], list)
-    assert "ui_show_card" in ui["tools"]
-    assert "ui_ask_user" in ui["tools"]
-    assert ui["tools"]["ui_show_card"]["title"]
-    assert ui["tools"]["ui_show_card"]["description"]
+    http = catalog["http"]
+    assert isinstance(http["title"], str) and http["title"]
+    assert isinstance(http["description"], str)
+    assert isinstance(http["x-tags"], list)
+    assert "http_get" in http["tools"]
+    assert "http_post" in http["tools"]
+    assert http["tools"]["http_get"]["title"]
+    assert http["tools"]["http_get"]["description"]
+
+
+def test_ui_tools_absent_from_catalog():
+    """ui_show_card / ui_ask_user moved to system tools and must not be
+    user-selectable anymore."""
+    catalog = get_tool_catalog()
+    assert "ui" not in catalog
+    all_tool_names = {name for cat in catalog.values() for name in cat["tools"]}
+    assert "ui_show_card" not in all_tool_names
+    assert "ui_ask_user" not in all_tool_names
 
 
 def test_web3_categories_flagged():
