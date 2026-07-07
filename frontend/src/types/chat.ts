@@ -32,6 +32,8 @@ export interface ChatMessageToolCall {
   name: string;
   parameters: Record<string, unknown>;
   success: boolean;
+  /** Agent-written status line shown to the user in place of the tool name */
+  display_message?: string;
   response?: string;
   error_message?: string;
   credit_event_id?: string;

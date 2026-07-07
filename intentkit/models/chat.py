@@ -112,6 +112,15 @@ class ChatMessageAttachment(TypedDict):
     ]
 
 
+# Name of the extra argument injected into every tool schema bound to the
+# model: a user-facing status line the LLM writes for each call. It is
+# stripped before the tool executes and lifted out of ``parameters`` into
+# ``ChatMessageToolCall.display_message`` when the call is persisted.
+# The name is reserved — tools must not define an argument with this name
+# (the persistence lift above cannot tell such an argument apart).
+DISPLAY_MESSAGE_ARG = "display_message"
+
+
 class ChatMessageToolCall(TypedDict):
     """TypedDict for tool call details."""
 
@@ -119,6 +128,9 @@ class ChatMessageToolCall(TypedDict):
     name: str
     parameters: dict[str, object]
     success: bool
+    display_message: NotRequired[
+        str
+    ]  # Agent-written status line shown to the user in place of the tool name
     response: NotRequired[
         str
     ]  # Optional response from the tool call, trimmed to 100 characters
@@ -527,7 +539,8 @@ class ChatMessage(ChatMessageCreate):
         # Create a copy of the current message
         sanitized_data = self.model_dump()
 
-        # Clear sensitive data from tool calls
+        # Clear sensitive data from tool calls. display_message is kept:
+        # it is authored by the agent for display, like the message text.
         if sanitized_data.get("tool_calls"):
             for tool_call in sanitized_data["tool_calls"]:
                 # Clear parameters and response while keeping structure

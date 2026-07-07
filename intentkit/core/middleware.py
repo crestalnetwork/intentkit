@@ -9,16 +9,23 @@ from langchain.agents.middleware import AgentMiddleware, LLMToolSelectorMiddlewa
 from langchain.agents.middleware.summarization import SummarizationMiddleware
 from langchain_core.messages import AIMessage, HumanMessage
 from langchain_core.tools import BaseTool
+from langchain_core.utils.function_calling import convert_to_openai_tool
 from langgraph.runtime import Runtime
 
 if TYPE_CHECKING:
-    from langchain.agents.middleware.types import ModelRequest, ModelResponse
+    from langchain.agents.middleware.types import (
+        ModelRequest,
+        ModelResponse,
+        ToolCallRequest,
+    )
+    from langchain_core.messages import ToolMessage
+    from langgraph.types import Command
 
 from intentkit.abstracts.graph import AgentContext, AgentState
 from intentkit.core.prompt import build_system_prompt
 from intentkit.models.agent import Agent
 from intentkit.models.agent_data import AgentData
-from intentkit.models.chat import AuthorType
+from intentkit.models.chat import DISPLAY_MESSAGE_ARG, AuthorType
 from intentkit.models.llm import LLMModel
 
 logger = logging.getLogger(__name__)
@@ -47,8 +54,67 @@ class DynamicPromptMiddleware(AgentMiddleware[AgentState, AgentContext]):
         return await handler(updated_request)
 
 
+_DISPLAY_MESSAGE_SCHEMA: dict[str, Any] = {
+    "type": "string",
+    "description": (
+        "One short sentence shown to the user in the chat UI while this call "
+        "runs, written in the language the user is speaking. Describe what "
+        "you are doing from the user's point of view (e.g. 'Searching the "
+        "web for the latest BTC news'). Plain text only; never mention "
+        "internal tool names."
+    ),
+}
+
+
+def _display_message_tool(tool: BaseTool) -> BaseTool | None:
+    """A copy of the tool advertising an extra ``display_message`` arg.
+
+    The copy is only ever bound to the model for its schema; the tool node
+    resolves calls by name to the original registered tool. Returns None
+    when the tool must keep its original schema: conversion to JSON schema
+    failed, or the tool already defines an argument with that name itself
+    (stripping it before execution would break the tool).
+    """
+    try:
+        raw_params: Any = convert_to_openai_tool(tool)["function"].get("parameters")
+    except Exception:
+        logger.warning(
+            "Cannot augment tool '%s' with %s: schema conversion failed",
+            tool.name,
+            DISPLAY_MESSAGE_ARG,
+            exc_info=True,
+        )
+        return None
+    # For dict args_schema tools the converted schema shares its containers
+    # with the tool's own schema, which must stay untouched — copy the three
+    # containers we extend and share the nested property schemas read-only.
+    if not isinstance(raw_params, dict):
+        raw_params = {"type": "object"}
+    if DISPLAY_MESSAGE_ARG in (raw_params.get("properties") or {}):
+        return None
+    params: dict[str, Any] = {
+        "type": "object",  # fallback only: raw_params overrides it below
+        **raw_params,
+        "properties": {
+            **(raw_params.get("properties") or {}),
+            DISPLAY_MESSAGE_ARG: dict(_DISPLAY_MESSAGE_SCHEMA),
+        },
+        "required": [*(raw_params.get("required") or []), DISPLAY_MESSAGE_ARG],
+    }
+    # model_copy keeps every other attribute (return_direct, team_only,
+    # interactive_only, ...) intact for anything reading request.tools.
+    return tool.model_copy(update={"args_schema": params})
+
+
 class ToolBindingMiddleware(AgentMiddleware[AgentState, AgentContext]):
-    """Middleware that selects tools and model parameters based on context."""
+    """Middleware that selects tools and model parameters based on context.
+
+    Every bound tool schema additionally advertises a required
+    ``display_message`` argument — a user-facing status line the LLM writes
+    per call. The argument is stripped again in ``awrap_tool_call`` before
+    the real tool executes; the engine later lifts it from the recorded
+    call args into ``ChatMessageToolCall.display_message`` for the UI.
+    """
 
     llm_model: LLMModel
     # Named all_tools: AgentMiddleware.tools has different semantics (tools a
@@ -66,6 +132,14 @@ class ToolBindingMiddleware(AgentMiddleware[AgentState, AgentContext]):
         self.llm_model = llm_model
         self.all_tools = all_tools
         self.extra_llm_params = extra_llm_params or {}
+        # Schema stand-ins keyed by tool name. Tools missing here keep their
+        # original schema and their call args are never stripped.
+        self._display_tools: dict[str, BaseTool] = {}
+        for t in all_tools:
+            if isinstance(t, BaseTool):
+                stand_in = _display_message_tool(t)
+                if stand_in is not None:
+                    self._display_tools[t.name] = stand_in
 
     @override
     async def awrap_model_call(  # type: ignore[override]
@@ -86,8 +160,11 @@ class ToolBindingMiddleware(AgentMiddleware[AgentState, AgentContext]):
         interactive_allowed = (
             context.entrypoint != AuthorType.TRIGGER and not context.is_subagent
         )
+        # The display_message swap is deliberately unconditional: cron and
+        # sub-agent runs have no live viewer, but their tool calls are shown
+        # later in execution history, so the status line is still worth it.
         tools: list[BaseTool | dict[str, Any]] = [
-            t
+            self._display_tools.get(t.name, t) if isinstance(t, BaseTool) else t
             for t in self.all_tools
             if (context.is_own_team or not getattr(t, "team_only", False))
             and (interactive_allowed or not getattr(t, "interactive_only", False))
@@ -100,6 +177,29 @@ class ToolBindingMiddleware(AgentMiddleware[AgentState, AgentContext]):
             model_settings=llm_params,
         )
         return await handler(updated_request)
+
+    @override
+    async def awrap_tool_call(
+        self,
+        request: ToolCallRequest,
+        handler: Callable[[ToolCallRequest], Awaitable[ToolMessage | Command[Any]]],
+    ) -> ToolMessage | Command[Any]:
+        """Strip the injected ``display_message`` arg before the tool runs.
+
+        Only calls to tools whose schema we augmented are stripped; the
+        recorded tool call on the AIMessage keeps the argument, so the
+        engine can persist it for the UI.
+        """
+        tool_call = request.tool_call
+        args = tool_call.get("args")
+        if (
+            tool_call["name"] in self._display_tools
+            and isinstance(args, dict)
+            and DISPLAY_MESSAGE_ARG in args
+        ):
+            stripped = {k: v for k, v in args.items() if k != DISPLAY_MESSAGE_ARG}
+            request = request.override(tool_call={**tool_call, "args": stripped})
+        return await handler(request)
 
 
 class StepTrackingMiddleware(AgentMiddleware[AgentState, AgentContext]):

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"strings"
 
 	"github.com/crestalnetwork/intentkit/integrations/types"
 )
@@ -24,8 +25,16 @@ func DispatchMessage(ctx context.Context, msg types.ChatMessage, sender MessageS
 
 	case types.AuthorTypeTool:
 		if len(msg.ToolCalls) > 0 {
-			text := fmt.Sprintf("🔧 Running %s...", msg.ToolCalls[0].Name)
-			if err := sender.SendText(ctx, text); err != nil {
+			// Prefer the agent-written status lines over raw tool names.
+			lines := make([]string, 0, len(msg.ToolCalls))
+			for _, tc := range msg.ToolCalls {
+				if status := strings.TrimSpace(tc.DisplayMessage); status != "" {
+					lines = append(lines, "🔧 "+status)
+				} else {
+					lines = append(lines, fmt.Sprintf("🔧 Running %s...", tc.Name))
+				}
+			}
+			if err := sender.SendText(ctx, strings.Join(lines, "\n")); err != nil {
 				slog.Error("Failed to send tool status", "error", err)
 			}
 		}

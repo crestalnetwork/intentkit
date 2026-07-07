@@ -19,6 +19,7 @@ from intentkit.core.engine.content import (
 )
 from intentkit.models.agent import Agent
 from intentkit.models.chat import (
+    DISPLAY_MESSAGE_ARG,
     AuthorType,
     ChatMessage,
     ChatMessageCreate,
@@ -178,12 +179,18 @@ async def handle_tools_chunk(
             if call["id"] == msg.tool_call_id:
                 if call_index == 0:
                     have_first_call_in_cache = True
+                # Lift the injected status line out of the call args into
+                # its own field for the UI (see DISPLAY_MESSAGE_ARG).
+                parameters: dict[str, object] = dict(call["args"])
+                display_message = parameters.pop(DISPLAY_MESSAGE_ARG, None)
                 tool_call: ChatMessageToolCall = {
                     "id": msg.tool_call_id,
                     "name": call["name"],
-                    "parameters": call["args"],
+                    "parameters": parameters,
                     "success": True,
                 }
+                if isinstance(display_message, str) and display_message.strip():
+                    tool_call["display_message"] = display_message.strip()
                 status = getattr(msg, "status", None)
                 if status == "error":
                     tool_call["success"] = False

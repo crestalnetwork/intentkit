@@ -46,12 +46,13 @@ type ChatMessage struct {
 
 // ChatMessageTool mirrors intentkit.models.chat.ChatMessageToolCall.
 type ChatMessageTool struct {
-	ID           string                 `json:"id,omitempty"`
-	Name         string                 `json:"name"`
-	Parameters   map[string]interface{} `json:"parameters"`
-	Success      bool                   `json:"success"`
-	Response     string                 `json:"response,omitempty"`
-	ErrorMessage string                 `json:"error_message,omitempty"`
+	ID             string                 `json:"id,omitempty"`
+	Name           string                 `json:"name"`
+	Parameters     map[string]interface{} `json:"parameters"`
+	Success        bool                   `json:"success"`
+	DisplayMessage string                 `json:"display_message,omitempty"`
+	Response       string                 `json:"response,omitempty"`
+	ErrorMessage   string                 `json:"error_message,omitempty"`
 }
 
 // ChatMessageAttach mirrors intentkit.models.chat.ChatMessageAttachment.

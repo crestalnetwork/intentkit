@@ -44,6 +44,7 @@ export function ToolCallBadge({ toolCall, isLoading }: ToolCallBadgeProps) {
 
   const displayName = getDisplayName(toolCall.name);
   const toolset = getToolset(toolCall.name);
+  const displayMessage = toolCall.display_message?.trim();
 
   return (
     <div className="inline-block">
@@ -67,8 +68,14 @@ export function ToolCallBadge({ toolCall, isLoading }: ToolCallBadgeProps) {
           <XCircle className="h-3 w-3" />
         )}
         <Wrench className="h-3 w-3 opacity-60" />
-        <span className="opacity-60">{toolset}:</span>
-        <span>{displayName}</span>
+        {displayMessage ? (
+          <span>{displayMessage}</span>
+        ) : (
+          <>
+            <span className="opacity-60">{toolset}:</span>
+            <span>{displayName}</span>
+          </>
+        )}
         {isExpanded ? (
           <ChevronUp className="h-3 w-3 ml-0.5" />
         ) : (
@@ -78,6 +85,16 @@ export function ToolCallBadge({ toolCall, isLoading }: ToolCallBadgeProps) {
 
       {isExpanded && (
         <div className="mt-2 p-3 rounded-lg bg-muted/50 border text-xs space-y-2 max-w-md">
+          {/* Tool name (badge shows the display message instead) */}
+          {displayMessage && (
+            <div>
+              <span className="font-medium text-muted-foreground">Tool: </span>
+              <span>
+                {toolset}: {displayName}
+              </span>
+            </div>
+          )}
+
           {/* Parameters */}
           {toolCall.parameters &&
             Object.keys(toolCall.parameters).length > 0 && (
