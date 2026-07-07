@@ -1,10 +1,11 @@
-# Release v2.12.0
+# Release v2.13.0
 
 ## New Features
 
-- Agents now narrate their tool use. Every tool call carries a short status line written by the agent in the user's own language — for example "Searching the web for the latest BTC news" — and the chat shows that line instead of the raw tool name. Expanding a tool call still reveals the tool name, parameters, and response for troubleshooting.
-- Telegram and WeChat conversations benefit too: the "Running tool..." notice now shows the agent's own description of what it is doing, and when several tools run at once, each one gets its own line.
+- Tool calls now report their status the moment they start. The chat stream sends a live frame as soon as the agent begins a tool call, so the web UI shows the agent's status line with a spinner right away — expanding a running call reveals its request parameters, and when the call finishes, the result folds into the same badge.
+- Telegram, WeChat, Slack, and Lark conversations get the status message at the start of the tool call instead of after it finished, so users see what the agent is doing while it works.
 
 ## Improvements
 
-- Older messages and tools without a status line keep the previous display, so existing conversations look the same as before.
+- Cancelled or interrupted conversations clean up their leftover "running" indicators automatically, and conversation history stays exactly as before — the live frames are never stored.
+- Fixed small inconsistencies in how non-streaming API responses assembled their message lists.
