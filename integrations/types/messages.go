@@ -42,6 +42,9 @@ type ChatMessage struct {
 	CreatedAt   string              `json:"created_at,omitempty"`
 	ToolCalls   []ChatMessageTool   `json:"tool_calls,omitempty"`
 	Attachments []ChatMessageAttach `json:"attachments,omitempty"`
+	// Pending marks a transient stream frame: the tool calls are still
+	// executing and persisted result messages will follow.
+	Pending bool `json:"pending,omitempty"`
 }
 
 // ChatMessageTool mirrors intentkit.models.chat.ChatMessageToolCall.

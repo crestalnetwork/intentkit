@@ -210,10 +210,7 @@ async def execute_team_lead(
 ) -> list[ChatMessage]:
     """Execute the team lead agent for a channel message."""
     user_id, chat_msg = await _resolve_lead(request)
-    messages: list[ChatMessage] = []
-    async for chat_message in stream_lead(request.team_id, user_id, chat_msg):
-        messages.append(chat_message)
-    return messages
+    return await execute_lead(request.team_id, user_id, chat_msg)
 
 
 # ⚠️ INTERNAL USE ONLY - This endpoint bypasses authentication for internal microservice calls

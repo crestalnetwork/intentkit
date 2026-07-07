@@ -4,6 +4,7 @@
 
 import logging
 import textwrap
+from datetime import datetime, timezone
 from typing import Any
 
 from epyxid import XID
@@ -29,6 +30,52 @@ from intentkit.models.llm import LLMModelInfo, calculate_search_cost
 from intentkit.tools.base import get_tool_price
 
 logger = logging.getLogger(__name__)
+
+
+def _lift_tool_call(call: dict[str, Any]) -> ChatMessageToolCall:
+    """Base tool-call record from a model tool call.
+
+    The injected status line travels in the call args; lift it out of
+    ``parameters`` into its own field (see DISPLAY_MESSAGE_ARG).
+    """
+    parameters: dict[str, object] = dict(call["args"])
+    display_message = parameters.pop(DISPLAY_MESSAGE_ARG, None)
+    tool_call: ChatMessageToolCall = {
+        "id": call.get("id") or "",
+        "name": call["name"],
+        "parameters": parameters,
+    }
+    if isinstance(display_message, str) and display_message.strip():
+        tool_call["display_message"] = display_message.strip()
+    return tool_call
+
+
+def _build_pending_tool_message(
+    tool_calls: list[dict[str, Any]],
+    user_message: ChatMessage,
+    agent: Agent,
+) -> ChatMessage:
+    """Transient frame announcing that the step's tool calls started.
+
+    Yielded to live consumers before the tool node runs and never saved:
+    the persisted tool message(s) that follow carry the same tool call ids,
+    which is how consumers fold the results back into this frame.
+    """
+    return ChatMessage(
+        id=str(XID()),
+        agent_id=user_message.agent_id,
+        chat_id=user_message.chat_id,
+        user_id=user_message.user_id,
+        author_id=user_message.agent_id,
+        author_type=AuthorType.TOOL,
+        model=agent.model,
+        thread_type=user_message.thread_entrypoint,
+        reply_to=user_message.id,
+        message="",
+        tool_calls=[_lift_tool_call(call) for call in tool_calls],
+        pending=True,
+        created_at=datetime.now(timezone.utc),
+    )
 
 
 async def handle_model_chunk(
@@ -77,6 +124,13 @@ async def handle_model_chunk(
         )
         thinking_message = await thinking_message_create.save()
         messages_out.append(thinking_message)
+    if has_tools:
+        # Announce the calls before the tool node runs so live consumers can
+        # show the status lines immediately; the persisted results follow
+        # under the same tool call ids.
+        messages_out.append(
+            _build_pending_tool_message(msg.tool_calls, user_message, agent)
+        )
     if content and not has_tools:
         usage = getattr(msg, "usage_metadata", None) or {}
         chat_message_create = ChatMessageCreate(
@@ -179,18 +233,8 @@ async def handle_tools_chunk(
             if call["id"] == msg.tool_call_id:
                 if call_index == 0:
                     have_first_call_in_cache = True
-                # Lift the injected status line out of the call args into
-                # its own field for the UI (see DISPLAY_MESSAGE_ARG).
-                parameters: dict[str, object] = dict(call["args"])
-                display_message = parameters.pop(DISPLAY_MESSAGE_ARG, None)
-                tool_call: ChatMessageToolCall = {
-                    "id": msg.tool_call_id,
-                    "name": call["name"],
-                    "parameters": parameters,
-                    "success": True,
-                }
-                if isinstance(display_message, str) and display_message.strip():
-                    tool_call["display_message"] = display_message.strip()
+                tool_call: ChatMessageToolCall = _lift_tool_call(call)
+                tool_call["success"] = True
                 status = getattr(msg, "status", None)
                 if status == "error":
                     tool_call["success"] = False
@@ -257,7 +301,7 @@ async def handle_tools_chunk(
             tool_message_create.credit_cost = message_payment_event.total_amount
         # 2. Per-tool credit events
         for tool_call in tool_calls:
-            if not tool_call["success"]:
+            if not tool_call.get("success"):
                 continue
             tool_price = get_tool_price(tool_call["name"])
             payment_event = await expense_tool(

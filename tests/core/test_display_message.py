@@ -347,3 +347,132 @@ async def test_chunks_lift_display_message_into_tool_call():
     assert first["parameters"] == {"text": "hi"}
     assert DISPLAY_MESSAGE_ARG not in second
     assert second["parameters"] == {"text": "no status"}
+
+
+# ──────────────────────────────────────────────
+# Pending tool frames (call started / call finished)
+# ──────────────────────────────────────────────
+
+
+def _tool_call_ai_message() -> AIMessage:
+    return AIMessage(
+        content="",
+        tool_calls=[
+            {
+                "name": "echo_tool",
+                "args": {"text": "hi", DISPLAY_MESSAGE_ARG: "Echoing your text"},
+                "id": "call-1",
+                "type": "tool_call",
+            },
+            {
+                "name": "dict_tool",
+                "args": {"q": "x"},
+                "id": "call-2",
+                "type": "tool_call",
+            },
+        ],
+    )
+
+
+@pytest.mark.asyncio
+async def test_pending_frame_yielded_when_tool_calls_start():
+    """A model chunk with tool calls yields a transient pending frame."""
+    from intentkit.core.engine.chunks import handle_model_chunk
+
+    user_message = ChatMessage(
+        id="msg-1",
+        agent_id="agent-1",
+        chat_id="chat-1",
+        user_id="user-1",
+        author_id="user-1",
+        author_type=AuthorType.WEB,
+        message="hi",
+        created_at=datetime.now(),
+    )
+    agent = MagicMock()
+    agent.model = "gpt-test"
+    chunk = {"model": {"messages": [_tool_call_ai_message()]}}
+
+    messages, _last, cached_tool_step, in_tools_phase = await handle_model_chunk(
+        chunk,
+        user_message,
+        agent,
+        MagicMock(),
+        payer="team-1",
+        this_time=1.0,
+        last=0.0,
+        thread_id="thread-1",
+        cached_tool_step=None,
+        in_tools_phase=False,
+    )
+
+    assert in_tools_phase is True
+    assert cached_tool_step is not None
+    assert len(messages) == 1
+    frame = messages[0]
+    assert frame.pending is True
+    assert frame.author_type == AuthorType.TOOL
+    assert frame.tool_calls is not None
+    first, second = frame.tool_calls
+    assert first.get("id") == "call-1"
+    assert first.get("display_message") == "Echoing your text"
+    assert first["parameters"] == {"text": "hi"}
+    assert "success" not in first
+    assert second.get("id") == "call-2"
+    assert "display_message" not in second
+
+
+@pytest.mark.asyncio
+async def test_execute_agent_skips_pending_frames():
+    """Collected (non-streaming) results contain no transient frames."""
+    from intentkit.core.engine.stream import execute_agent
+
+    pending = ChatMessage(
+        id="frame-1",
+        agent_id="agent-1",
+        chat_id="chat-1",
+        user_id="user-1",
+        author_id="agent-1",
+        author_type=AuthorType.TOOL,
+        message="",
+        pending=True,
+        created_at=datetime.now(),
+    )
+    final = ChatMessage(
+        id="msg-2",
+        agent_id="agent-1",
+        chat_id="chat-1",
+        user_id="user-1",
+        author_id="agent-1",
+        author_type=AuthorType.AGENT,
+        message="done",
+        created_at=datetime.now(),
+    )
+
+    async def fake_stream(_message):
+        yield pending
+        yield final
+
+    with patch("intentkit.core.engine.stream.stream_agent", fake_stream):
+        result = await execute_agent(cast(Any, MagicMock()))
+
+    assert result == [final]
+
+
+def test_pending_field_excluded_from_db_dump():
+    """The pending marker must never reach the chat_messages insert."""
+    frame = ChatMessage(
+        id="frame-1",
+        agent_id="agent-1",
+        chat_id="chat-1",
+        user_id="user-1",
+        author_id="agent-1",
+        author_type=AuthorType.TOOL,
+        message="",
+        pending=True,
+        created_at=datetime.now(),
+    )
+    dumped = frame.model_dump(mode="json", exclude={"pending"})
+    assert "pending" not in dumped
+    # And the wire dump (SSE) does include it for live consumers.
+    assert frame.model_dump()["pending"] is True

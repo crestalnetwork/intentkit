@@ -562,7 +562,10 @@ async def stream_agent_raw(
                         in_tools_phase,
                     )
                     for m in model_msgs:
-                        yielded_any = True
+                        # Pending tool frames are transient announcements, not
+                        # run output — they must not mask an empty run.
+                        if not m.pending:
+                            yielded_any = True
                         yield m
                 elif "tools" in chunk and "messages" in chunk["tools"]:
                     in_tools_phase = False
@@ -728,6 +731,10 @@ async def execute_agent(message: ChatMessageCreate) -> list[ChatMessage]:
     """
     resp = []
     async for chat_message in stream_agent(message):
+        # Pending tool frames only matter to live consumers; a collected
+        # result already contains the final tool messages.
+        if chat_message.pending:
+            continue
         resp.append(chat_message)
     return resp
 

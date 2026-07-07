@@ -137,6 +137,8 @@ class LeadCallAgent(LeadTool):
 
         async with asyncio.timeout(CALL_AGENT_TIMEOUT):
             async for chat_msg in stream_agent_raw(chat_message, sub_agent, executor):
+                if chat_msg.pending:
+                    continue
                 if chat_msg.attachments:
                     all_attachments.extend(chat_msg.attachments)
                 last_message = chat_msg

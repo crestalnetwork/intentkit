@@ -127,7 +127,7 @@ class ChatMessageToolCall(TypedDict):
     id: NotRequired[str]
     name: str
     parameters: dict[str, object]
-    success: bool
+    success: NotRequired[bool]  # absent on pending frames (call still running)
     display_message: NotRequired[
         str
     ]  # Agent-written status line shown to the user in place of the tool name
@@ -397,7 +397,10 @@ class ChatMessageCreate(BaseModel):
         Returns:
             ChatMessage: The saved chat message with all fields populated
         """
-        message_record = ChatMessageTable(**self.model_dump(mode="json"))
+        # ``pending`` (ChatMessage only) is a stream-frame marker, not a column.
+        message_record = ChatMessageTable(
+            **self.model_dump(mode="json", exclude={"pending"})
+        )
         db.add(message_record)
         await db.flush()
         await db.refresh(message_record)
@@ -461,6 +464,17 @@ class ChatMessage(ChatMessageCreate):
     created_at: Annotated[
         datetime, Field(description="Timestamp when this message was created")
     ]
+    pending: Annotated[
+        bool,
+        Field(
+            False,
+            description=(
+                "Transient stream frame: the tool calls in this message are "
+                "still executing. Never persisted — result messages carrying "
+                "the same tool call ids follow when they finish."
+            ),
+        ),
+    ] = False
 
     @field_serializer("created_at")
     @classmethod
@@ -472,7 +486,7 @@ class ChatMessage(ChatMessageCreate):
         resp = ""
         if self.tool_calls:
             for call in self.tool_calls:
-                resp += f"{call['name']} {call['parameters']}: {call.get('response', '') if call['success'] else call.get('error_message', '')}\n"
+                resp += f"{call['name']} {call['parameters']}: {call.get('response', '') if call.get('success') else call.get('error_message', '')}\n"
             resp += "\n"
         resp += self.message
         return resp
@@ -493,7 +507,9 @@ class ChatMessage(ChatMessageCreate):
             resp += f"[ Tool Calls: ] ({self.created_at.strftime('%Y-%m-%d %H:%M:%S')} UTC)\n\n"
             for tool_call in self.tool_calls:
                 resp += f" {tool_call['name']}: {tool_call['parameters']}\n"
-                if tool_call["success"]:
+                if "success" not in tool_call:
+                    resp += "  Running...\n"
+                elif tool_call["success"]:
                     resp += f"  Success: {tool_call.get('response', '')}\n"
                 else:
                     resp += f"  Failed: {tool_call.get('error_message', '')}\n"

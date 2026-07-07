@@ -53,8 +53,12 @@ import { ImageAttachment } from "@/components/features/ImageAttachment";
 import { VideoAttachment } from "@/components/features/VideoAttachment";
 import { toast } from "@/hooks/use-toast";
 import { useAgentSlugRewrite } from "@/hooks/useAgentSlugRewrite";
-import { isUserAuthoredMessage } from "@/types/chat";
-import type { UIMessage, ChatThread, ChatMessage } from "@/types/chat";
+import {
+  apiMessageToUIMessage,
+  dropPendingMessages,
+  foldToolResultMessage,
+} from "@/types/chat";
+import type { UIMessage, ChatThread } from "@/types/chat";
 import { buildChatThreadPath } from "@/lib/autonomousChat";
 import type { StreamStatus } from "@/lib/chatStreamStore";
 import {
@@ -77,23 +81,6 @@ function isThreadOlderThanThreeDays(thread: ChatThread): boolean {
   const threeDaysAgo = new Date();
   threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
   return updatedAt < threeDaysAgo;
-}
-
-// Convert API ChatMessage to UI message
-function apiMessageToUIMessage(msg: ChatMessage): UIMessage {
-  const isSystem = msg.author_type === "system";
-  const isUserMessage = !isSystem && isUserAuthoredMessage(msg.author_type);
-  return {
-    id: msg.id,
-    role: isSystem ? "system" : isUserMessage ? "user" : "agent",
-    authorType: msg.author_type,
-    content: msg.message,
-    thinking: msg.thinking,
-    errorType: msg.error_type,
-    timestamp: new Date(msg.created_at),
-    toolCalls: msg.tool_calls,
-    attachments: msg.attachments,
-  };
 }
 
 // Check if message has non-xmtp attachments (UI attachments)
@@ -355,7 +342,7 @@ export default function AgentChatPage() {
         const dbMessages = response.data.reverse().map(apiMessageToUIMessage);
 
         setMessages((prev) => {
-          const merged = [...dbMessages];
+          let merged = [...dbMessages];
 
           // Overlay the background stream's current state (DB may lag behind
           // the stream by a tick for just-yielded messages).
@@ -363,9 +350,18 @@ export default function AgentChatPage() {
           if (snapshot) {
             for (const streamMsg of snapshot.messages) {
               const uiMsg = apiMessageToUIMessage(streamMsg);
+              merged = foldToolResultMessage(merged, uiMsg);
+              // Pending frames from a finished stream are stale.
+              if (uiMsg.pending && snapshot.status !== "active") continue;
               const idx = merged.findLastIndex((m) => m.id === uiMsg.id);
               if (idx < 0) merged.push(uiMsg);
               else merged[idx] = uiMsg;
+            }
+            // A result can already be in the DB while the snapshot still
+            // holds its pending frame (SSE event in flight) — fold the
+            // persisted results too so no orphan spinner survives.
+            for (const m of [...merged]) {
+              merged = foldToolResultMessage(merged, m);
             }
           }
 
@@ -419,6 +415,9 @@ export default function AgentChatPage() {
           let next = prev;
           for (let i = startIdx; i < processedCount; i++) {
             const uiMsg = apiMessageToUIMessage(streamMessages[i]);
+            // A finished tool call folds its result into the pending frame
+            // that announced it (matched by tool call id).
+            next = foldToolResultMessage(next, uiMsg);
             // Streaming deltas and appends land at the tail, so search from there.
             const idx = next.findLastIndex((m) => m.id === uiMsg.id);
             if (idx < 0) {
@@ -440,6 +439,10 @@ export default function AgentChatPage() {
 
       if (appliedTerminalStatus === snapshot.status) return;
       appliedTerminalStatus = snapshot.status;
+
+      // Whatever ended the stream, calls that never reported a result are
+      // not in the DB either — drop their leftover pending frames.
+      setMessages(dropPendingMessages);
 
       if (snapshot.status === "cancelled") {
         setMessages((prev) => {

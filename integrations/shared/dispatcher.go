@@ -24,19 +24,25 @@ func DispatchMessage(ctx context.Context, msg types.ChatMessage, sender MessageS
 		return
 
 	case types.AuthorTypeTool:
-		if len(msg.ToolCalls) > 0 {
-			// Prefer the agent-written status lines over raw tool names.
-			lines := make([]string, 0, len(msg.ToolCalls))
-			for _, tc := range msg.ToolCalls {
-				if status := strings.TrimSpace(tc.DisplayMessage); status != "" {
-					lines = append(lines, "🔧 "+status)
-				} else {
-					lines = append(lines, fmt.Sprintf("🔧 Running %s...", tc.Name))
+		// Status lines are sent from the pending frame, which arrives when
+		// the tool calls start; the result messages that follow carry only
+		// attachments (IM channels never show parameters or results).
+		if msg.Pending {
+			if len(msg.ToolCalls) > 0 {
+				// Prefer the agent-written status lines over raw tool names.
+				lines := make([]string, 0, len(msg.ToolCalls))
+				for _, tc := range msg.ToolCalls {
+					if status := strings.TrimSpace(tc.DisplayMessage); status != "" {
+						lines = append(lines, "🔧 "+status)
+					} else {
+						lines = append(lines, fmt.Sprintf("🔧 Running %s...", tc.Name))
+					}
+				}
+				if err := sender.SendText(ctx, strings.Join(lines, "\n")); err != nil {
+					slog.Error("Failed to send tool status", "error", err)
 				}
 			}
-			if err := sender.SendText(ctx, strings.Join(lines, "\n")); err != nil {
-				slog.Error("Failed to send tool status", "error", err)
-			}
+			return
 		}
 		for _, att := range msg.Attachments {
 			dispatchAttachment(ctx, att, sender)

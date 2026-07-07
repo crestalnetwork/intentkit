@@ -24,7 +24,7 @@ from sqlalchemy import desc, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from intentkit.config.db import get_db
-from intentkit.core.lead import get_lead_agent, stream_lead
+from intentkit.core.lead import execute_lead, get_lead_agent, stream_lead
 from intentkit.core.task_registry import cancel_task, register_task, unregister_task
 from intentkit.core.team.channel import (
     build_channel_chat_id,
@@ -308,10 +308,7 @@ async def send_lead_message(
             headers={"Cache-Control": "no-cache", "Connection": "keep-alive"},
         )
     else:
-        # For non-streaming, collect all chunks from stream_lead
-        response_messages: list[ChatMessage] = []
-        async for chunk in stream_lead(LEAD_TEAM_ID, LEAD_USER_ID, user_message):
-            response_messages.append(chunk)
+        response_messages = await execute_lead(LEAD_TEAM_ID, LEAD_USER_ID, user_message)
         if should_schedule_summary:
             schedule_chat_summary_title_update(LEAD_AGENT_ID, chat_id)
         return response_messages

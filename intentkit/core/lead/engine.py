@@ -95,6 +95,10 @@ async def execute_lead(
     """
     resp: list[ChatMessage] = []
     async for chat_message in stream_lead(team_id, user_id, message):
+        # Pending tool frames only matter to live consumers; a collected
+        # result already contains the final tool messages.
+        if chat_message.pending:
+            continue
         resp.append(chat_message)
     return resp
 

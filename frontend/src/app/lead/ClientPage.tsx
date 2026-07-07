@@ -24,7 +24,11 @@ import { ImageAttachment } from "@/components/features/ImageAttachment";
 import { VideoAttachment } from "@/components/features/VideoAttachment";
 import { ChatTimeSeparator } from "@/components/features/ChatTimeSeparator";
 import { formatExactTime, shouldShowTimeSeparator } from "@/lib/chatTime";
-import { isUserAuthoredMessage } from "@/types/chat";
+import {
+  apiMessageToUIMessage,
+  dropPendingMessages,
+  foldToolResultMessage,
+} from "@/types/chat";
 import type {
   UIMessage,
   ChatThread,
@@ -41,22 +45,6 @@ function isThreadOlderThanThreeDays(thread: ChatThread): boolean {
   const threeDaysAgo = new Date();
   threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
   return updatedAt < threeDaysAgo;
-}
-
-function apiMessageToUIMessage(msg: ChatMessage): UIMessage {
-  const isSystem = msg.author_type === "system";
-  const isUserMessage = !isSystem && isUserAuthoredMessage(msg.author_type);
-  return {
-    id: msg.id,
-    role: isSystem ? "system" : isUserMessage ? "user" : "agent",
-    authorType: msg.author_type,
-    content: msg.message,
-    thinking: msg.thinking,
-    errorType: msg.error_type,
-    timestamp: new Date(msg.created_at),
-    toolCalls: msg.tool_calls,
-    attachments: msg.attachments,
-  };
 }
 
 function hasUIAttachments(msg: UIMessage): boolean {
@@ -393,11 +381,14 @@ export default function LeadChatPage() {
         )) {
           const uiMsg = apiMessageToUIMessage(msg);
           setMessages((prev) => {
-            const existing = prev.find((m) => m.id === uiMsg.id);
+            // A finished tool call folds its result into the pending frame
+            // that announced it (matched by tool call id).
+            const next = foldToolResultMessage(prev, uiMsg);
+            const existing = next.find((m) => m.id === uiMsg.id);
             if (existing) {
-              return prev.map((m) => (m.id === uiMsg.id ? uiMsg : m));
+              return next.map((m) => (m.id === uiMsg.id ? uiMsg : m));
             }
-            return [...prev, uiMsg];
+            return [...next, uiMsg];
           });
         }
 
@@ -423,6 +414,9 @@ export default function LeadChatPage() {
       } finally {
         abortControllerRef.current = null;
         setIsSending(false);
+        // Calls that never reported a result are not in the DB either —
+        // drop their leftover pending frames.
+        setMessages(dropPendingMessages);
       }
     },
     [

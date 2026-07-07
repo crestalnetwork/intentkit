@@ -216,7 +216,7 @@ async def test_tool_call_current_time() -> None:
             time_call = call
             break
     assert time_call is not None, "Expected current_time tool call"
-    assert time_call["success"] is True
+    assert time_call.get("success") is True
     # Response should contain a date pattern like "2026-02-10"
     assert re.search(r"\d{4}-\d{2}-\d{2}", time_call.get("response", ""))
 

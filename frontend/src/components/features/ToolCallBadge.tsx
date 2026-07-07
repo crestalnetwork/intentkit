@@ -14,11 +14,12 @@ import type { ChatMessageToolCall } from "@/types/chat";
 
 interface ToolCallBadgeProps {
   toolCall: ChatMessageToolCall;
-  isLoading?: boolean;
 }
 
-export function ToolCallBadge({ toolCall, isLoading }: ToolCallBadgeProps) {
+export function ToolCallBadge({ toolCall }: ToolCallBadgeProps) {
   const [isExpanded, setIsExpanded] = useState(false);
+  // A call without a result yet (pending frame) is still running.
+  const isLoading = toolCall.success === undefined;
 
   // Extract tool display name (remove prefix like "twitter_", "web_", etc.)
   const getDisplayName = (name: string) => {
@@ -141,13 +142,9 @@ export function ToolCallBadge({ toolCall, isLoading }: ToolCallBadgeProps) {
 
 interface ToolCallBadgeListProps {
   toolCalls: ChatMessageToolCall[];
-  isLoading?: boolean;
 }
 
-export function ToolCallBadgeList({
-  toolCalls,
-  isLoading,
-}: ToolCallBadgeListProps) {
+export function ToolCallBadgeList({ toolCalls }: ToolCallBadgeListProps) {
   if (!toolCalls || toolCalls.length === 0) return null;
 
   return (
@@ -156,7 +153,6 @@ export function ToolCallBadgeList({
         <ToolCallBadge
           key={toolCall.id || `tool-${index}`}
           toolCall={toolCall}
-          isLoading={isLoading && index === toolCalls.length - 1}
         />
       ))}
     </div>
