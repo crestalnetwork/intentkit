@@ -1,11 +1,12 @@
-# Release v2.13.0
+# Release v2.14.0
 
 ## New Features
 
-- Tool calls now report their status the moment they start. The chat stream sends a live frame as soon as the agent begins a tool call, so the web UI shows the agent's status line with a spinner right away — expanding a running call reveals its request parameters, and when the call finishes, the result folds into the same badge.
-- Telegram, WeChat, Slack, and Lark conversations get the status message at the start of the tool call instead of after it finished, so users see what the agent is doing while it works.
+- Networks now follow wallets. Each team wallet carries its own default network, editable on the wallet page (Safe and Privy smart wallets stay on the chain they were deployed on). On-chain tools automatically operate on the network of the wallet they are called with, so one agent can work across several chains through different wallets. The agent-level network setting has been removed.
+- The agent create and edit forms are leaner: the model tuning parameters are gone, and all web3 toolsets are grouped under a collapsed "Advanced Settings" section that only appears when the team owns a wallet.
 
 ## Improvements
 
-- Cancelled or interrupted conversations clean up their leftover "running" indicators automatically, and conversation history stays exactly as before — the live frames are never stored.
-- Fixed small inconsistencies in how non-streaming API responses assembled their message lists.
+- Toolset rows in the agent form show a compact selected/total counter, and the toolset description expands together with the toolset.
+- The wallet management API's rename endpoint became a general update endpoint covering the name and the default network, with validation of the allowed networks.
+- Reduced redundant database lookups in the on-chain tool layer and fixed bugs in the OpenSea listing tools.
