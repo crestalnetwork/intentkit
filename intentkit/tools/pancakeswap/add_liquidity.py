@@ -17,7 +17,6 @@ from intentkit.tools.pancakeswap.constants import (
     MASTERCHEF_V3_ADDRESSES,
     MAX_TICK,
     MIN_TICK,
-    NETWORK_TO_CHAIN_ID,
     POSITION_MANAGER_ABI,
     POSITION_MANAGER_ADDRESS,
     TICK_SPACINGS,
@@ -86,16 +85,8 @@ class PancakeSwapAddLiquidity(PancakeSwapBaseTool):
         **kwargs: Any,
     ) -> str:
         try:
-            network_id = self.get_agent_network_id()
-            if not network_id:
-                raise ToolException("Agent network_id is not configured")
-
-            chain_id = NETWORK_TO_CHAIN_ID.get(network_id)
-            if not chain_id:
-                raise ToolException(
-                    f"PancakeSwap not supported on {network_id}. "
-                    f"Supported: {', '.join(NETWORK_TO_CHAIN_ID.keys())}"
-                )
+            wallet = await self.get_unified_wallet(wallet_address)
+            chain_id = self._resolve_chain_id(wallet.network_id)
 
             tick_spacing = TICK_SPACINGS.get(fee_tier)
             if not tick_spacing:
@@ -103,8 +94,7 @@ class PancakeSwapAddLiquidity(PancakeSwapBaseTool):
                     f"Invalid fee tier {fee_tier}. Valid: 100, 500, 2500, 10000"
                 )
 
-            wallet = await self.get_unified_wallet(wallet_address)
-            w3 = self.web3_client()
+            w3 = wallet.w3
 
             # Resolve tokens (V3 uses wrapped tokens)
             is_native_a = token_a.lower() == "native"

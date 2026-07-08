@@ -7,6 +7,7 @@ from web3.exceptions import ContractLogicError
 
 from intentkit.models.chat import ChatMessageAttachment, ChatMessageAttachmentType
 from intentkit.tools.xmtp.base import XmtpBaseTool
+from intentkit.wallets.web3 import get_async_web3_client
 
 
 class TransferInput(BaseModel):
@@ -20,6 +21,11 @@ class TransferInput(BaseModel):
     currency: str = Field(description="Currency symbol (e.g., 'ETH', 'USDC')")
     token_contract_address: str | None = Field(
         default=None, description="ERC20 contract address (empty for ETH)"
+    )
+    network_id: str = Field(
+        default="base-mainnet",
+        description="Network to transfer on: ethereum-mainnet, base-mainnet, "
+        "arbitrum-mainnet or optimism-mainnet",
     )
 
 
@@ -42,6 +48,7 @@ class XmtpTransfer(XmtpBaseTool):
         amount: str,
         currency: str,
         token_contract_address: str | None,
+        network_id: str = "base-mainnet",
     ) -> tuple[str, list[ChatMessageAttachment]]:
         """Create an XMTP transfer transaction request.
 
@@ -51,26 +58,18 @@ class XmtpTransfer(XmtpBaseTool):
             amount: Amount to transfer
             currency: Currency symbol
             token_contract_address: Token contract address (None for ETH)
+            network_id: Network to transfer on
 
         Returns:
             Tuple of (content_message, list_of_attachments)
         """
-        # Get context and check network
-        context = self.get_context()
-        agent = context.agent
-
-        if not agent.network_id:
-            raise ToolException("Agent network_id is not configured")
-
         # Validate network and get chain ID
-        chain_id_hex = self.validate_network_and_get_chain_id(
-            agent.network_id, "transfer"
-        )
+        chain_id_hex = self.validate_network_and_get_chain_id(network_id, "transfer")
 
         # Validate token contract and get decimals
         if token_contract_address:
             # Validate ERC20 contract and get token info
-            web3 = self.web3_client()
+            web3 = get_async_web3_client(network_id)
 
             # ERC20 ABI for symbol() and decimals() functions
             erc20_abi = [
@@ -205,7 +204,7 @@ class XmtpTransfer(XmtpBaseTool):
             f"**Details:**\n"
             f"• Amount: {amount} {currency}\n"
             f"• To: {to_address}\n"
-            f"• Network: {agent.network_id}\n"
+            f"• Network: {network_id}\n"
             f"• Type: {'ERC20 Token' if token_contract_address else 'Native ETH'}\n\n"
             f"Please review the transaction details and sign to execute the transfer."
         )

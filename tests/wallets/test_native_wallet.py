@@ -16,6 +16,19 @@ from intentkit.wallets.native import (
 )
 
 
+def _patch_nonce_manager(nonce: int):
+    """Patch the Redis-backed wallet nonce manager with an in-test fake."""
+    manager = MagicMock()
+    manager.acquire_lock = AsyncMock(return_value=True)
+    manager.get_and_increment_nonce = AsyncMock(return_value=nonce)
+    manager.reset_from_blockchain = AsyncMock()
+    manager.release_lock = AsyncMock()
+    return patch(
+        "intentkit.wallets.privy_nonce.get_wallet_nonce_manager",
+        return_value=manager,
+    )
+
+
 class TestNativeWalletProviderBasics:
     def test_get_wallet_provider_initialization(self):
         native_data = {
@@ -121,6 +134,7 @@ class TestNativeWalletProviderTransactions:
                 "intentkit.wallets.native.get_async_web3_client", return_value=mock_w3
             ),
             patch("eth_account.Account.from_key", return_value=mock_account),
+            _patch_nonce_manager(1),
         ):
             provider = get_wallet_provider(native_data)
             res = await provider.execute_transaction(
@@ -171,6 +185,7 @@ class TestNativeWalletProviderTransactions:
                 "intentkit.wallets.native.get_async_web3_client", return_value=mock_w3
             ),
             patch("eth_account.Account.from_key", return_value=mock_account),
+            _patch_nonce_manager(2),
         ):
             provider = get_wallet_provider(native_data)
             res = await provider.execute_transaction(

@@ -75,14 +75,10 @@ def _wallet_payload(wallet: TeamWallet, error_prefix: str) -> dict[str, Any]:
     return data
 
 
-async def get_wallet_provider(
-    agent: "Agent", wallet_address: str
-) -> WalletProviderType:
-    """Build the provider for one of the agent's team wallets."""
-    wallet = await resolve_team_wallet(agent, wallet_address)
-
+async def build_wallet_provider(wallet: TeamWallet) -> WalletProviderType:
+    """Build the provider for an already-resolved team wallet."""
     if wallet.wallet_provider == "cdp":
-        return await get_cdp_wallet_provider(wallet, agent.network_id)
+        return await get_cdp_wallet_provider(wallet)
 
     elif wallet.wallet_provider == "native":
         return get_native_wallet_provider(_wallet_payload(wallet, "NativeWallet"))
@@ -104,6 +100,14 @@ async def get_wallet_provider(
             f"Wallet provider '{wallet.wallet_provider}' is not supported for on-chain operations. "
             "Supported providers are: 'cdp', 'native', 'safe', 'privy'.",
         )
+
+
+async def get_wallet_provider(
+    agent: "Agent", wallet_address: str
+) -> WalletProviderType:
+    """Build the provider for one of the agent's team wallets."""
+    wallet = await resolve_team_wallet(agent, wallet_address)
+    return await build_wallet_provider(wallet)
 
 
 async def get_wallet_signer(agent: "Agent", wallet_address: str) -> WalletSignerType:
@@ -146,6 +150,7 @@ async def get_wallet_signer(agent: "Agent", wallet_address: str) -> WalletSigner
 __all__ = [
     "WalletProviderType",
     "WalletSignerType",
+    "build_wallet_provider",
     "get_cdp_client",
     "get_cdp_network",
     "get_evm_account",

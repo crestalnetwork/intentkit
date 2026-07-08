@@ -6,6 +6,7 @@ from langchain_core.tools.base import ToolException
 from pydantic import BaseModel, Field
 
 from intentkit.tools.onchain import WALLET_ADDRESS_ARG_DESCRIPTION
+from intentkit.wallets import build_wallet_provider
 
 from .base import EnsoBaseTool, base_url
 
@@ -45,10 +46,10 @@ class EnsoGetWalletBalances(EnsoBaseTool):
         **_: object,
     ) -> EnsoGetBalancesOutput:
         context = self.get_context()
-        resolved_chain_id = self.resolve_chain_id(context, chainId)
-        api_token = self.get_api_token(context)
         # Read-only: just validate the wallet belongs to the agent's team.
-        await self.resolve_wallet(wallet_address)
+        wallet = await self.resolve_wallet(wallet_address)
+        resolved_chain_id = self.resolve_chain_id(chainId, wallet.network)
+        api_token = self.get_api_token(context)
 
         headers = {
             "accept": "application/json",
@@ -118,10 +119,10 @@ class EnsoGetWalletApprovals(EnsoBaseTool):
         **_: object,
     ) -> EnsoGetApprovalsOutput:
         context = self.get_context()
-        resolved_chain_id = self.resolve_chain_id(context, chainId)
-        api_token = self.get_api_token(context)
         # Read-only: just validate the wallet belongs to the agent's team.
-        await self.resolve_wallet(wallet_address)
+        wallet = await self.resolve_wallet(wallet_address)
+        resolved_chain_id = self.resolve_chain_id(chainId, wallet.network)
+        api_token = self.get_api_token(context)
 
         headers = {
             "accept": "application/json",
@@ -206,10 +207,11 @@ class EnsoWalletApprove(EnsoBaseTool):
         **_: object,
     ) -> tuple[EnsoWalletApproveOutput, EnsoWalletApproveArtifact]:
         context = self.get_context()
-        resolved_chain_id = self.resolve_chain_id(context, chainId)
+        # Signing operation: the guarded resolution enforces the own-team rule.
+        wallet = await self.get_signing_wallet(wallet_address)
+        resolved_chain_id = self.resolve_chain_id(chainId, wallet.network)
         api_token = self.get_api_token(context)
-        # Signing operation: acquire the guarded wallet provider up front.
-        wallet_provider = await self.get_wallet_provider(wallet_address)
+        wallet_provider = await build_wallet_provider(wallet)
 
         headers = {
             "accept": "application/json",

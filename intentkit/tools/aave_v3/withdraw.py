@@ -52,9 +52,10 @@ class AaveV3Withdraw(AaveV3BaseTool):
         **kwargs: Any,
     ) -> str:
         try:
-            chain_id = self._resolve_chain_id()
             wallet = await self.get_unified_wallet(wallet_address)
-            w3 = self.web3_client()
+            network_id = wallet.network_id
+            chain_id = self._resolve_chain_id(network_id)
+            w3 = wallet.w3
 
             pool_address = POOL_ADDRESSES[chain_id]
             checksum_token = Web3.to_checksum_address(token_address)
@@ -91,7 +92,7 @@ class AaveV3Withdraw(AaveV3BaseTool):
             return (
                 f"**Aave V3 Withdraw**\n"
                 f"Withdrawn: {amount_display} {symbol}\n"
-                f"Network: {self.get_agent_network_id()}\n"
+                f"Network: {network_id}\n"
                 f"Tx: {tx_hash}"
             )
 

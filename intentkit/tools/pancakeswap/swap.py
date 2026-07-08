@@ -12,7 +12,6 @@ from intentkit.tools.onchain import WALLET_ADDRESS_ARG_DESCRIPTION
 from intentkit.tools.pancakeswap.base import PancakeSwapBaseTool
 from intentkit.tools.pancakeswap.constants import (
     FEE_TIERS,
-    NETWORK_TO_CHAIN_ID,
     QUOTER_V2_ABI,
     QUOTER_V2_ADDRESSES,
     SMART_ROUTER_ABI,
@@ -70,24 +69,15 @@ class PancakeSwapSwap(PancakeSwapBaseTool):
         **kwargs: Any,
     ) -> str:
         try:
-            network_id = self.get_agent_network_id()
-            if not network_id:
-                raise ToolException("Agent network_id is not configured")
-
-            chain_id = NETWORK_TO_CHAIN_ID.get(network_id)
-            if not chain_id:
-                raise ToolException(
-                    f"PancakeSwap not supported on {network_id}. "
-                    f"Supported: {', '.join(NETWORK_TO_CHAIN_ID.keys())}"
-                )
+            wallet = await self.get_unified_wallet(wallet_address)
+            chain_id = self._resolve_chain_id(wallet.network_id)
 
             router_address = SMART_ROUTER_ADDRESSES.get(chain_id)
             quoter_address = QUOTER_V2_ADDRESSES.get(chain_id)
             if not router_address or not quoter_address:
                 raise ToolException(f"No PancakeSwap contracts for chain {chain_id}")
 
-            wallet = await self.get_unified_wallet(wallet_address)
-            w3 = self.web3_client()
+            w3 = wallet.w3
 
             # Resolve tokens
             is_native_in = token_in.lower() == "native"

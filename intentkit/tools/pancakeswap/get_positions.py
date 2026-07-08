@@ -13,11 +13,11 @@ from intentkit.tools.pancakeswap.base import PancakeSwapBaseTool
 from intentkit.tools.pancakeswap.constants import (
     MASTERCHEF_V3_ABI,
     MASTERCHEF_V3_ADDRESSES,
-    NETWORK_TO_CHAIN_ID,
     POSITION_MANAGER_ABI,
     POSITION_MANAGER_ADDRESS,
 )
 from intentkit.tools.pancakeswap.utils import get_decimals, get_token_symbol
+from intentkit.wallets.web3 import get_async_web3_client
 
 NAME = "pancakeswap_get_positions"
 MAX_POSITIONS = 20
@@ -43,20 +43,13 @@ class PancakeSwapGetPositions(PancakeSwapBaseTool):
     @override
     async def _arun(self, wallet_address: str, **kwargs: Any) -> str:
         try:
-            network_id = self.get_agent_network_id()
-            if not network_id:
-                raise ToolException("Agent network_id is not configured")
-
-            chain_id = NETWORK_TO_CHAIN_ID.get(network_id)
-            if not chain_id:
-                raise ToolException(
-                    f"PancakeSwap not supported on {network_id}. "
-                    f"Supported: {', '.join(NETWORK_TO_CHAIN_ID.keys())}"
-                )
-
             # Read-only: just validate the wallet belongs to the agent's team.
-            await self.resolve_wallet(wallet_address)
-            w3 = self.web3_client()
+            # The network follows the wallet.
+            team_wallet = await self.resolve_wallet(wallet_address)
+            network_id = team_wallet.network
+            chain_id = self._resolve_chain_id(network_id)
+
+            w3 = get_async_web3_client(network_id)
             wallet_address = Web3.to_checksum_address(wallet_address)
 
             pm = w3.eth.contract(

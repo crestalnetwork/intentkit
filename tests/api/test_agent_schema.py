@@ -63,12 +63,18 @@ async def test_agent_schema_strips_telegram_fields():
 
 
 @pytest.mark.asyncio
-async def test_agent_schema_excludes_model_tuning_fields():
-    """Model tuning params were removed from ``schema.json``; the real
-    endpoint output must not offer them to the form UI."""
+async def test_agent_schema_excludes_retired_fields():
+    """Retired agent fields were removed from ``schema.json``; the real
+    endpoint output must not offer them to the form UI. Model tuning params
+    are no longer user-configurable and the network follows the wallet."""
     response = await get_agent_schema()
 
     properties = json.loads(bytes(response.body))["properties"]
     assert "tools" in properties
-    for field in ("temperature", "frequency_penalty", "presence_penalty"):
+    for field in (
+        "temperature",
+        "frequency_penalty",
+        "presence_penalty",
+        "network_id",
+    ):
         assert field not in properties

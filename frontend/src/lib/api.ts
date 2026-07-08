@@ -1321,7 +1321,7 @@ export interface TeamWallet {
   team_id: string;
   name: string;
   wallet_provider: string; // cdp | native | readonly | safe | privy
-  network_id: string | null;
+  default_network_id: string | null;
   evm_wallet_address: string | null;
   solana_wallet_address: string | null;
   weekly_spending_limit: number | null;
@@ -1333,9 +1333,14 @@ export interface TeamWallet {
 export interface WalletCreateRequest {
   name: string;
   wallet_provider: string;
-  network_id?: string | null;
+  default_network_id?: string | null;
   readonly_address?: string | null;
   weekly_spending_limit?: number | null;
+}
+
+export interface WalletUpdateRequest {
+  name?: string;
+  default_network_id?: string;
 }
 
 export const walletApi = {
@@ -1362,16 +1367,19 @@ export const walletApi = {
     return response.json();
   },
 
-  async renameWallet(walletId: string, name: string): Promise<TeamWallet> {
+  async updateWallet(
+    walletId: string,
+    body: WalletUpdateRequest,
+  ): Promise<TeamWallet> {
     const response = await fetch(`${API_BASE}/wallets/${walletId}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name }),
+      body: JSON.stringify(body),
     });
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
       throw new Error(
-        errorData.msg || errorData.message || `Failed to rename wallet: ${response.statusText}`,
+        errorData.msg || errorData.message || `Failed to update wallet: ${response.statusText}`,
       );
     }
     return response.json();

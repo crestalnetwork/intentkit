@@ -75,6 +75,8 @@ const NETWORKS = [
   "base-sepolia",
 ];
 
+const DEFAULT_NETWORK = NETWORKS[0];
+
 function shortAddress(address: string): string {
   if (address.length <= 14) return address;
   return `${address.slice(0, 8)}…${address.slice(-6)}`;
@@ -93,7 +95,7 @@ function WalletCard({ wallet }: { wallet: TeamWallet }) {
   };
 
   const renameMutation = useMutation({
-    mutationFn: (name: string) => walletApi.renameWallet(wallet.id, name),
+    mutationFn: (name: string) => walletApi.updateWallet(wallet.id, { name }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["wallets"] });
       toast({ title: "Wallet renamed", variant: "success" });
@@ -102,6 +104,22 @@ function WalletCard({ wallet }: { wallet: TeamWallet }) {
     onError: (error: Error) => {
       toast({
         title: "Failed to rename wallet",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const networkMutation = useMutation({
+    mutationFn: (default_network_id: string) =>
+      walletApi.updateWallet(wallet.id, { default_network_id }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["wallets"] });
+      toast({ title: "Default network updated", variant: "success" });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Failed to update default network",
         description: error.message,
         variant: "destructive",
       });
@@ -193,9 +211,32 @@ function WalletCard({ wallet }: { wallet: TeamWallet }) {
             </Badge>
           ) : null}
         </div>
-        {wallet.network_id ? (
-          <CardDescription>{wallet.network_id}</CardDescription>
-        ) : null}
+        <div className="text-sm text-muted-foreground">
+          <select
+            value={
+              networkMutation.isPending && networkMutation.variables
+                ? networkMutation.variables
+                : (wallet.default_network_id ?? DEFAULT_NETWORK)
+            }
+            disabled={networkMutation.isPending}
+            onChange={(e) => networkMutation.mutate(e.target.value)}
+            className="cursor-pointer bg-transparent text-xs text-muted-foreground outline-none hover:text-foreground"
+            title="Default network for tools using this wallet"
+            aria-label="Default network"
+          >
+            {wallet.default_network_id &&
+            !NETWORKS.includes(wallet.default_network_id) ? (
+              <option value={wallet.default_network_id}>
+                {wallet.default_network_id}
+              </option>
+            ) : null}
+            {NETWORKS.map((n) => (
+              <option key={n} value={n}>
+                {n}
+              </option>
+            ))}
+          </select>
+        </div>
       </CardHeader>
       <CardContent>
         {wallet.evm_wallet_address ? (
@@ -276,7 +317,7 @@ function CreateWalletForm({ onDone }: { onDone: () => void }) {
   const queryClient = useQueryClient();
   const [name, setName] = useState("");
   const [provider, setProvider] = useState("cdp");
-  const [network, setNetwork] = useState("base-mainnet");
+  const [network, setNetwork] = useState(DEFAULT_NETWORK);
   const [readonlyAddress, setReadonlyAddress] = useState("");
   const [spendingLimit, setSpendingLimit] = useState("");
 
@@ -306,7 +347,7 @@ function CreateWalletForm({ onDone }: { onDone: () => void }) {
     createMutation.mutate({
       name: name.trim(),
       wallet_provider: provider,
-      network_id: network,
+      default_network_id: network,
       readonly_address:
         provider === "readonly" ? readonlyAddress.trim() || null : null,
       weekly_spending_limit:
@@ -358,7 +399,7 @@ function CreateWalletForm({ onDone }: { onDone: () => void }) {
         </div>
         <div className="grid gap-2">
           <label htmlFor="wallet-network" className="text-sm font-medium">
-            Network
+            Default Network
           </label>
           <select
             id="wallet-network"

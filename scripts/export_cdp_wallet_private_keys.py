@@ -76,7 +76,7 @@ async def main() -> None:
                 wallet_id=wallet.id,
                 wallet_address=wallet_address,
                 private_key=normalize_private_key(private_key),
-                network_id=wallet.network_id,
+                network_id=wallet.default_network_id,
             )
         )
         logger.info("%s %s export ok", wallet.id, wallet_address)

@@ -52,14 +52,12 @@ class ERC721GetBalance(ERC721BaseTool):
             A message containing the NFT balance or error details.
         """
         try:
-            # Read-only: validate the wallet belongs to the team, no signing.
-            await self.resolve_wallet(wallet_address)
-
             checksum_address = Web3.to_checksum_address(address or wallet_address)
             checksum_contract = Web3.to_checksum_address(contract_address)
 
-            # Read balance directly from the contract
-            w3 = self.web3_client()
+            # Read balance on the wallet's network (also validates that the
+            # wallet belongs to the team).
+            w3 = await self.web3_client(wallet_address)
             contract = w3.eth.contract(address=checksum_contract, abi=ERC721_ABI)
             balance = await contract.functions.balanceOf(checksum_address).call()
 

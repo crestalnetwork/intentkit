@@ -69,15 +69,16 @@ class BasenameRegister(BasenameBaseTool):
             A message containing the registration result or error details.
         """
         try:
-            # Get the unified wallet (signing-capable, guarded)
+            # Get the unified wallet (signing-capable, guarded); the wallet
+            # determines the network to register on.
             wallet = await self.get_unified_wallet(wallet_address)
-            network_id = self.get_agent_network_id()
+            network_id = wallet.network_id
 
             # Validate network
             if network_id not in SUPPORTED_NETWORKS:
                 raise ToolException(
                     f"Error: Basename registration is only supported on Base networks. "
-                    f"Current network: {network_id}. "
+                    f"Wallet network: {network_id}. "
                     f"Supported networks: {', '.join(SUPPORTED_NETWORKS)}"
                 )
 

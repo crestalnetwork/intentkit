@@ -84,7 +84,7 @@ async def main() -> None:
         wallet_addr = wallet.evm_wallet_address
         if not wallet_addr:
             continue
-        network_id = str(wallet.network_id or "base-mainnet")
+        network_id = wallet.network
 
         eth, usdc = await get_balances(wallet_addr, network_id)
 

@@ -11,6 +11,7 @@ from intentkit.tools.aave_v3.base import AaveV3BaseTool
 from intentkit.tools.aave_v3.constants import POOL_ABI, POOL_ADDRESSES
 from intentkit.tools.aave_v3.utils import format_base_currency, format_health_factor
 from intentkit.tools.onchain import WALLET_ADDRESS_ARG_DESCRIPTION
+from intentkit.wallets.web3 import get_async_web3_client
 
 NAME = "aave_v3_get_user_account_data"
 
@@ -44,12 +45,14 @@ class AaveV3GetUserAccountData(AaveV3BaseTool):
         **kwargs: Any,
     ) -> str:
         try:
-            chain_id = self._resolve_chain_id()
-            pool_address = POOL_ADDRESSES[chain_id]
-            w3 = self.web3_client()
-
             # Read-only: validate the wallet belongs to the team, no signing.
-            await self.resolve_wallet(wallet_address)
+            # The wallet also determines the network to query.
+            wallet = await self.resolve_wallet(wallet_address)
+            network_id = wallet.network
+            chain_id = self._resolve_chain_id(network_id)
+            pool_address = POOL_ADDRESSES[chain_id]
+            w3 = get_async_web3_client(network_id)
+
             query_address = Web3.to_checksum_address(user_address or wallet_address)
 
             pool = w3.eth.contract(
@@ -68,7 +71,7 @@ class AaveV3GetUserAccountData(AaveV3BaseTool):
             ) = result
 
             return (
-                f"**Aave V3 Account Data** ({self.get_agent_network_id()})\n"
+                f"**Aave V3 Account Data** ({network_id})\n"
                 f"Address: {query_address}\n"
                 f"Total Collateral: {format_base_currency(total_collateral)}\n"
                 f"Total Debt: {format_base_currency(total_debt)}\n"

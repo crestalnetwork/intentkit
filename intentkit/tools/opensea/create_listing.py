@@ -55,15 +55,17 @@ class OpenSeaCreateListing(OpenSeaOnChainBaseTool):
         **kwargs: Any,
     ) -> str:
         try:
-            chain = self._get_chain_name()
-            # Validate signing authorization and team ownership up front.
-            await self.get_signing_wallet(wallet_address)
+            # Validate signing authorization and team ownership up front;
+            # the wallet determines the network to list on.
+            team_wallet = await self.get_signing_wallet(wallet_address)
+            network_id = team_wallet.network
+            chain = self._get_chain_name(network_id)
             price_wei = Web3.to_wei(Decimal(price), "ether")
 
             approval_tx = await self._ensure_nft_approval(
                 contract_address, wallet_address
             )
-            counter = await self._get_seaport_counter(wallet_address)
+            counter = await self._get_seaport_counter(wallet_address, network_id)
 
             order_params = self._build_listing_order(
                 offerer=wallet_address,
@@ -74,7 +76,9 @@ class OpenSeaCreateListing(OpenSeaOnChainBaseTool):
                 counter=counter,
             )
 
-            signature = await self._sign_seaport_order(order_params, wallet_address)
+            signature = await self._sign_seaport_order(
+                order_params, wallet_address, network_id
+            )
 
             data, error = await self._post(
                 f"/orders/{chain}/seaport/listings",

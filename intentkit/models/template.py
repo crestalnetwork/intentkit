@@ -99,12 +99,6 @@ class TemplateTable(Base):
         default=0.0,
         comment="The presence penalty (-2.0~2.0)",
     )
-    network_id: Mapped[str | None] = mapped_column(
-        String,
-        nullable=True,
-        default="base-mainnet",
-        comment="Network identifier",
-    )
     tools: Mapped[list[str] | None] = mapped_column(
         JSONB(),
         nullable=True,

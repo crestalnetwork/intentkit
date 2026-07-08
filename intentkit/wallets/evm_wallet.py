@@ -15,7 +15,7 @@ from web3 import AsyncWeb3
 from web3.types import TxParams, Wei
 
 from intentkit.utils.error import IntentKitAPIError
-from intentkit.wallets import get_wallet_provider
+from intentkit.wallets import build_wallet_provider, resolve_team_wallet
 from intentkit.wallets.web3 import get_async_web3_client
 
 if TYPE_CHECKING:
@@ -69,8 +69,10 @@ class EvmWallet:
         """
         Factory method to create a unified wallet over a team wallet.
 
+        The network comes from the team wallet's default_network_id.
+
         Args:
-            agent: The active agent (network context + team scoping).
+            agent: The active agent (team scoping).
             wallet_address: Address of one of the team's wallets.
 
         Returns:
@@ -79,22 +81,18 @@ class EvmWallet:
         Raises:
             IntentKitAPIError: If the wallet cannot be created.
         """
-        if not agent.network_id:
-            raise IntentKitAPIError(
-                400,
-                "NetworkNotConfigured",
-                "Agent network_id is not configured",
-            )
+        team_wallet = await resolve_team_wallet(agent, wallet_address)
+        network_id = team_wallet.network
 
-        provider = await get_wallet_provider(agent, wallet_address)
+        provider = await build_wallet_provider(team_wallet)
 
-        w3 = get_async_web3_client(agent.network_id)
+        w3 = get_async_web3_client(network_id)
         try:
             chain_id = await w3.eth.chain_id
         except Exception:
             chain_id = None
 
-        wallet = cls(provider, agent.network_id, chain_id)
+        wallet = cls(provider, network_id, chain_id)
         wallet._address = provider.get_address()
 
         return wallet

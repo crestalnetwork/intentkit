@@ -18,9 +18,8 @@ from intentkit.tools.pancakeswap.swap import PancakeSwapSwap
 WALLET_ADDRESS = "0x1111111111111111111111111111111111111111"
 
 
-def _mock_context(network_id: str = "bnb-mainnet") -> MagicMock:
+def _mock_context() -> MagicMock:
     mock_agent = MagicMock()
-    mock_agent.network_id = network_id
     mock_agent.id = "test-agent"
     ctx = MagicMock()
     ctx.agent = mock_agent
@@ -29,14 +28,24 @@ def _mock_context(network_id: str = "bnb-mainnet") -> MagicMock:
 
 def _mock_wallet(
     address: str = WALLET_ADDRESS,
+    w3: MagicMock | None = None,
 ) -> MagicMock:
+    """Fake EvmWallet: the network and web3 client follow the wallet now."""
     wallet = MagicMock()
     wallet.address = address
     wallet.network_id = "bnb-mainnet"
+    wallet.w3 = w3 if w3 is not None else MagicMock()
     wallet.send_transaction = AsyncMock(return_value="0xabcdef1234567890")
     wallet.wait_for_receipt = AsyncMock(return_value={"status": 1})
     wallet.get_balance = AsyncMock(return_value=10**18)
     return wallet
+
+
+def _mock_team_wallet(network: str = "bnb-mainnet") -> MagicMock:
+    """Fake TeamWallet for read paths: network follows the wallet."""
+    team_wallet = MagicMock()
+    team_wallet.network = network
+    return team_wallet
 
 
 def _quoter_call_result(amount_out: int, gas: int = 100000):
@@ -97,7 +106,7 @@ class TestPancakeSwapQuote:
                 return_value=ctx,
             ),
             patch(
-                "intentkit.tools.onchain.get_async_web3_client",
+                "intentkit.tools.pancakeswap.quote.get_async_web3_client",
                 return_value=mock_w3,
             ),
         ):
@@ -105,6 +114,7 @@ class TestPancakeSwapQuote:
                 token_in="0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c",
                 token_out="0xe9e7CEA3DedcA5984780Bafc599bD69ADd087D56",
                 amount="1.0",
+                network_id="bnb-mainnet",
             )
 
         assert "PancakeSwap V3 Quote" in result
@@ -141,7 +151,7 @@ class TestPancakeSwapQuote:
                 return_value=ctx,
             ),
             patch(
-                "intentkit.tools.onchain.get_async_web3_client",
+                "intentkit.tools.pancakeswap.quote.get_async_web3_client",
                 return_value=mock_w3,
             ),
         ):
@@ -150,13 +160,14 @@ class TestPancakeSwapQuote:
                     token_in="0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c",
                     token_out="0x0000000000000000000000000000000000000001",
                     amount="1.0",
+                    network_id="bnb-mainnet",
                 )
 
     @pytest.mark.asyncio
     async def test_quote_unsupported_network(self):
         """Quote should fail gracefully on unsupported networks."""
         tool = PancakeSwapQuote()
-        ctx = _mock_context(network_id="solana-mainnet")
+        ctx = _mock_context()
 
         with patch(
             "intentkit.tools.base.IntentKitTool.get_context",
@@ -167,6 +178,7 @@ class TestPancakeSwapQuote:
                     token_in="native",
                     token_out="0x0000000000000000000000000000000000000001",
                     amount="1.0",
+                    network_id="solana-mainnet",
                 )
 
     @pytest.mark.asyncio
@@ -215,7 +227,7 @@ class TestPancakeSwapQuote:
                 return_value=ctx,
             ),
             patch(
-                "intentkit.tools.onchain.get_async_web3_client",
+                "intentkit.tools.pancakeswap.quote.get_async_web3_client",
                 return_value=mock_w3,
             ),
         ):
@@ -223,6 +235,7 @@ class TestPancakeSwapQuote:
                 token_in="native",
                 token_out="0xe9e7CEA3DedcA5984780Bafc599bD69ADd087D56",
                 amount="1.0",
+                network_id="bnb-mainnet",
             )
 
         assert "PancakeSwap V3 Quote" in result
@@ -271,6 +284,7 @@ class TestPancakeSwapSwap:
 
         mock_w3 = MagicMock()
         mock_w3.eth.contract = mock_contract
+        wallet.w3 = mock_w3
 
         with (
             patch(
@@ -280,10 +294,6 @@ class TestPancakeSwapSwap:
             patch(
                 "intentkit.wallets.evm_wallet.EvmWallet.create",
                 new=AsyncMock(return_value=wallet),
-            ),
-            patch(
-                "intentkit.tools.onchain.get_async_web3_client",
-                return_value=mock_w3,
             ),
         ):
             result = await tool._arun(
@@ -331,6 +341,7 @@ class TestPancakeSwapSwap:
 
         mock_w3 = MagicMock()
         mock_w3.eth.contract = mock_contract
+        wallet.w3 = mock_w3
 
         with (
             patch(
@@ -340,10 +351,6 @@ class TestPancakeSwapSwap:
             patch(
                 "intentkit.wallets.evm_wallet.EvmWallet.create",
                 new=AsyncMock(return_value=wallet),
-            ),
-            patch(
-                "intentkit.tools.onchain.get_async_web3_client",
-                return_value=mock_w3,
             ),
         ):
             result = await tool._arun(
@@ -384,6 +391,7 @@ class TestPancakeSwapSwap:
 
         mock_w3 = MagicMock()
         mock_w3.eth.contract = mock_contract
+        wallet.w3 = mock_w3
 
         with (
             patch(
@@ -393,10 +401,6 @@ class TestPancakeSwapSwap:
             patch(
                 "intentkit.wallets.evm_wallet.EvmWallet.create",
                 new=AsyncMock(return_value=wallet),
-            ),
-            patch(
-                "intentkit.tools.onchain.get_async_web3_client",
-                return_value=mock_w3,
             ),
         ):
             with pytest.raises(ToolException, match="No liquidity"):
@@ -441,6 +445,7 @@ class TestPancakeSwapSwap:
 
         mock_w3 = MagicMock()
         mock_w3.eth.contract = mock_contract
+        wallet.w3 = mock_w3
 
         with (
             patch(
@@ -450,10 +455,6 @@ class TestPancakeSwapSwap:
             patch(
                 "intentkit.wallets.evm_wallet.EvmWallet.create",
                 new=AsyncMock(return_value=wallet),
-            ),
-            patch(
-                "intentkit.tools.onchain.get_async_web3_client",
-                return_value=mock_w3,
             ),
         ):
             result = await tool._arun(
@@ -500,6 +501,7 @@ class TestPancakeSwapSwap:
 
         mock_w3 = MagicMock()
         mock_w3.eth.contract = mock_contract
+        wallet.w3 = mock_w3
 
         with (
             patch(
@@ -509,10 +511,6 @@ class TestPancakeSwapSwap:
             patch(
                 "intentkit.wallets.evm_wallet.EvmWallet.create",
                 new=AsyncMock(return_value=wallet),
-            ),
-            patch(
-                "intentkit.tools.onchain.get_async_web3_client",
-                return_value=mock_w3,
             ),
         ):
             with pytest.raises(Exception, match="failed"):
@@ -579,10 +577,10 @@ class TestPancakeSwapGetPositions:
             ),
             patch(
                 "intentkit.tools.onchain.resolve_team_wallet",
-                new=AsyncMock(return_value=MagicMock()),
+                new=AsyncMock(return_value=_mock_team_wallet()),
             ),
             patch(
-                "intentkit.tools.onchain.get_async_web3_client",
+                "intentkit.tools.pancakeswap.get_positions.get_async_web3_client",
                 return_value=mock_w3,
             ),
             patch(
@@ -628,10 +626,10 @@ class TestPancakeSwapGetPositions:
             ),
             patch(
                 "intentkit.tools.onchain.resolve_team_wallet",
-                new=AsyncMock(return_value=MagicMock()),
+                new=AsyncMock(return_value=_mock_team_wallet()),
             ),
             patch(
-                "intentkit.tools.onchain.get_async_web3_client",
+                "intentkit.tools.pancakeswap.get_positions.get_async_web3_client",
                 return_value=mock_w3,
             ),
             patch(
@@ -689,10 +687,10 @@ class TestPancakeSwapGetPositions:
             ),
             patch(
                 "intentkit.tools.onchain.resolve_team_wallet",
-                new=AsyncMock(return_value=MagicMock()),
+                new=AsyncMock(return_value=_mock_team_wallet()),
             ),
             patch(
-                "intentkit.tools.onchain.get_async_web3_client",
+                "intentkit.tools.pancakeswap.get_positions.get_async_web3_client",
                 return_value=mock_w3,
             ),
             patch(
@@ -766,6 +764,7 @@ class TestPancakeSwapAddLiquidity:
 
         mock_w3 = MagicMock()
         mock_w3.eth.contract = mock_contract
+        wallet.w3 = mock_w3
 
         with (
             patch(
@@ -775,10 +774,6 @@ class TestPancakeSwapAddLiquidity:
             patch(
                 "intentkit.wallets.evm_wallet.EvmWallet.create",
                 new=AsyncMock(return_value=wallet),
-            ),
-            patch(
-                "intentkit.tools.onchain.get_async_web3_client",
-                return_value=mock_w3,
             ),
             patch(
                 "intentkit.tools.base.IntentKitTool.get_agent_tool_data",
@@ -870,6 +865,7 @@ class TestPancakeSwapAddLiquidity:
 
         mock_w3 = MagicMock()
         mock_w3.eth.contract = mock_contract
+        wallet.w3 = mock_w3
 
         with (
             patch(
@@ -879,10 +875,6 @@ class TestPancakeSwapAddLiquidity:
             patch(
                 "intentkit.wallets.evm_wallet.EvmWallet.create",
                 new=AsyncMock(return_value=wallet),
-            ),
-            patch(
-                "intentkit.tools.onchain.get_async_web3_client",
-                return_value=mock_w3,
             ),
             patch(
                 "intentkit.tools.base.IntentKitTool.get_agent_tool_data",
@@ -954,6 +946,7 @@ class TestPancakeSwapRemoveLiquidity:
 
         mock_w3 = MagicMock()
         mock_w3.eth.contract = mock_contract
+        wallet.w3 = mock_w3
 
         with (
             patch(
@@ -963,10 +956,6 @@ class TestPancakeSwapRemoveLiquidity:
             patch(
                 "intentkit.wallets.evm_wallet.EvmWallet.create",
                 new=AsyncMock(return_value=wallet),
-            ),
-            patch(
-                "intentkit.tools.onchain.get_async_web3_client",
-                return_value=mock_w3,
             ),
         ):
             result = await tool._arun(
@@ -1019,6 +1008,7 @@ class TestPancakeSwapRemoveLiquidity:
 
         mock_w3 = MagicMock()
         mock_w3.eth.contract = mock_contract
+        wallet.w3 = mock_w3
 
         with (
             patch(
@@ -1028,10 +1018,6 @@ class TestPancakeSwapRemoveLiquidity:
             patch(
                 "intentkit.wallets.evm_wallet.EvmWallet.create",
                 new=AsyncMock(return_value=wallet),
-            ),
-            patch(
-                "intentkit.tools.onchain.get_async_web3_client",
-                return_value=mock_w3,
             ),
         ):
             result = await tool._arun(
@@ -1078,6 +1064,7 @@ class TestPancakeSwapRemoveLiquidity:
 
         mock_w3 = MagicMock()
         mock_w3.eth.contract = mock_contract
+        wallet.w3 = mock_w3
 
         with (
             patch(
@@ -1087,10 +1074,6 @@ class TestPancakeSwapRemoveLiquidity:
             patch(
                 "intentkit.wallets.evm_wallet.EvmWallet.create",
                 new=AsyncMock(return_value=wallet),
-            ),
-            patch(
-                "intentkit.tools.onchain.get_async_web3_client",
-                return_value=mock_w3,
             ),
             patch(
                 "intentkit.tools.base.IntentKitTool.get_agent_tool_data",

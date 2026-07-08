@@ -3,6 +3,7 @@ from langchain_core.tools import ArgsSchema
 from langchain_core.tools.base import ToolException
 from pydantic import BaseModel, Field
 
+from intentkit.models.wallet import DEFAULT_NETWORK_ID
 from intentkit.tools.enso.base import EnsoBaseTool, base_url
 
 # Actual Enso output types
@@ -47,7 +48,7 @@ from intentkit.tools.enso.base import EnsoBaseTool, base_url
 class EnsoGetTokensInput(BaseModel):
     chainId: int | None = Field(
         None,
-        description="Chain ID (defaults to agent network)",
+        description="Chain ID (defaults to Base mainnet)",
     )
     protocolSlug: str | None = Field(
         None,
@@ -141,7 +142,7 @@ class EnsoGetTokens(EnsoBaseTool):
         url = f"{base_url}/api/v1/tokens"
 
         context = self.get_context()
-        resolved_chain_id = self.resolve_chain_id(context, chainId)
+        resolved_chain_id = self.resolve_chain_id(chainId, DEFAULT_NETWORK_ID)
         api_token = self.get_api_token(context)
         main_tokens = self.get_main_tokens(context)
         main_tokens_upper = {token.upper() for token in main_tokens}

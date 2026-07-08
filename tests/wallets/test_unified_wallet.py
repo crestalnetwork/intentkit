@@ -34,7 +34,7 @@ def _team_wallet(
         team_id=TEAM_ID,
         name="main",
         wallet_provider=wallet_provider,
-        network_id="base-mainnet",
+        default_network_id="base-mainnet",
         evm_wallet_address="0x1234567890abcdef1234567890abcdef12345678",
         wallet_data=json.dumps(wallet_data) if wallet_data is not None else None,
         created_by="user-1",
@@ -48,7 +48,6 @@ def _agent() -> MagicMock:
     agent = MagicMock()
     agent.id = "test-agent"
     agent.team_id = TEAM_ID
-    agent.network_id = "base-mainnet"
     return agent
 
 
@@ -81,7 +80,9 @@ class TestGetWalletProvider:
         ):
             provider = await get_wallet_provider(mock_agent, WALLET_ADDRESS)
 
-            mock_get_cdp.assert_called_once_with(wallet, mock_agent.network_id)
+            # The CDP provider is built from the wallet alone; the network
+            # comes from the wallet's default_network_id.
+            mock_get_cdp.assert_called_once_with(wallet)
             assert provider == mock_cdp_provider
 
     @pytest.mark.asyncio
@@ -170,7 +171,12 @@ class TestEvmWallet:
 
         with (
             patch(
-                "intentkit.wallets.evm_wallet.get_wallet_provider",
+                "intentkit.wallets.evm_wallet.resolve_team_wallet",
+                new_callable=AsyncMock,
+                return_value=_team_wallet("cdp"),
+            ),
+            patch(
+                "intentkit.wallets.evm_wallet.build_wallet_provider",
                 new_callable=AsyncMock,
                 return_value=mock_provider,
             ),
@@ -183,6 +189,8 @@ class TestEvmWallet:
 
         assert wallet.address == "0x123"
         assert wallet.chain_id == 8453
+        # The network follows the team wallet's default_network_id
+        assert wallet.network_id == "base-mainnet"
 
 
 class TestGetWalletSigner:

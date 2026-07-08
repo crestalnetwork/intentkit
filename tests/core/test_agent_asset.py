@@ -57,9 +57,7 @@ async def test_agent_asset_missing_agent(monkeypatch):
 
 @pytest.mark.asyncio
 async def test_agent_asset_no_wallet(monkeypatch):
-    agent = SimpleNamespace(
-        network_id="base-mainnet", ticker=None, token_address=None, id="agent-id"
-    )
+    agent = SimpleNamespace(ticker=None, token_address=None, id="agent-id")
 
     async def mock_get_agent(agent_id):
         return agent
@@ -86,18 +84,18 @@ async def test_agent_asset_no_wallet(monkeypatch):
 
 @pytest.mark.asyncio
 async def test_agent_asset_success(monkeypatch):
-    agent = SimpleNamespace(
-        network_id="base-mainnet", ticker="WOW", token_address="0xabc", id="agent-id"
-    )
+    agent = SimpleNamespace(ticker="WOW", token_address="0xabc", id="agent-id")
 
     async def mock_get_agent(agent_id):
         return agent
 
     async def mock_list_agent_team_wallets(agent_obj):
-        return [SimpleNamespace(evm_wallet_address="0x123")]
+        # The network follows the wallet, not the agent
+        return [SimpleNamespace(evm_wallet_address="0x123", network="base-mainnet")]
 
-    async def mockbuild_assets_list(agent_obj, wallet_address, web3_client):
+    async def mockbuild_assets_list(agent_obj, wallet_address, network_id, web3_client):
         assert wallet_address == "0x123"
+        assert network_id == "base-mainnet"
         return [Asset(symbol="ETH", balance=Decimal("1"))]
 
     async def mock_get_wallet_net_worth(wallet, network_id):
@@ -128,29 +126,21 @@ async def test_agent_asset_success(monkeypatch):
     assert result.tokens == [Asset(symbol="ETH", balance=Decimal("1"))]
 
 
-@pytest.mark.asyncio
-async def test_agent_asset_missing_network(monkeypatch):
-    agent = SimpleNamespace(
-        network_id=None, ticker=None, token_address=None, id="agent-id"
+def test_wallet_network_falls_back_to_platform_default():
+    """A wallet without an explicit default network operates on base-mainnet."""
+    from datetime import datetime
+
+    from intentkit.models.wallet import TeamWallet
+
+    now = datetime.now()
+    wallet = TeamWallet(
+        id="w1",
+        team_id="t1",
+        name="main",
+        wallet_provider="readonly",
+        created_by="u1",
+        created_at=now,
+        updated_at=now,
     )
-
-    async def mock_get_agent(agent_id):
-        return agent
-
-    async def mock_list_agent_team_wallets(agent_obj):
-        return [SimpleNamespace(evm_wallet_address="0x123")]
-
-    monkeypatch.setattr(asset_module, "get_agent", mock_get_agent)
-    monkeypatch.setattr(
-        asset_module, "list_agent_team_wallets", mock_list_agent_team_wallets
-    )
-    monkeypatch.setattr(asset_module, "get_session", mock_session_ctx)
-    mock_redis = AsyncMock()
-    mock_redis.get.return_value = None
-    mock_redis.set.return_value = None
-    monkeypatch.setattr(asset_module, "get_redis", lambda: mock_redis)
-
-    result = await asset_module.agent_asset("agent-id")
-
-    assert result.net_worth == "0"
-    assert result.tokens == []
+    assert wallet.default_network_id is None
+    assert wallet.network == "base-mainnet"

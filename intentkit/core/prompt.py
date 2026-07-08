@@ -182,16 +182,14 @@ async def _build_wallet_section(agent: Agent, context: AgentContext) -> str:
     ]
     for wallet in wallets:
         details = [f"provider: {wallet.wallet_provider}"]
-        if wallet.network_id:
-            details.append(f"network: {wallet.network_id}")
+        details.append(f"network: {wallet.network}")
         address = wallet.evm_wallet_address or wallet.solana_wallet_address or "n/a"
         lines.append(f"- {wallet.name}: `{address}` ({', '.join(details)})")
     lines.append(
-        "\nOn-chain reads work anywhere, but transactions and signing are "
-        "only permitted when you are serving your own team.\n"
+        "\nEach wallet operates on its own network shown above. On-chain "
+        "reads work anywhere, but transactions and signing are only "
+        "permitted when you are serving your own team.\n"
     )
-    if agent.network_id:
-        lines.append(f"You are now in the {agent.network_id} network.\n")
 
     return "\n".join(lines)
 

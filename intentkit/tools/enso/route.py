@@ -23,7 +23,7 @@ class EnsoRouteShortcutInput(BaseModel):
     )
     chainId: int | None = Field(
         None,
-        description="Chain ID (defaults to agent network)",
+        description="Chain ID (defaults to the wallet's network)",
     )
     amountIn: list[int] = Field(
         description="Amount in wei (multiply value by token decimals)"
@@ -170,7 +170,7 @@ class EnsoRouteShortcut(EnsoBaseTool):
             amountIn (list[int]): Amount of tokenIn to swap in wei, you should multiply user's requested value by token decimals.
             tokenIn (list[str]): Ethereum address of the token to swap or enter into a position from (For ETH, use 0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee).
             tokenOut (list[str]): Ethereum address of the token to swap or enter into a position to (For ETH, use 0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee).
-            chainId (int | None): The chain id of the network to be used for swap, deposit and routing. Defaults to the agent's configured network.
+            chainId (int | None): The chain id of the network to be used for swap, deposit and routing. Defaults to the wallet's network.
             broadcast_requested (bool): User should ask for broadcasting the transaction explicitly, otherwise it is always false.
 
         Returns:
@@ -178,11 +178,11 @@ class EnsoRouteShortcut(EnsoBaseTool):
         """
 
         context = self.get_context()
-        resolved_chain_id = self.resolve_chain_id(context, chainId)
-        api_token = self.get_api_token(context)
         # Quoting is a read: only validate team ownership. The guarded wallet
         # provider is acquired later, and only when broadcasting is requested.
-        await self.resolve_wallet(wallet_address)
+        wallet = await self.resolve_wallet(wallet_address)
+        resolved_chain_id = self.resolve_chain_id(chainId, wallet.network)
+        api_token = self.get_api_token(context)
 
         async with httpx.AsyncClient() as client:
             try:

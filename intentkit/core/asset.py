@@ -146,18 +146,17 @@ async def _get_wallet_net_worth(wallet_address: str, network_id: str | None) -> 
 
 
 async def build_assets_list(
-    agent: Agent, wallet_address: str, web3_client: AsyncWeb3
+    agent: Agent, wallet_address: str, network_id: str, web3_client: AsyncWeb3
 ) -> list[Asset]:
     """Build the assets list based on network conditions and agent configuration."""
     assets: list[Asset] = []
-    network_id: str | None = agent.network_id
 
     # ETH is always included
     eth_balance = await _get_eth_balance(web3_client, wallet_address)
     assets.append(Asset(symbol="ETH", balance=eth_balance))
 
-    if network_id and network_id.endswith("-mainnet"):
-        usdc_address = USDC_ADDRESSES.get(str(network_id))
+    if network_id.endswith("-mainnet"):
+        usdc_address = USDC_ADDRESSES.get(network_id)
         if usdc_address:
             usdc_balance = await _get_token_balance(
                 web3_client, wallet_address, usdc_address
@@ -200,23 +199,28 @@ async def agent_asset(agent_id: str) -> AgentAssets:
         cached_assets = AgentAssets.model_validate(cached_data)
         return cached_assets
 
-    # Agents have no wallet of their own; aggregate over the team's wallets.
+    # Agents have no wallet of their own; aggregate over the team's wallets,
+    # each on its own default network.
     wallets = await list_agent_team_wallets(agent)
-    addresses = [w.evm_wallet_address for w in wallets if w.evm_wallet_address]
-    if not addresses or not agent.network_id:
+    funded = [w for w in wallets if w.evm_wallet_address]
+    if not funded:
         assets_result = AgentAssets(net_worth="0", tokens=[])
     else:
         try:
-            web3_client = get_async_web3_client(str(agent.network_id))
             merged: dict[str, Decimal] = {}
             net_worth_total = Decimal(0)
-            for address in addresses:
-                tokens = await build_assets_list(agent, address, web3_client)
+            for wallet in funded:
+                address = str(wallet.evm_wallet_address)
+                network_id = wallet.network
+                web3_client = get_async_web3_client(network_id)
+                tokens = await build_assets_list(
+                    agent, address, network_id, web3_client
+                )
                 for token in tokens:
                     merged[token.symbol] = (
                         merged.get(token.symbol, Decimal(0)) + token.balance
                     )
-                net_worth = await _get_wallet_net_worth(address, str(agent.network_id))
+                net_worth = await _get_wallet_net_worth(address, network_id)
                 try:
                     net_worth_total += Decimal(net_worth)
                 except Exception:

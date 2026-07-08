@@ -11,8 +11,8 @@ from intentkit.config.base import Base
 from intentkit.core.team.wallet import (
     create_team_wallet,
     delete_team_wallet,
-    rename_team_wallet,
     set_wallet_safe_token_spending_limit,
+    update_team_wallet,
 )
 from intentkit.models.agent import Agent, AgentVisibility
 from intentkit.models.team import Team
@@ -76,7 +76,6 @@ def _build_agent(team_id: str | None = "team-1") -> Agent:
         temperature=0.7,
         visibility=AgentVisibility.PRIVATE,
         public_info_updated_at=now,
-        network_id="base-mainnet",
     )
 
 
@@ -305,8 +304,48 @@ class TestWalletManagement:
             evm_wallet_address="0xw",
             created_by="user-1",
         )
-        renamed = await rename_team_wallet("team-1", wallet.id, "new-name")
+        renamed = await update_team_wallet("team-1", wallet.id, name="new-name")
         assert renamed.name == "new-name"
+
+    @pytest.mark.asyncio
+    async def test_update_default_network(self, wallet_tables):
+        wallet = await TeamWallet.create(
+            team_id="team-1",
+            name="main",
+            wallet_provider="readonly",
+            evm_wallet_address="0xw",
+            created_by="user-1",
+        )
+        assert wallet.network == "base-mainnet"
+        updated = await update_team_wallet(
+            "team-1", wallet.id, default_network_id="ethereum-mainnet"
+        )
+        assert updated.default_network_id == "ethereum-mainnet"
+        assert updated.network == "ethereum-mainnet"
+        # Name untouched when only the network changes
+        assert updated.name == "main"
+
+    @pytest.mark.asyncio
+    async def test_update_network_rejected_for_smart_wallets(self, wallet_tables):
+        """Safe/Privy smart wallets are chain-bound; their network is immutable."""
+        wallet = await TeamWallet.create(
+            team_id="team-1",
+            name="safe",
+            wallet_provider="safe",
+            default_network_id="base-mainnet",
+            evm_wallet_address="0xs",
+            created_by="user-1",
+        )
+        with pytest.raises(IntentKitAPIError) as exc_info:
+            await update_team_wallet(
+                "team-1", wallet.id, default_network_id="ethereum-mainnet"
+            )
+        assert exc_info.value.key == "WalletNetworkImmutable"
+        # Re-sending the current network is a no-op, not an error
+        unchanged = await update_team_wallet(
+            "team-1", wallet.id, default_network_id="base-mainnet"
+        )
+        assert unchanged.network == "base-mainnet"
 
     @pytest.mark.asyncio
     async def test_rename_to_taken_name_rejected(self, wallet_tables):
@@ -325,7 +364,7 @@ class TestWalletManagement:
             created_by="user-1",
         )
         with pytest.raises(IntentKitAPIError) as exc_info:
-            await rename_team_wallet("team-1", wallet.id, "taken")
+            await update_team_wallet("team-1", wallet.id, name="taken")
         assert exc_info.value.key == "WalletNameTaken"
 
     @pytest.mark.asyncio
@@ -338,7 +377,7 @@ class TestWalletManagement:
             created_by="user-2",
         )
         with pytest.raises(IntentKitAPIError) as exc_info:
-            await rename_team_wallet("team-1", wallet.id, "stolen")
+            await update_team_wallet("team-1", wallet.id, name="stolen")
         assert exc_info.value.key == "WalletNotFound"
 
     @pytest.mark.asyncio

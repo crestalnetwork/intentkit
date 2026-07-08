@@ -14,7 +14,6 @@ from intentkit.tools.pancakeswap.base import PancakeSwapBaseTool
 from intentkit.tools.pancakeswap.constants import (
     MASTERCHEF_V3_ABI,
     MASTERCHEF_V3_ADDRESSES,
-    NETWORK_TO_CHAIN_ID,
     POSITION_MANAGER_ABI,
     POSITION_MANAGER_ADDRESS,
 )
@@ -66,22 +65,13 @@ class PancakeSwapRemoveLiquidity(PancakeSwapBaseTool):
         **kwargs: Any,
     ) -> str:
         try:
-            network_id = self.get_agent_network_id()
-            if not network_id:
-                raise ToolException("Agent network_id is not configured")
-
-            chain_id = NETWORK_TO_CHAIN_ID.get(network_id)
-            if not chain_id:
-                raise ToolException(
-                    f"PancakeSwap not supported on {network_id}. "
-                    f"Supported: {', '.join(NETWORK_TO_CHAIN_ID.keys())}"
-                )
+            wallet = await self.get_unified_wallet(wallet_address)
+            chain_id = self._resolve_chain_id(wallet.network_id)
 
             if not 1 <= percentage <= 100:
                 raise ToolException("Percentage must be between 1 and 100")
 
-            wallet = await self.get_unified_wallet(wallet_address)
-            w3 = self.web3_client()
+            w3 = wallet.w3
             wallet_address = Web3.to_checksum_address(wallet.address)
 
             pm_address = Web3.to_checksum_address(POSITION_MANAGER_ADDRESS)

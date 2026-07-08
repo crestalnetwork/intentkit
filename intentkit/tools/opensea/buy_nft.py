@@ -47,8 +47,9 @@ class OpenSeaBuyNft(OpenSeaOnChainBaseTool):
         **kwargs: Any,
     ) -> str:
         try:
-            chain = self._get_chain_name()
+            # The wallet determines the network to buy on.
             wallet = await self.get_unified_wallet(wallet_address)
+            chain = self._get_chain_name(wallet.network_id)
 
             data, error = await self._post(
                 "/listings/fulfillment_data",

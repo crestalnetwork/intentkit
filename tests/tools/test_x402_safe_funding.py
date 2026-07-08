@@ -28,7 +28,7 @@ def _safe_wallet() -> TeamWallet:
         team_id="team-1",
         name="safe",
         wallet_provider="safe",
-        network_id="base-mainnet",
+        default_network_id="base-mainnet",
         evm_wallet_address=PRIVY_WALLET_DATA["smart_wallet_address"],
         wallet_data=json.dumps(PRIVY_WALLET_DATA),
         created_by="user-1",
@@ -42,7 +42,6 @@ def _safe_agent_context() -> MagicMock:
     mock_agent = MagicMock()
     mock_agent.id = "agent-id"
     mock_agent.team_id = "team-1"
-    mock_agent.network_id = "base-mainnet"
 
     mock_context = MagicMock()
     mock_context.agent = mock_agent

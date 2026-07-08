@@ -23,11 +23,6 @@ def send_agent_notification(agent: Agent, agent_data: AgentData, message: str) -
                     {"title": "Name", "short": True, "value": agent.name},
                     {"title": "Model", "short": True, "value": agent.model},
                     {
-                        "title": "Network",
-                        "short": True,
-                        "value": agent.network_id or "Not Set",
-                    },
-                    {
                         "title": "Telegram Enabled",
                         "short": True,
                         "value": str(agent.telegram_entrypoint_enabled),

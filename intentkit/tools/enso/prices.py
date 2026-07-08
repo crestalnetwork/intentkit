@@ -3,6 +3,8 @@ from langchain_core.tools import ArgsSchema
 from langchain_core.tools.base import ToolException
 from pydantic import BaseModel, Field
 
+from intentkit.models.wallet import DEFAULT_NETWORK_ID
+
 from .base import EnsoBaseTool, base_url
 
 
@@ -48,14 +50,14 @@ class EnsoGetPrices(EnsoBaseTool):
         Asynchronous function to request the token price from the API.
 
         Args:
-            chainId (int | None): The blockchain's chain ID. Defaults to the agent's configured network.
+            chainId (int | None): The blockchain's chain ID. Defaults to Base mainnet.
             address (str): Contract address of the token.
 
         Returns:
             EnsoGetPricesOutput: Token price response or error message.
         """
         context = self.get_context()
-        resolved_chain_id = self.resolve_chain_id(context, chainId)
+        resolved_chain_id = self.resolve_chain_id(chainId, DEFAULT_NETWORK_ID)
         api_token = self.get_api_token(context)
 
         headers = {

@@ -11,6 +11,7 @@ from pydantic import BaseModel, Field
 from web3 import AsyncWeb3
 from web3.exceptions import TimeExhausted
 
+from intentkit.models.wallet import TeamWallet
 from intentkit.tools.lifi.base import LiFiBaseTool
 from intentkit.tools.lifi.token_quote import TokenQuote
 from intentkit.tools.lifi.utils import (
@@ -27,6 +28,9 @@ from intentkit.tools.lifi.utils import (
     validate_inputs,
 )
 from intentkit.tools.onchain import WALLET_ADDRESS_ARG_DESCRIPTION
+from intentkit.wallets import get_cdp_network as resolve_cdp_network
+from intentkit.wallets import get_evm_account as fetch_evm_account
+from intentkit.wallets.web3 import get_async_web3_client
 
 
 class TokenExecuteInput(BaseModel):
@@ -130,27 +134,22 @@ class TokenExecute(LiFiBaseTool):
                 self.allowed_chains,
             )
 
-            # Get agent context for CDP wallet
-            context = self.get_context()
-            agent = context.agent
-            network_id = agent.network_id
-            if not network_id:
-                raise ToolException(
-                    "Agent network ID is not configured. Please set it before executing on-chain transactions."
-                )
+            # Resolve the team wallet once (guarded signing path); the CDP
+            # network, EVM account, and web3 client all derive from it.
+            wallet = await self.get_signing_wallet(wallet_address)
 
             try:
-                cdp_network = self.get_cdp_network()
+                cdp_network = resolve_cdp_network(wallet.network)
             except Exception as e:
                 self.logger.error("LiFi_CDP_Network_Error: %s", str(e))
-                raise ToolException(f"Invalid agent network for CDP: {e!s}")
+                raise ToolException(f"Invalid wallet network for CDP: {e!s}")
 
             self.logger.info(
                 f"Executing LiFi transfer: {from_amount} {from_token} on {from_chain} -> {to_token} on {to_chain}"
             )
 
             # Get CDP EVM account and web3 client
-            evm_account = await self._get_evm_account(wallet_address)
+            evm_account = await self._get_evm_account(wallet)
 
             from_address = evm_account.address
             if not from_address:
@@ -159,11 +158,11 @@ class TokenExecute(LiFiBaseTool):
                 )
 
             try:
-                web3 = self.web3_client()
+                web3 = get_async_web3_client(wallet.network)
             except Exception as e:
                 self.logger.error("LiFi_Web3_Error: %s", str(e))
                 raise ToolException(
-                    "Unable to initialize Web3 client. Please verify the agent's network configuration."
+                    "Unable to initialize Web3 client. Please verify the wallet's network configuration."
                 )
 
             # Get quote and execute transfer
@@ -211,10 +210,10 @@ class TokenExecute(LiFiBaseTool):
             self.logger.error("LiFi_Error: %s", str(e))
             raise ToolException(f"An unexpected error occurred: {e!s}")
 
-    async def _get_evm_account(self, wallet_address: str) -> EvmServerAccount:
-        """Get the CDP EVM account behind a team wallet, with error handling."""
+    async def _get_evm_account(self, wallet: TeamWallet) -> EvmServerAccount:
+        """Get the CDP EVM account behind a resolved team wallet, with error handling."""
         try:
-            evm_account = await self.get_evm_account(wallet_address)
+            evm_account = await fetch_evm_account(wallet)
             if not evm_account:
                 raise ToolException("No CDP account available for the selected wallet.")
 

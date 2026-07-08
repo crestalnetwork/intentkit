@@ -11,11 +11,11 @@ from web3 import Web3
 from intentkit.tools.pancakeswap.base import PancakeSwapBaseTool
 from intentkit.tools.pancakeswap.constants import (
     FEE_TIERS,
-    NETWORK_TO_CHAIN_ID,
     QUOTER_V2_ABI,
     QUOTER_V2_ADDRESSES,
 )
 from intentkit.tools.pancakeswap.utils import get_decimals, resolve_token
+from intentkit.wallets.web3 import get_async_web3_client
 
 NAME = "pancakeswap_quote"
 
@@ -31,6 +31,11 @@ class PancakeSwapQuoteInput(BaseModel):
     )
     amount: str = Field(
         description="Amount to swap in human-readable format (e.g. '1.5')"
+    )
+    network_id: str = Field(
+        default="base-mainnet",
+        description="Network to quote on: bnb-mainnet, ethereum-mainnet, "
+        "base-mainnet, arbitrum-mainnet or linea-mainnet",
     )
 
 
@@ -51,25 +56,17 @@ class PancakeSwapQuote(PancakeSwapBaseTool):
         token_in: str,
         token_out: str,
         amount: str,
+        network_id: str = "base-mainnet",
         **kwargs: Any,
     ) -> str:
         try:
-            network_id = self.get_agent_network_id()
-            if not network_id:
-                raise ToolException("Agent network_id is not configured")
-
-            chain_id = NETWORK_TO_CHAIN_ID.get(network_id)
-            if not chain_id:
-                raise ToolException(
-                    f"PancakeSwap not supported on {network_id}. "
-                    f"Supported: {', '.join(NETWORK_TO_CHAIN_ID.keys())}"
-                )
+            chain_id = self._resolve_chain_id(network_id)
 
             quoter_address = QUOTER_V2_ADDRESSES.get(chain_id)
             if not quoter_address:
                 raise ToolException(f"No QuoterV2 address for chain {chain_id}")
 
-            w3 = self.web3_client()
+            w3 = get_async_web3_client(network_id)
 
             # Resolve native token to wrapped address
             addr_in = resolve_token(token_in, chain_id)

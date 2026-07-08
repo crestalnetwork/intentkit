@@ -171,7 +171,7 @@ def get_cdp_network(network_id: str | None) -> str:
         raise IntentKitAPIError(
             400,
             "BadNetworkID",
-            "Your agent network ID is not set. Please set it in the agent config.",
+            "No network is configured for this wallet.",
         )
     mapping = {
         "ethereum-mainnet": "ethereum",
@@ -194,16 +194,9 @@ def get_cdp_network(network_id: str | None) -> str:
     return cdp_network
 
 
-async def get_wallet_provider(
-    wallet: TeamWallet, network_id: str | None
-) -> CdpWalletProvider:
+async def get_wallet_provider(wallet: TeamWallet) -> CdpWalletProvider:
     _assert_cdp_wallet(wallet)
-    if not network_id:
-        raise IntentKitAPIError(
-            400,
-            "BadNetworkID",
-            "Your agent network ID is not set. Please set it in the agent config.",
-        )
+    network_id = wallet.network
 
     cache_key = (wallet.id, network_id, wallet.evm_wallet_address or "")
     cached = _wallet_providers.get(cache_key)

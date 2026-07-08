@@ -54,15 +54,16 @@ class ERC20GetBalance(ERC20BaseTool):
             A message containing the balance or error details.
         """
         try:
-            # Read-only: validate the wallet belongs to the team, no signing.
-            await self.resolve_wallet(wallet_address)
+            # Read-only: resolving the client validates that the wallet
+            # belongs to the team and picks the wallet's network; no signing.
+            w3 = await self.web3_client(wallet_address)
 
             # Use the selected wallet address if no explicit address is given
             checksum_address = Web3.to_checksum_address(address or wallet_address)
 
             # Get token details (includes balance)
             token_details = await get_token_details(
-                self.web3_client(), contract_address, checksum_address
+                w3, contract_address, checksum_address
             )
 
             if not token_details:

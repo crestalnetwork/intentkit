@@ -11,7 +11,6 @@ from web3 import Web3
 from intentkit.tools.aerodrome.base import AerodromeBaseTool
 from intentkit.tools.aerodrome.constants import (
     CL_GAUGE_ABI,
-    NETWORK_TO_CHAIN_ID,
     POSITION_MANAGER_ABI,
     POSITION_MANAGER_ADDRESS,
     TOOL_DATA_NAMESPACE,
@@ -22,6 +21,7 @@ from intentkit.tools.aerodrome.utils import (
     staked_data_key,
 )
 from intentkit.tools.onchain import WALLET_ADDRESS_ARG_DESCRIPTION
+from intentkit.wallets.web3 import get_async_web3_client
 
 NAME = "aerodrome_get_positions"
 MAX_POSITIONS = 20
@@ -47,20 +47,14 @@ class AerodromeGetPositions(AerodromeBaseTool):
     @override
     async def _arun(self, wallet_address: str, **kwargs: Any) -> str:
         try:
-            network_id = self.get_agent_network_id()
-            if not network_id:
-                raise ToolException("Agent network_id is not configured")
-
-            chain_id = NETWORK_TO_CHAIN_ID.get(network_id)
-            if not chain_id:
-                raise ToolException(
-                    f"Aerodrome is only supported on Base. "
-                    f"Current network: {network_id}"
-                )
-
             # Read-only: validate the wallet belongs to the team, no signing.
-            await self.resolve_wallet(wallet_address)
-            w3 = self.web3_client()
+            # The network follows the wallet.
+            team_wallet = await self.resolve_wallet(wallet_address)
+            network_id = team_wallet.network
+            # Validate the wallet network (Aerodrome is Base-only).
+            self._resolve_chain_id(network_id)
+
+            w3 = get_async_web3_client(network_id)
             checksum_wallet = Web3.to_checksum_address(wallet_address)
 
             pm = w3.eth.contract(

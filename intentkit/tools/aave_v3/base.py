@@ -11,16 +11,12 @@ class AaveV3BaseTool(IntentKitOnChainTool):
 
     category: str = "aave_v3"
 
-    def _resolve_chain_id(self) -> int:
-        """Validate network and return chain ID.
+    def _resolve_chain_id(self, network_id: str) -> int:
+        """Map a network to its Aave V3 chain ID.
 
         Raises:
-            ToolException: If network is not configured or not supported.
+            ToolException: If Aave V3 is not supported on the network.
         """
-        network_id = self.get_agent_network_id()
-        if not network_id:
-            raise ToolException("Agent network_id is not configured")
-
         chain_id = NETWORK_TO_CHAIN_ID.get(network_id)
         if not chain_id:
             supported = ", ".join(NETWORK_TO_CHAIN_ID.keys())

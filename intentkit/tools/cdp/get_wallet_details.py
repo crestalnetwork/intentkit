@@ -10,6 +10,7 @@ from web3 import Web3
 
 from intentkit.tools.cdp.base import CDPBaseTool
 from intentkit.tools.onchain import WALLET_ADDRESS_ARG_DESCRIPTION
+from intentkit.wallets.web3 import get_async_web3_client
 
 
 class GetWalletDetailsInput(BaseModel):
@@ -41,10 +42,11 @@ class CDPGetWalletDetails(CDPBaseTool):
         """
         try:
             # Read-only: validate team ownership and the CDP provider.
-            await self.ensure_cdp_provider(wallet_address)
+            wallet = await self.ensure_cdp_provider(wallet_address)
+            network_id = wallet.network
 
             # Read balance and chain id directly from the chain (no signing)
-            w3 = self.web3_client()
+            w3 = get_async_web3_client(network_id)
             checksum_address = Web3.to_checksum_address(wallet_address)
             balance_wei = await w3.eth.get_balance(checksum_address)
             chain_id = await w3.eth.chain_id
@@ -54,7 +56,6 @@ class CDPGetWalletDetails(CDPBaseTool):
             formatted_balance = f"{balance_decimal:.18f}".rstrip("0").rstrip(".")
 
             # Determine the native token symbol based on network
-            network_id = self.get_agent_network_id() or ""
             network_info = {
                 "ethereum-mainnet": {"symbol": "ETH", "display": "Ethereum Mainnet"},
                 "base-mainnet": {"symbol": "ETH", "display": "Base Mainnet"},

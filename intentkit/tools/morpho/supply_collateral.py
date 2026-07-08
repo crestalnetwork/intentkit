@@ -52,7 +52,7 @@ class MorphoSupplyCollateral(MorphoBaseTool):
         try:
             wallet = await self.get_unified_wallet(wallet_address)
             self._validate_network(wallet.network_id)
-            w3 = self.web3_client()
+            w3 = wallet.w3
 
             (
                 loan_token,

@@ -12,12 +12,17 @@ from web3 import Web3
 from intentkit.tools.erc20.constants import ERC20_ABI
 from intentkit.tools.morpho.base import MorphoBaseTool
 from intentkit.tools.morpho.constants import METAMORPHO_ABI
+from intentkit.wallets.web3 import get_async_web3_client
 
 
 class GetVaultDataInput(BaseModel):
     """Input for getting MetaMorpho Vault data."""
 
     vault_address: str = Field(description="MetaMorpho Vault contract address")
+    network_id: str = Field(
+        default="base-mainnet",
+        description="Network to query: base-mainnet or base-sepolia",
+    )
 
 
 class MorphoGetVaultData(MorphoBaseTool):
@@ -36,15 +41,13 @@ class MorphoGetVaultData(MorphoBaseTool):
     async def _arun(
         self,
         vault_address: str,
+        network_id: str = "base-mainnet",
         **kwargs: Any,
     ) -> str:
         try:
             # Pure on-chain read: no wallet involved at all.
-            network_id = self.get_agent_network_id()
-            if not network_id:
-                raise ToolException("Agent network_id is not configured")
             self._validate_network(network_id)
-            w3 = self.web3_client()
+            w3 = get_async_web3_client(network_id)
 
             checksum_vault = Web3.to_checksum_address(vault_address)
             vault_contract = w3.eth.contract(address=checksum_vault, abi=METAMORPHO_ABI)

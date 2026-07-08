@@ -50,7 +50,7 @@ class MorphoWithdraw(MorphoBaseTool):
         try:
             wallet = await self.get_unified_wallet(wallet_address)
             self._validate_network(wallet.network_id)
-            w3 = self.web3_client()
+            w3 = wallet.w3
 
             checksum_vault = w3.to_checksum_address(vault_address)
             checksum_receiver = w3.to_checksum_address(receiver)

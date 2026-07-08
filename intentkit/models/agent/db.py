@@ -78,14 +78,6 @@ class AgentUserInputColumns:
         comment="Controls topic adherence (-2.0~2.0). Higher values allow more topic deviation, lower values enforce stricter topic adherence.",
     )
 
-    # Network configuration from AgentCore
-    network_id: Mapped[str | None] = mapped_column(
-        String,
-        nullable=True,
-        default="base-mainnet",
-        comment="Network identifier",
-    )
-
     # Tools configuration from AgentCore
     tools: Mapped[list[str] | None] = mapped_column(
         JSONB(),

@@ -14,7 +14,12 @@ from sqlalchemy import or_, select
 from intentkit.config.config import config
 from intentkit.config.db import get_session
 from intentkit.models.team import Team
-from intentkit.models.wallet import WALLET_PROVIDERS, TeamWallet, wallet_owner_team
+from intentkit.models.wallet import (
+    DEFAULT_NETWORK_ID,
+    WALLET_PROVIDERS,
+    TeamWallet,
+    wallet_owner_team,
+)
 from intentkit.utils.error import IntentKitAPIError
 
 logger = logging.getLogger(__name__)
@@ -57,7 +62,7 @@ async def create_team_wallet(
     name: str,
     wallet_provider: str,
     created_by: str,
-    network_id: str | None = None,
+    default_network_id: str | None = None,
     readonly_address: str | None = None,
     weekly_spending_limit: float | None = None,
 ) -> TeamWallet:
@@ -71,7 +76,7 @@ async def create_team_wallet(
         )
 
     wallet_id = str(XID())
-    network = network_id or "base-mainnet"
+    network = default_network_id or DEFAULT_NETWORK_ID
 
     if wallet_provider == "cdp":
         if not config.cdp_api_key_id:
@@ -86,7 +91,7 @@ async def create_team_wallet(
             team_id=team_id,
             name=name,
             wallet_provider="cdp",
-            network_id=network,
+            default_network_id=network,
             evm_wallet_address=account.address,
             created_by=created_by,
         )
@@ -100,7 +105,7 @@ async def create_team_wallet(
             team_id=team_id,
             name=name,
             wallet_provider="native",
-            network_id=network,
+            default_network_id=network,
             evm_wallet_address=wallet_data["address"],
             wallet_data=json.dumps(wallet_data),
             created_by=created_by,
@@ -118,7 +123,7 @@ async def create_team_wallet(
             team_id=team_id,
             name=name,
             wallet_provider="readonly",
-            network_id=network,
+            default_network_id=network,
             evm_wallet_address=readonly_address,
             created_by=created_by,
         )
@@ -153,7 +158,7 @@ async def create_team_wallet(
             team_id=team_id,
             name=name,
             wallet_provider="privy",
-            network_id=network,
+            default_network_id=network,
             evm_wallet_address=privy_wallet.address,
             wallet_data=json.dumps(wallet_data),
             created_by=created_by,
@@ -176,7 +181,7 @@ async def create_team_wallet(
         team_id=team_id,
         name=name,
         wallet_provider="safe",
-        network_id=network,
+        default_network_id=network,
         evm_wallet_address=wallet_data["smart_wallet_address"],
         wallet_data=json.dumps(wallet_data),
         weekly_spending_limit=weekly_spending_limit,
@@ -215,7 +220,7 @@ async def set_wallet_safe_token_spending_limit(
             "Wallet data is missing required fields.",
         ) from e
 
-    network_id = data.get("network_id") or wallet.network_id or "base-mainnet"
+    network_id = data.get("network_id") or wallet.network
     rpc_url = data.get("rpc_url") or _resolve_rpc_url(network_id)
     if not rpc_url:
         raise IntentKitAPIError(
@@ -239,17 +244,39 @@ async def set_wallet_safe_token_spending_limit(
     )
 
 
-async def rename_team_wallet(team_id: str, wallet_id: str, name: str) -> TeamWallet:
-    """Rename a team wallet (names stay unique within the team).
+async def update_team_wallet(
+    team_id: str,
+    wallet_id: str,
+    *,
+    name: str | None = None,
+    default_network_id: str | None = None,
+) -> TeamWallet:
+    """Update a team wallet's mutable settings (name, default network).
 
     Raises:
         IntentKitAPIError 404: wallet missing or not owned by the team.
-        IntentKitAPIError 400: the team already has a wallet with that name.
+        IntentKitAPIError 400: the team already has a wallet with that name,
+            or the wallet's network cannot be changed (safe/privy smart
+            wallets are deployed on one chain).
     """
     wallet = await TeamWallet.get_for_team(wallet_id, team_id)
     if not wallet:
         raise IntentKitAPIError(404, "WalletNotFound", "Wallet not found")
-    updated = await TeamWallet.patch(wallet_id, {"name": name})
+    data: dict[str, str] = {}
+    if name is not None:
+        data["name"] = name
+    if default_network_id is not None and default_network_id != wallet.network:
+        if wallet.wallet_provider in ("safe", "privy"):
+            raise IntentKitAPIError(
+                400,
+                "WalletNetworkImmutable",
+                "Safe and Privy smart wallets are deployed on a single chain; "
+                "their network cannot be changed after creation.",
+            )
+        data["default_network_id"] = default_network_id
+    if not data:
+        return wallet
+    updated = await TeamWallet.patch(wallet_id, data)
     if updated is None:
         raise IntentKitAPIError(404, "WalletNotFound", "Wallet not found")
     return updated

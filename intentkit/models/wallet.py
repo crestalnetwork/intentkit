@@ -29,6 +29,21 @@ WalletProviderLiteral = Literal["cdp", "native", "readonly", "safe", "privy"]
 
 WALLET_PROVIDERS: tuple[str, ...] = ("cdp", "native", "readonly", "safe", "privy")
 
+# Network used when a wallet has no explicit default_network_id.
+DEFAULT_NETWORK_ID = "base-mainnet"
+
+# Networks selectable as a wallet's default (kept in sync with the frontend
+# wallet pages); the API request models validate against this literal.
+NetworkIdLiteral = Literal[
+    "base-mainnet",
+    "ethereum-mainnet",
+    "polygon-mainnet",
+    "arbitrum-mainnet",
+    "optimism-mainnet",
+    "bnb-mainnet",
+    "base-sepolia",
+]
+
 
 def wallet_owner_team(team_id: str | None) -> str:
     """The team a wallet must belong to for a given owner team id.
@@ -73,8 +88,8 @@ class TeamWalletTable(Base):
     wallet_provider: Mapped[str] = mapped_column(
         String, nullable=False, comment="cdp | native | readonly | safe | privy"
     )
-    network_id: Mapped[str | None] = mapped_column(
-        String, nullable=True, comment="Default network the wallet was provisioned for"
+    default_network_id: Mapped[str | None] = mapped_column(
+        String, nullable=True, comment="Default network for tools using this wallet"
     )
     evm_wallet_address: Mapped[str | None] = mapped_column(
         String, nullable=True, comment="EVM address (Safe address for safe wallets)"
@@ -115,9 +130,9 @@ class TeamWallet(BaseModel):
     wallet_provider: Annotated[
         str, Field(description="cdp | native | readonly | safe | privy")
     ]
-    network_id: Annotated[
+    default_network_id: Annotated[
         str | None,
-        Field(default=None, description="Default network the wallet was created for"),
+        Field(default=None, description="Default network for tools using this wallet"),
     ] = None
     evm_wallet_address: Annotated[
         str | None,
@@ -149,6 +164,11 @@ class TeamWallet(BaseModel):
     @classmethod
     def serialize_datetime(cls, v: datetime) -> str:
         return v.isoformat(timespec="milliseconds")
+
+    @property
+    def network(self) -> str:
+        """Effective network for on-chain operations with this wallet."""
+        return self.default_network_id or DEFAULT_NETWORK_ID
 
     def wallet_data_json(self) -> dict[str, Any]:
         """Parse the provider payload; empty dict when unset."""
@@ -224,7 +244,7 @@ class TeamWallet(BaseModel):
         wallet_provider: str,
         created_by: str,
         wallet_id: str | None = None,
-        network_id: str | None = None,
+        default_network_id: str | None = None,
         evm_wallet_address: str | None = None,
         solana_wallet_address: str | None = None,
         wallet_data: str | None = None,
@@ -236,7 +256,7 @@ class TeamWallet(BaseModel):
                 team_id=team_id,
                 name=name,
                 wallet_provider=wallet_provider,
-                network_id=network_id,
+                default_network_id=default_network_id,
                 evm_wallet_address=evm_wallet_address,
                 solana_wallet_address=solana_wallet_address,
                 wallet_data=wallet_data,
@@ -261,7 +281,7 @@ class TeamWallet(BaseModel):
     _PATCHABLE_FIELDS: ClassVar[frozenset[str]] = frozenset(
         {
             "name",
-            "network_id",
+            "default_network_id",
             "weekly_spending_limit",
             "wallet_data",
             "evm_wallet_address",

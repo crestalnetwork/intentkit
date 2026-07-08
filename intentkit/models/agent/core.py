@@ -3,7 +3,7 @@ from __future__ import annotations
 import hashlib
 import json
 from enum import IntEnum
-from typing import Annotated, ClassVar, Literal
+from typing import Annotated, ClassVar
 
 from pydantic import BaseModel, ConfigDict, field_validator
 from pydantic import Field as PydanticField
@@ -128,23 +128,6 @@ class AgentCore(BaseModel):
             le=2.0,
         ),
     ] = 0.0
-    network_id: Annotated[
-        Literal[
-            "base-mainnet",
-            "ethereum-mainnet",
-            "polygon-mainnet",
-            "arbitrum-mainnet",
-            "optimism-mainnet",
-            "bnb-mainnet",
-            "solana",
-            "base-sepolia",
-        ]
-        | None,
-        PydanticField(
-            default="base-mainnet",
-            description="Network identifier",
-        ),
-    ] = "base-mainnet"
     tools: Annotated[
         list[str] | None,
         PydanticField(

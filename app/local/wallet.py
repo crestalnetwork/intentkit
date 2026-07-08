@@ -13,9 +13,9 @@ from pydantic import BaseModel, Field
 from intentkit.core.team.wallet import (
     create_team_wallet,
     delete_team_wallet,
-    rename_team_wallet,
+    update_team_wallet,
 )
-from intentkit.models.wallet import TeamWallet
+from intentkit.models.wallet import NetworkIdLiteral, TeamWallet
 
 from app.local.lead import LEAD_TEAM_ID, LEAD_USER_ID
 
@@ -45,7 +45,7 @@ class WalletCreateRequest(BaseModel):
     wallet_provider: str = Field(
         description="cdp | native | readonly | safe | privy",
     )
-    network_id: str | None = Field(
+    default_network_id: NetworkIdLiteral | None = Field(
         default=None, description="Default network (defaults to base-mainnet)"
     )
     readonly_address: str | None = Field(
@@ -71,35 +71,44 @@ async def create_wallet(body: WalletCreateRequest = Body(...)) -> TeamWallet:
         name=body.name,
         wallet_provider=body.wallet_provider,
         created_by=LEAD_USER_ID,
-        network_id=body.network_id,
+        default_network_id=body.default_network_id,
         readonly_address=body.readonly_address,
         weekly_spending_limit=body.weekly_spending_limit,
     )
 
 
-class WalletRenameRequest(BaseModel):
-    """Rename a wallet."""
+class WalletUpdateRequest(BaseModel):
+    """Update a wallet's mutable settings; omitted fields stay unchanged."""
 
-    name: str = Field(
+    name: str | None = Field(
+        default=None,
         min_length=1,
         max_length=50,
         description="New display name, unique within the team",
+    )
+    default_network_id: NetworkIdLiteral | None = Field(
+        default=None, description="Default network for tools using this wallet"
     )
 
 
 @wallet_router.patch(
     "/wallets/{wallet_id}",
     response_model=TeamWallet,
-    operation_id="rename_wallet",
-    summary="Rename a wallet",
+    operation_id="update_wallet",
+    summary="Update a wallet",
     tags=["Wallet"],
 )
-async def rename_wallet(
+async def update_wallet(
     wallet_id: str = Path(..., description="Wallet ID"),
-    body: WalletRenameRequest = Body(...),
+    body: WalletUpdateRequest = Body(...),
 ) -> TeamWallet:
-    """Rename a wallet of the local (system) team."""
-    return await rename_team_wallet(LEAD_TEAM_ID, wallet_id, body.name)
+    """Update a wallet's name and/or default network."""
+    return await update_team_wallet(
+        LEAD_TEAM_ID,
+        wallet_id,
+        name=body.name,
+        default_network_id=body.default_network_id,
+    )
 
 
 @wallet_router.delete(

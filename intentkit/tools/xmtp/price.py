@@ -2,7 +2,6 @@ from typing import Literal, override
 
 from cdp.actions.evm.swap.types import SwapPriceResult
 from langchain_core.tools import ArgsSchema
-from langchain_core.tools.base import ToolException
 from pydantic import BaseModel, Field
 
 from intentkit.tools.xmtp.base import XmtpBaseTool
@@ -16,6 +15,11 @@ class SwapPriceInput(BaseModel):
     to_token: str = Field(description="Contract address to swap to")
     from_amount: str = Field(description="Amount in smallest units (string)")
     from_address: str = Field(description="Address holding the from_token")
+    network_id: str = Field(
+        default="base-mainnet",
+        description="Network to quote on: ethereum-mainnet, base-mainnet, "
+        "arbitrum-mainnet or optimism-mainnet",
+    )
 
 
 class XmtpGetSwapPrice(XmtpBaseTool):
@@ -34,23 +38,9 @@ class XmtpGetSwapPrice(XmtpBaseTool):
         to_token: str,
         from_amount: str,
         from_address: str,
+        network_id: str = "base-mainnet",
     ) -> str:
-        context = self.get_context()
-        agent = context.agent
-
-        # Only support mainnet networks for price and swap
-        supported_networks = [
-            "ethereum-mainnet",
-            "base-mainnet",
-            "arbitrum-mainnet",
-            "optimism-mainnet",
-        ]
-        if agent.network_id not in supported_networks:
-            raise ToolException(
-                f"Swap price only supported on {', '.join(supported_networks)}. Current: {agent.network_id}"
-            )
-
-        network_for_cdp = self._resolve_cdp_network_name(agent.network_id)
+        network_for_cdp = self._resolve_cdp_network_name(network_id)
 
         cdp_client = get_cdp_client()
         # Note: Don't use async with context manager as get_cdp_client returns a managed global client
@@ -64,6 +54,6 @@ class XmtpGetSwapPrice(XmtpBaseTool):
 
         # Try to format a readable message from typical fields
         if price.to_amount:
-            return f"Estimated output: {price.to_amount} units of {price.to_token} on {agent.network_id}."
+            return f"Estimated output: {price.to_amount} units of {price.to_token} on {network_id}."
 
         return f"Swap price result (raw): {price}"

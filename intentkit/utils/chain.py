@@ -174,11 +174,11 @@ id_to_network: dict[NetworkId, SupportedNetwork] = {
     NetworkId.PolygonMainnet: SupportedNetwork.PolygonMainnet,
 }
 
-# Mapping of agent-level network identifiers to QuickNode network names.
+# Mapping of network identifiers to QuickNode network names.
 # Agent configuration often uses human-friendly identifiers such as
 # "ethereum-mainnet" or "solana" while QuickNode expects the canonical
 # network strings defined in `QuickNodeNetwork`.  This mapping bridges the two.
-# Mapping of agent-level network identifiers to SupportedNetwork.
+# Mapping of network identifiers to SupportedNetwork.
 # The user's requested list includes:
 # "base-mainnet", "ethereum-mainnet", "polygon-mainnet",
 # "arbitrum-mainnet", "optimism-mainnet", "bnb-mainnet", "base-sepolia"
@@ -199,22 +199,22 @@ AGENT_NETWORK_TO_SUPPORTED_NETWORK: dict[str, SupportedNetwork] = {
 }
 
 
-def resolve_supported_network(agent_network_id: str) -> SupportedNetwork:
-    """Resolve an agent-level network identifier to a SupportedNetwork.
+def resolve_supported_network(network_id: str) -> SupportedNetwork:
+    """Resolve a network identifier to a SupportedNetwork.
 
     Args:
-        agent_network_id: Network identifier stored on the agent model.
+        network_id: Network identifier (e.g. a team wallet's default network).
 
     Returns:
         The corresponding `SupportedNetwork` enum value.
 
     Raises:
-        ValueError: If the agent network identifier is empty or unmapped.
+        ValueError: If the network identifier is empty or unmapped.
     """
 
-    normalized = (agent_network_id or "").strip().lower()
+    normalized = (network_id or "").strip().lower()
     if not normalized:
-        raise ValueError("agent network_id must be provided")
+        raise ValueError("network_id must be provided")
 
     mapped_network = AGENT_NETWORK_TO_SUPPORTED_NETWORK.get(normalized)
     if mapped_network:
@@ -223,7 +223,7 @@ def resolve_supported_network(agent_network_id: str) -> SupportedNetwork:
     try:
         return SupportedNetwork(normalized)
     except ValueError as exc:  # pragma: no cover - defensive guard
-        raise ValueError(f"unsupported agent network_id: {agent_network_id}") from exc
+        raise ValueError(f"unsupported network_id: {network_id}") from exc
 
 
 @final
@@ -326,7 +326,7 @@ class ChainProvider(ABC):
         Retrieves the chain configuration for a specific agent network identifier.
 
         Args:
-            network_id: The agent-level network identifier (e.g., "base-mainnet").
+            network_id: The network identifier (e.g., "base-mainnet").
 
         Returns:
             The `ChainConfig` object associated with the given network.

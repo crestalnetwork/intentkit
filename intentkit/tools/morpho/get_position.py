@@ -16,6 +16,7 @@ from intentkit.tools.morpho.constants import (
     MORPHO_BLUE_ADDRESS,
 )
 from intentkit.tools.onchain import WALLET_ADDRESS_ARG_DESCRIPTION
+from intentkit.wallets.web3 import get_async_web3_client
 
 
 class GetPositionInput(BaseModel):
@@ -49,13 +50,11 @@ class MorphoGetPosition(MorphoBaseTool):
         **kwargs: Any,
     ) -> str:
         try:
-            network_id = self.get_agent_network_id()
-            if not network_id:
-                raise ToolException("Agent network_id is not configured")
+            # Read-only: resolving the wallet's network also validates that
+            # the wallet belongs to the agent's team.
+            network_id = await self.get_network_id(wallet_address)
             self._validate_network(network_id)
-            # Read-only: just validate the wallet belongs to the agent's team.
-            await self.resolve_wallet(wallet_address)
-            w3 = self.web3_client()
+            w3 = get_async_web3_client(network_id)
 
             checksum_morpho = Web3.to_checksum_address(MORPHO_BLUE_ADDRESS)
             morpho = w3.eth.contract(address=checksum_morpho, abi=MORPHO_BLUE_ABI)

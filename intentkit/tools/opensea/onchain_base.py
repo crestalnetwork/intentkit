@@ -28,6 +28,7 @@ from intentkit.tools.opensea.constants import (
     ZERO_ADDRESS,
     ZERO_BYTES32,
 )
+from intentkit.wallets.web3 import get_async_web3_client
 
 logger = logging.getLogger(__name__)
 
@@ -37,11 +38,8 @@ class OpenSeaOnChainBaseTool(OpenSeaApiMixin, IntentKitOnChainTool):
 
     category: str = "opensea"
 
-    def _get_chain_name(self) -> str:
-        """Get OpenSea chain name from agent network_id."""
-        network_id = self.get_agent_network_id()
-        if not network_id:
-            raise ToolException("Agent network_id is not configured")
+    def _get_chain_name(self, network_id: str) -> str:
+        """Map a wallet network to the OpenSea chain name."""
         chain = NETWORK_TO_CHAIN.get(network_id)
         if not chain:
             raise ToolException(
@@ -50,9 +48,9 @@ class OpenSeaOnChainBaseTool(OpenSeaApiMixin, IntentKitOnChainTool):
             )
         return chain
 
-    async def _get_seaport_counter(self, offerer: str) -> int:
-        """Get the current Seaport counter for an address."""
-        w3 = self.web3_client()
+    async def _get_seaport_counter(self, offerer: str, network_id: str) -> int:
+        """Get the current Seaport counter for an address on a network."""
+        w3 = get_async_web3_client(network_id)
         seaport = w3.eth.contract(
             address=Web3.to_checksum_address(SEAPORT_ADDRESS),
             abi=SEAPORT_ABI,
@@ -70,8 +68,8 @@ class OpenSeaOnChainBaseTool(OpenSeaApiMixin, IntentKitOnChainTool):
         Returns:
             Transaction hash if approval was sent, None if already approved.
         """
-        w3 = self.web3_client()
         wallet = await self.get_unified_wallet(wallet_address)
+        w3 = wallet.w3
 
         nft_contract = w3.eth.contract(
             address=Web3.to_checksum_address(contract_address),
@@ -156,7 +154,7 @@ class OpenSeaOnChainBaseTool(OpenSeaApiMixin, IntentKitOnChainTool):
         }
 
     async def _sign_seaport_order(
-        self, order_parameters: dict[str, Any], wallet_address: str
+        self, order_parameters: dict[str, Any], wallet_address: str, network_id: str
     ) -> str:
         """Sign a Seaport order using EIP-712 typed data.
 
@@ -164,7 +162,7 @@ class OpenSeaOnChainBaseTool(OpenSeaApiMixin, IntentKitOnChainTool):
             The signature hex string.
         """
         signer = await self.get_wallet_signer(wallet_address)
-        w3 = self.web3_client()
+        w3 = get_async_web3_client(network_id)
         chain_id = await w3.eth.chain_id
 
         domain = {

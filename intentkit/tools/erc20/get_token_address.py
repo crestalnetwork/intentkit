@@ -20,42 +20,44 @@ class GetTokenAddressInput(BaseModel):
         ...,
         description="Token symbol (e.g. USDC, WETH)",
     )
+    network_id: str = Field(
+        default="base-mainnet",
+        description="Network to look up the token on: base-mainnet, "
+        "base-sepolia, ethereum-mainnet, polygon-mainnet, arbitrum-mainnet "
+        "or optimism-mainnet. Use the network of the wallet you will "
+        "operate with.",
+    )
 
 
 class ERC20GetTokenAddress(ERC20BaseTool):
-    """Get the contract address for a token symbol on the current network.
+    """Get the contract address for a token symbol on a network.
 
     This tool returns the contract address for frequently used ERC20 tokens
-    based on their symbol and the agent's configured network.
+    based on their symbol and the requested network.
     """
 
     name: str = "erc20_get_token_address"
     title: str = "Get Token Address"
-    description: str = "Get the contract address for a token symbol on the current network. Returns available symbols if not found."
+    description: str = "Get the contract address for a token symbol on a network. Returns available symbols if not found."
     args_schema: ArgsSchema | None = GetTokenAddressInput
 
     @override
     async def _arun(
         self,
         symbol: str,
+        network_id: str = "base-mainnet",
         **kwargs: Any,
     ) -> str:
-        """Get the contract address for a token symbol on the current network.
+        """Get the contract address for a token symbol on a network.
 
         Args:
             symbol: The token symbol to look up.
+            network_id: The network to look up the token on.
 
         Returns:
             A message containing the token address or error details.
         """
         try:
-            # Get the network ID from the agent context
-            network_id = self.get_agent_network_id()
-
-            if not network_id:
-                raise ToolException(
-                    "Error: Agent network is not configured. Please set the network_id in the agent configuration."
-                )
             # Look up the token address
             token_address = get_token_address_by_symbol(network_id, symbol)
 

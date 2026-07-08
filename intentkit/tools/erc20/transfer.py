@@ -59,9 +59,10 @@ class ERC20Transfer(ERC20BaseTool):
             A message containing the transfer result or error details.
         """
         try:
-            # Get the unified wallet (signing-capable, guarded)
+            # Get the unified wallet (signing-capable, guarded); its network
+            # determines which chain the transfer runs on.
             wallet = await self.get_unified_wallet(wallet_address)
-            w3_read = self.web3_client()
+            w3_read = wallet.w3
 
             w3 = Web3()
             checksum_contract = w3.to_checksum_address(contract_address)

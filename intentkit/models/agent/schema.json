@@ -275,23 +275,6 @@
       "description": "List of enabled tool names. Please choose the Agent's tools carefully. Excessive tools will pollute the context and reduce the Agent's intelligence. Only select the necessary tools, and it is best not to exceed 10.",
       "x-group": "tools",
       "x-inline": true
-    },
-    "network_id": {
-      "title": "Default Network",
-      "type": "string",
-      "description": "Default Network, please note that some CDP Wallet native tools like swap only support the base network.",
-      "default": "base-mainnet",
-      "enum": [
-        "base-mainnet",
-        "ethereum-mainnet",
-        "polygon-mainnet",
-        "arbitrum-mainnet",
-        "optimism-mainnet",
-        "bnb-mainnet",
-        "base-sepolia"
-      ],
-      "x-group": "onchain",
-      "x-advanced": true
     }
   },
   "additionalProperties": true

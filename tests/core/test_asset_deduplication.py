@@ -14,7 +14,6 @@ async def test_asset_deduplication_usdc(monkeypatch):
 
     agent = MagicMock()
     agent.id = "test-agent"
-    agent.network_id = "base-mainnet"
     agent.ticker = "USDC"
     agent.token_address = USDC_ADDRESSES["base-mainnet"]
 
@@ -29,7 +28,9 @@ async def test_asset_deduplication_usdc(monkeypatch):
     monkeypatch.setattr(asset_module, "_get_eth_balance", mock_get_eth_balance)
     monkeypatch.setattr(asset_module, "_get_token_balance", mock_get_token_balance)
 
-    assets = await asset_module.build_assets_list(agent, wallet_address, web3_client)
+    assets = await asset_module.build_assets_list(
+        agent, wallet_address, "base-mainnet", web3_client
+    )
 
     assert len(assets) == 3
     symbols = [asset.symbol for asset in assets]
@@ -44,7 +45,6 @@ async def test_asset_deduplication_nation(monkeypatch):
 
     agent = MagicMock()
     agent.id = "test-agent"
-    agent.network_id = "base-mainnet"
     agent.ticker = "NATION"
     agent.token_address = NATION_ADDRESS
 
@@ -59,7 +59,9 @@ async def test_asset_deduplication_nation(monkeypatch):
     monkeypatch.setattr(asset_module, "_get_eth_balance", mock_get_eth_balance)
     monkeypatch.setattr(asset_module, "_get_token_balance", mock_get_token_balance)
 
-    assets = await asset_module.build_assets_list(agent, wallet_address, web3_client)
+    assets = await asset_module.build_assets_list(
+        agent, wallet_address, "base-mainnet", web3_client
+    )
 
     assert len(assets) == 3
     symbols = [asset.symbol for asset in assets]
@@ -74,7 +76,6 @@ async def test_asset_no_deduplication_custom_token(monkeypatch):
 
     agent = MagicMock()
     agent.id = "test-agent"
-    agent.network_id = "base-mainnet"
     agent.ticker = "CUSTOM"
     agent.token_address = "0x9999999999999999999999999999999999999999"
 
@@ -89,7 +90,9 @@ async def test_asset_no_deduplication_custom_token(monkeypatch):
     monkeypatch.setattr(asset_module, "_get_eth_balance", mock_get_eth_balance)
     monkeypatch.setattr(asset_module, "_get_token_balance", mock_get_token_balance)
 
-    assets = await asset_module.build_assets_list(agent, wallet_address, web3_client)
+    assets = await asset_module.build_assets_list(
+        agent, wallet_address, "base-mainnet", web3_client
+    )
 
     assert len(assets) == 4
     symbols = [asset.symbol for asset in assets]
@@ -103,7 +106,6 @@ async def test_case_insensitive_deduplication(monkeypatch):
 
     agent = MagicMock()
     agent.id = "test-agent"
-    agent.network_id = "base-mainnet"
     agent.ticker = "USDC"
     agent.token_address = USDC_ADDRESSES["base-mainnet"].upper()
 
@@ -118,7 +120,9 @@ async def test_case_insensitive_deduplication(monkeypatch):
     monkeypatch.setattr(asset_module, "_get_eth_balance", mock_get_eth_balance)
     monkeypatch.setattr(asset_module, "_get_token_balance", mock_get_token_balance)
 
-    assets = await asset_module.build_assets_list(agent, wallet_address, web3_client)
+    assets = await asset_module.build_assets_list(
+        agent, wallet_address, "base-mainnet", web3_client
+    )
 
     assert len(assets) == 3
     symbols = [asset.symbol for asset in assets]

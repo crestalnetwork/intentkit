@@ -21,11 +21,6 @@ class UpdateListingInput(BaseModel):
 
     wallet_address: str = Field(description=WALLET_ADDRESS_ARG_DESCRIPTION)
     order_hash: str = Field(description="The order hash of the listing to update")
-    chain: str = Field(
-        description=(
-            "The blockchain name (e.g., 'ethereum', 'matic', 'base', 'arbitrum')"
-        )
-    )
     protocol_address: str = Field(
         description="The protocol contract address (from get_listings)"
     )
@@ -60,7 +55,6 @@ class OpenSeaUpdateListing(OpenSeaOnChainBaseTool):
         self,
         wallet_address: str,
         order_hash: str,
-        chain: str,
         protocol_address: str,
         contract_address: str,
         token_id: str,
@@ -71,7 +65,11 @@ class OpenSeaUpdateListing(OpenSeaOnChainBaseTool):
         try:
             # Validate signing authorization and team ownership before
             # cancelling the old listing, so a forbidden call has no effect.
-            await self.get_signing_wallet(wallet_address)
+            # The wallet also determines the network to operate on — the
+            # OpenSea chain must match the network the order is signed for.
+            team_wallet = await self.get_signing_wallet(wallet_address)
+            network_id = team_wallet.network
+            chain = self._get_chain_name(network_id)
 
             _, cancel_error = await self._post(
                 f"/orders/chain/{chain}/protocol/{protocol_address}/{order_hash}/cancel",
@@ -85,7 +83,7 @@ class OpenSeaUpdateListing(OpenSeaOnChainBaseTool):
                 )
 
             new_price_wei = Web3.to_wei(Decimal(new_price), "ether")
-            counter = await self._get_seaport_counter(wallet_address)
+            counter = await self._get_seaport_counter(wallet_address, network_id)
 
             order_params = self._build_listing_order(
                 offerer=wallet_address,
@@ -96,7 +94,9 @@ class OpenSeaUpdateListing(OpenSeaOnChainBaseTool):
                 counter=counter,
             )
 
-            signature = await self._sign_seaport_order(order_params, wallet_address)
+            signature = await self._sign_seaport_order(
+                order_params, wallet_address, network_id
+            )
 
             data, error = await self._post(
                 f"/orders/{chain}/seaport/listings",

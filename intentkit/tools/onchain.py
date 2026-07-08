@@ -50,22 +50,6 @@ class IntentKitOnChainTool(IntentKitTool, metaclass=ABCMeta):
     gated on the own-team rule (see module docstring).
     """
 
-    def web3_client(self) -> AsyncWeb3:
-        """
-        Get an AsyncWeb3 client for the active agent network.
-
-        Returns:
-            AsyncWeb3 instance configured for the agent's network.
-
-        Raises:
-            ToolException: If network_id is not configured.
-        """
-        context = self.get_context()
-        network_id = context.agent.network_id
-        if network_id is None:
-            raise ToolException("Agent network_id is not configured")
-        return get_async_web3_client(network_id)
-
     # =========================================================================
     # Read helpers (no signing authorization required)
     # =========================================================================
@@ -85,19 +69,25 @@ class IntentKitOnChainTool(IntentKitTool, metaclass=ABCMeta):
         context = self.get_context()
         return await resolve_team_wallet(context.agent, wallet_address)
 
-    def get_cdp_network(self) -> str:
+    async def get_network_id(self, wallet_address: str) -> str:
+        """The effective network of a team wallet (e.g., 'base-mainnet').
+
+        The network follows the wallet: its default_network_id, falling back
+        to the platform default.
         """
-        Get CDP network mapped from the agent's network id.
+        wallet = await self.resolve_wallet(wallet_address)
+        return wallet.network
+
+    async def web3_client(self, wallet_address: str) -> AsyncWeb3:
+        """An AsyncWeb3 client for the network of a team wallet."""
+        return get_async_web3_client(await self.get_network_id(wallet_address))
+
+    async def get_cdp_network(self, wallet_address: str) -> str:
+        """CDP network name mapped from a team wallet's network.
 
         Note: This method is CDP-specific.
         """
-        context = self.get_context()
-        return resolve_cdp_network(context.agent.network_id)
-
-    def get_agent_network_id(self) -> str | None:
-        """The network ID for the active agent (e.g., 'base-mainnet')."""
-        context = self.get_context()
-        return context.agent.network_id
+        return resolve_cdp_network(await self.get_network_id(wallet_address))
 
     # =========================================================================
     # Signing helpers (guarded)

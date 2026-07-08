@@ -52,7 +52,6 @@ HTTP_STATUS_PHRASES: dict[int, str] = {
 
 # Maximum content length to return (in bytes)
 MAX_CONTENT_LENGTH = 1000
-DEFAULT_NETWORK_ID = "base-mainnet"
 
 PAYMENT_RESPONSE_HEADERS = ("payment-response", "x-payment-response")
 PAYMENT_REQUIRED_HEADERS = ("payment-required",)
@@ -163,7 +162,7 @@ def normalize_payment_required_payload(
 
 
 def normalize_network_id(network: str | None) -> str | None:
-    """Normalize CAIP-2 network identifiers to agent network IDs."""
+    """Normalize CAIP-2 network identifiers to platform network IDs."""
     if not network:
         return None
     key = str(network).strip().lower()
@@ -269,13 +268,10 @@ class X402BaseTool(IntentKitOnChainTool):
 
         try:
             context = self.get_context()
-            agent = context.agent
             agent_id = context.agent_id
-            network_id = agent.network_id if agent else None
             wallet_provider = "safe"
         except (AttributeError, ValueError):
             agent_id = "unknown"
-            network_id = None
             wallet_provider = None
 
         try:
@@ -293,11 +289,6 @@ class X402BaseTool(IntentKitOnChainTool):
                                 "title": "Wallet Provider",
                                 "short": True,
                                 "value": wallet_provider or "unknown",
-                            },
-                            {
-                                "title": "Network",
-                                "short": True,
-                                "value": network_id or "unknown",
                             },
                             {"title": "URL", "value": url},
                             {"title": "Error", "value": error_message},
@@ -462,12 +453,7 @@ class X402BaseTool(IntentKitOnChainTool):
             safe_address = privy_wallet_data["smart_wallet_address"]
         except KeyError as exc:
             raise ValueError("Privy wallet data missing required fields.") from exc
-        network_id = (
-            privy_wallet_data.get("network_id")
-            or agent.network_id
-            or network
-            or DEFAULT_NETWORK_ID
-        )
+        network_id = privy_wallet_data.get("network_id") or network or wallet.network
         normalized_network_id = normalize_network_id(network_id) or network_id
         rpc_url = self._resolve_rpc_url(normalized_network_id, privy_wallet_data)
         balance = await self._get_erc20_balance(

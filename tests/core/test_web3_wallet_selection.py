@@ -44,7 +44,6 @@ def _build_agent(
         temperature=0.7,
         visibility=AgentVisibility.PRIVATE,
         public_info_updated_at=now,
-        network_id="base-mainnet",
     )
 
 
@@ -162,7 +161,7 @@ class TestPromptWalletSection:
             team_id="team-1",
             name="trading",
             wallet_provider="cdp",
-            network_id="base-mainnet",
+            default_network_id="base-mainnet",
             evm_wallet_address="0xaaa",
             created_by="user-1",
         )
@@ -170,7 +169,7 @@ class TestPromptWalletSection:
             team_id="team-1",
             name="treasury",
             wallet_provider="safe",
-            network_id="base-mainnet",
+            default_network_id="base-mainnet",
             evm_wallet_address="0xbbb",
             created_by="user-1",
         )

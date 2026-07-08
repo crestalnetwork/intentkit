@@ -46,7 +46,7 @@ class XmtpBaseTool(IntentKitOnChainTool):
             supported_networks = ", ".join(self.CHAIN_ID_HEX_BY_NETWORK.keys())
             raise ToolException(
                 f"XMTP {tool_name} supports the following networks: {supported_networks}. "
-                f"Current agent network: {network_id}"
+                f"Requested network: {network_id}"
             )
         return self.CHAIN_ID_HEX_BY_NETWORK[network_id]
 

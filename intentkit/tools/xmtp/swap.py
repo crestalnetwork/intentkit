@@ -22,6 +22,11 @@ class SwapInput(BaseModel):
     to_token: str = Field(description="Contract address of token to swap to")
     from_amount: str = Field(description="Amount in smallest unit (string)")
     slippage_bps: int = Field(default=100, description="Max slippage in bps (100=1%)")
+    network_id: str = Field(
+        default="base-mainnet",
+        description="Network to swap on: ethereum-mainnet, base-mainnet, "
+        "arbitrum-mainnet or optimism-mainnet",
+    )
 
 
 class XmtpSwap(XmtpBaseTool):
@@ -48,6 +53,7 @@ class XmtpSwap(XmtpBaseTool):
         to_token: str,
         from_amount: str,
         slippage_bps: int = 100,
+        network_id: str = "base-mainnet",
     ) -> tuple[str, list[ChatMessageAttachment]]:
         # Input validation
         if (
@@ -76,29 +82,13 @@ class XmtpSwap(XmtpBaseTool):
         if slippage_bps < 0 or slippage_bps > 10000:
             raise ToolException("slippage_bps must be between 0 and 10000 (0% to 100%)")
 
-        # Resolve agent context and target network
-        context = self.get_context()
-        agent = context.agent
-
-        # Only support mainnet networks for swap
-        supported_networks = [
-            "ethereum-mainnet",
-            "base-mainnet",
-            "arbitrum-mainnet",
-            "optimism-mainnet",
-        ]
-        if agent.network_id not in supported_networks:
-            raise ToolException(
-                f"Swap only supported on {', '.join(supported_networks)}. Current: {agent.network_id}"
-            )
-
         # Validate network and get chain ID
-        chain_id_hex = self.validate_network_and_get_chain_id(agent.network_id, "swap")
+        chain_id_hex = self.validate_network_and_get_chain_id(network_id, "swap")
 
         # Get CDP network name
         # Reference: CDP SDK examples for swap quote and price
         # https://github.com/coinbase/cdp-sdk/blob/main/examples/python/evm/swaps/create_swap_quote.py
-        network_for_cdp = self._resolve_cdp_network_name(agent.network_id)
+        network_for_cdp = self._resolve_cdp_network_name(network_id)
 
         # Get CDP client from the global helper (server-side credentials)
         cdp_client = get_cdp_client()
@@ -175,7 +165,7 @@ class XmtpSwap(XmtpBaseTool):
                 "expectedOutput": to_amount,
                 "minimumOutput": min_to_amount,
                 "slippageBps": slippage_bps,
-                "network": agent.network_id,
+                "network": network_id,
             },
         }
 
@@ -211,7 +201,7 @@ class XmtpSwap(XmtpBaseTool):
             f"• To: {to_token}\n"
             f"• Expected output: {expected_output} units\n"
             f"• Minimum output: {min_output} units\n"
-            f"• Network: {agent.network_id}\n"
+            f"• Network: {network_id}\n"
             f"• Slippage: {slippage_bps / 100:.1f}%\n\n"
             f"Please review the transaction details and sign to execute the swap."
         )

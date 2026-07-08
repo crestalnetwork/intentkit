@@ -10,12 +10,12 @@ from web3 import Web3
 
 from intentkit.tools.aerodrome.base import AerodromeBaseTool
 from intentkit.tools.aerodrome.constants import (
-    NETWORK_TO_CHAIN_ID,
     QUOTER_V2_ABI,
     QUOTER_V2_ADDRESS,
     TICK_SPACINGS,
 )
 from intentkit.tools.aerodrome.utils import convert_amount, get_decimals, resolve_token
+from intentkit.wallets.web3 import get_async_web3_client
 
 NAME = "aerodrome_quote"
 
@@ -54,18 +54,8 @@ class AerodromeQuote(AerodromeBaseTool):
         **kwargs: Any,
     ) -> str:
         try:
-            network_id = self.get_agent_network_id()
-            if not network_id:
-                raise ToolException("Agent network_id is not configured")
-
-            chain_id = NETWORK_TO_CHAIN_ID.get(network_id)
-            if not chain_id:
-                raise ToolException(
-                    f"Aerodrome is only supported on Base. "
-                    f"Current network: {network_id}"
-                )
-
-            w3 = self.web3_client()
+            # Aerodrome Slipstream only exists on Base; quotes always run there.
+            w3 = get_async_web3_client("base-mainnet")
 
             addr_in = resolve_token(token_in)
             addr_out = resolve_token(token_out)

@@ -14,6 +14,7 @@ from intentkit.tools.aave_v3.constants import (
     POOL_DATA_PROVIDER_ADDRESSES,
 )
 from intentkit.tools.aave_v3.utils import format_amount, format_ray, get_token_symbol
+from intentkit.wallets.web3 import get_async_web3_client
 
 NAME = "aave_v3_get_reserve_data"
 
@@ -23,6 +24,12 @@ class GetReserveDataInput(BaseModel):
 
     token_address: str = Field(
         description="ERC20 token contract address of the reserve/market to query"
+    )
+    network_id: str = Field(
+        default="base-mainnet",
+        description="Network of the market to query: ethereum-mainnet, "
+        "polygon-mainnet, arbitrum-mainnet, optimism-mainnet, base-mainnet "
+        "or bnb-mainnet",
     )
 
 
@@ -42,12 +49,13 @@ class AaveV3GetReserveData(AaveV3BaseTool):
     async def _arun(
         self,
         token_address: str,
+        network_id: str = "base-mainnet",
         **kwargs: Any,
     ) -> str:
         try:
-            chain_id = self._resolve_chain_id()
+            chain_id = self._resolve_chain_id(network_id)
             provider_address = POOL_DATA_PROVIDER_ADDRESSES[chain_id]
-            w3 = self.web3_client()
+            w3 = get_async_web3_client(network_id)
             checksum_token = Web3.to_checksum_address(token_address)
 
             provider = w3.eth.contract(
@@ -105,7 +113,7 @@ class AaveV3GetReserveData(AaveV3BaseTool):
             status = ", ".join(status_parts)
 
             return (
-                f"**Aave V3 Reserve Data — {symbol}** ({self.get_agent_network_id()})\n"
+                f"**Aave V3 Reserve Data — {symbol}** ({network_id})\n"
                 f"Status: {status}\n"
                 f"Supply APY: {format_ray(liquidity_rate)}\n"
                 f"Variable Borrow APY: {format_ray(variable_borrow_rate)}\n"

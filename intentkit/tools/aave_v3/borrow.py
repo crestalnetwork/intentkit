@@ -57,15 +57,15 @@ class AaveV3Borrow(AaveV3BaseTool):
         **kwargs: Any,
     ) -> str:
         try:
-            chain_id = self._resolve_chain_id()
-
             if interest_rate_mode not in (1, 2):
                 raise ToolException(
                     "interest_rate_mode must be 1 (stable) or 2 (variable)"
                 )
 
             wallet = await self.get_unified_wallet(wallet_address)
-            w3 = self.web3_client()
+            network_id = wallet.network_id
+            chain_id = self._resolve_chain_id(network_id)
+            w3 = wallet.w3
 
             pool_address = POOL_ADDRESSES[chain_id]
             checksum_token = Web3.to_checksum_address(token_address)
@@ -100,7 +100,7 @@ class AaveV3Borrow(AaveV3BaseTool):
                 f"**Aave V3 Borrow**\n"
                 f"Borrowed: {amount} {symbol}\n"
                 f"Rate Mode: {rate_mode_str}\n"
-                f"Network: {self.get_agent_network_id()}\n"
+                f"Network: {network_id}\n"
                 f"Tx: {tx_hash}"
             )
 
