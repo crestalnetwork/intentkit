@@ -2,6 +2,7 @@
 import React from "react";
 import { FieldProps } from "@rjsf/utils";
 import { useQuery } from "@tanstack/react-query";
+import { AdvancedSection } from "./AdvancedSection";
 import { ToolsetCard } from "./ToolsetCard";
 import { config } from "@/lib/config";
 import { walletApi } from "@/lib/api";
@@ -53,23 +54,54 @@ export function ToolsField(props: FieldProps<string[]>) {
         setSelected(next);
     };
 
-    const handleCategoryClear = (categoryKey: string) => {
-        const tools = catalog[categoryKey]?.tools || {};
-        const next = new Set(selected);
-        for (const toolKey of Object.keys(tools)) {
-            next.delete(toolKey);
-        }
-        setSelected(next);
-    };
+    // Sort by title; web3 toolsets go into a collapsed Advanced Settings
+    // group, which is hidden entirely until the team owns a wallet
+    const sortedCategories = Object.entries(catalog).sort(
+        ([keyA, a], [keyB, b]) =>
+            (a.title || keyA).localeCompare(b.title || keyB)
+    );
+    const regularCategories = sortedCategories.filter(
+        ([, entry]) => entry["x-web3"] !== true
+    );
+    const web3Categories = sortedCategories.filter(
+        ([, entry]) => entry["x-web3"] === true
+    );
+    const hasWeb3Selection = web3Categories.some(([, entry]) =>
+        Object.keys(entry.tools || {}).some((toolKey) => selected.has(toolKey))
+    );
 
-    // Web3 categories are hidden until the team owns a wallet; sort by title
-    const sortedCategories = Object.entries(catalog)
-        .filter(([, entry]) => hasWallets || entry["x-web3"] !== true)
-        .sort(([, a], [, b]) => {
-            const titleA = a.title || "";
-            const titleB = b.title || "";
-            return titleA.localeCompare(titleB);
-        });
+    const renderCategory = ([categoryKey, categorySchema]: [
+        string,
+        ToolsetCatalogEntry,
+    ]) => {
+        const tools = Object.entries(categorySchema.tools || {}).map(
+            ([toolKey, toolInfo]) => ({
+                title: toolInfo.title || toolKey,
+                description: toolInfo.description,
+                enabled: selected.has(toolKey),
+                onToggle: (enabled: boolean) =>
+                    handleToolToggle(toolKey, enabled),
+            })
+        );
+
+        // Build icon URL: relative paths get API base prefix, absolute URLs pass through
+        const rawIcon = categorySchema["x-icon"];
+        const iconUrl = rawIcon
+            ? rawIcon.startsWith("/")
+                ? `${config.apiBaseUrl}${rawIcon}`
+                : rawIcon
+            : undefined;
+
+        return (
+            <ToolsetCard
+                key={categoryKey}
+                title={categorySchema.title || categoryKey}
+                description={categorySchema.description}
+                iconUrl={iconUrl}
+                tools={tools}
+            />
+        );
+    };
 
     return (
         <div id={idSchema?.$id || "tools-field"} className="space-y-4">
@@ -82,36 +114,15 @@ export function ToolsField(props: FieldProps<string[]>) {
                     <p className="text-xs font-normal text-muted-foreground">{schema.description}</p>
                 )}
             </div>
-            {sortedCategories.map(([categoryKey, categorySchema]) => {
-                const tools = Object.entries(categorySchema.tools || {}).map(
-                    ([toolKey, toolInfo]) => ({
-                        title: toolInfo.title || toolKey,
-                        description: toolInfo.description,
-                        enabled: selected.has(toolKey),
-                        onToggle: (enabled: boolean) =>
-                            handleToolToggle(toolKey, enabled),
-                    })
-                );
-
-                // Build icon URL: relative paths get API base prefix, absolute URLs pass through
-                const rawIcon = categorySchema["x-icon"];
-                const iconUrl = rawIcon
-                    ? rawIcon.startsWith("/")
-                        ? `${config.apiBaseUrl}${rawIcon}`
-                        : rawIcon
-                    : undefined;
-
-                return (
-                    <ToolsetCard
-                        key={categoryKey}
-                        title={categorySchema.title || categoryKey}
-                        description={categorySchema.description}
-                        iconUrl={iconUrl}
-                        tools={tools}
-                        onClear={() => handleCategoryClear(categoryKey)}
-                    />
-                );
-            })}
+            {regularCategories.map(renderCategory)}
+            {hasWallets && web3Categories.length > 0 && (
+                <AdvancedSection
+                    defaultOpen={hasWeb3Selection}
+                    bodyClassName="space-y-4"
+                >
+                    {web3Categories.map(renderCategory)}
+                </AdvancedSection>
+            )}
         </div>
     );
 }

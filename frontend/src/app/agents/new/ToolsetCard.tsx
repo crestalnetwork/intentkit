@@ -14,8 +14,6 @@ interface ToolsetCardProps {
     description?: string;
     iconUrl?: string;
     tools: ToolToggleConfig[];
-    onClear: () => void;
-    defaultExpanded?: boolean;
 }
 
 export function ToolsetCard({
@@ -23,33 +21,34 @@ export function ToolsetCard({
     description,
     iconUrl,
     tools,
-    onClear,
-    defaultExpanded = false,
 }: ToolsetCardProps) {
     const activeToolsCount = tools.filter((tool) => tool.enabled).length;
-    const [isExpanded, setIsExpanded] = useState(
-        activeToolsCount > 0 || defaultExpanded
-    );
+    const [isExpanded, setIsExpanded] = useState(activeToolsCount > 0);
 
     return (
         <div className="border rounded-lg bg-card shadow-xs overflow-hidden">
             {/* Header */}
             <div
+                role="button"
+                tabIndex={0}
+                aria-expanded={isExpanded}
                 className="flex items-center justify-between px-4 py-3 cursor-pointer hover:bg-muted/50 transition-colors"
                 onClick={() => setIsExpanded(!isExpanded)}
+                onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        setIsExpanded(!isExpanded);
+                    }
+                }}
             >
-                <div className="flex items-center gap-3">
-                    <button
-                        type="button"
-                        className="text-muted-foreground"
-                        aria-label={isExpanded ? "Collapse" : "Expand"}
-                    >
+                <div className="flex min-w-0 flex-1 items-center gap-3">
+                    <span className="text-muted-foreground" aria-hidden="true">
                         {isExpanded ? (
                             <ChevronDown className="h-4 w-4" />
                         ) : (
                             <ChevronRight className="h-4 w-4" />
                         )}
-                    </button>
+                    </span>
                     {iconUrl && (
                         <img
                             src={iconUrl}
@@ -57,34 +56,28 @@ export function ToolsetCard({
                             className="h-6 w-6 rounded object-contain"
                         />
                     )}
-                    <div>
+                    <div className="min-w-0">
                         <h3 className="font-semibold text-sm">{title}</h3>
                         {description && (
-                            <p className="text-xs font-normal text-muted-foreground line-clamp-1">
+                            <p
+                                className={`text-xs font-normal text-muted-foreground ${
+                                    isExpanded ? "" : "line-clamp-1"
+                                }`}
+                            >
                                 {description}
                             </p>
                         )}
                     </div>
                 </div>
-                <div className="flex items-center gap-3">
-                    {activeToolsCount > 0 && (
-                        <span className="text-xs text-muted-foreground">
-                            {activeToolsCount} active
-                        </span>
-                    )}
-                    {activeToolsCount > 0 && (
-                        <button
-                            type="button"
-                            className="text-xs text-muted-foreground hover:text-foreground underline"
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                onClear();
-                            }}
-                        >
-                            Clear
-                        </button>
-                    )}
-                </div>
+                <span
+                    className={`shrink-0 text-xs tabular-nums ${
+                        activeToolsCount > 0
+                            ? "font-medium text-foreground"
+                            : "text-muted-foreground"
+                    }`}
+                >
+                    {activeToolsCount}/{tools.length}
+                </span>
             </div>
 
             {/* Expanded Content */}

@@ -33,3 +33,42 @@ async def test_agent_schema_includes_tool_catalog():
     assert erc20["tools"]["erc20_transfer"]["title"]
     # Non-web3 categories must not carry the flag at all.
     assert "x-web3" not in catalog["http"]
+
+
+@pytest.mark.asyncio
+async def test_agent_schema_strips_telegram_fields():
+    """The endpoint must strip telegram fields even when the base schema has them."""
+    base_schema = {
+        "properties": {
+            "tools": {"type": "array"},
+            "telegram_entrypoint_enabled": {"type": "boolean"},
+            "telegram_entrypoint_prompt": {"type": "string"},
+            "telegram_config": {"type": "object"},
+        }
+    }
+    with patch(
+        "app.common.schema.Agent.get_json_schema",
+        new=AsyncMock(return_value=base_schema),
+    ):
+        response = await get_agent_schema()
+
+    properties = json.loads(bytes(response.body))["properties"]
+    assert "tools" in properties
+    for field in (
+        "telegram_entrypoint_enabled",
+        "telegram_entrypoint_prompt",
+        "telegram_config",
+    ):
+        assert field not in properties
+
+
+@pytest.mark.asyncio
+async def test_agent_schema_excludes_model_tuning_fields():
+    """Model tuning params were removed from ``schema.json``; the real
+    endpoint output must not offer them to the form UI."""
+    response = await get_agent_schema()
+
+    properties = json.loads(bytes(response.body))["properties"]
+    assert "tools" in properties
+    for field in ("temperature", "frequency_penalty", "presence_penalty"):
+        assert field not in properties

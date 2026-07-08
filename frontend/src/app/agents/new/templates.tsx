@@ -1,6 +1,6 @@
-import React, { useState } from "react";
+import React from "react";
 import { FieldTemplateProps, ObjectFieldTemplateProps } from "@rjsf/utils";
-import { ChevronDown, ChevronRight } from "lucide-react";
+import { AdvancedSection } from "./AdvancedSection";
 
 export const FieldTemplate = (props: FieldTemplateProps) => {
     const {
@@ -39,7 +39,6 @@ export const FieldTemplate = (props: FieldTemplateProps) => {
 };
 
 export const ObjectFieldTemplate = (props: ObjectFieldTemplateProps) => {
-    const [showAdvanced, setShowAdvanced] = useState(false);
     const { properties, schema } = props;
 
     const schemaProperties = (schema.properties || {}) as Record<string, Record<string, unknown>>;
@@ -63,21 +62,9 @@ export const ObjectFieldTemplate = (props: ObjectFieldTemplateProps) => {
     return (
         <>
             {normalFields.map(p => p.content)}
-            <div className="border-t pt-2 mt-4">
-                <button
-                    type="button"
-                    onClick={() => setShowAdvanced(!showAdvanced)}
-                    className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors mb-2"
-                >
-                    {showAdvanced ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
-                    Advanced Settings
-                </button>
-                {showAdvanced && (
-                    <div className="pl-2">
-                        {advancedFields.map(p => p.content)}
-                    </div>
-                )}
-            </div>
+            <AdvancedSection bodyClassName="pl-2">
+                {advancedFields.map(p => p.content)}
+            </AdvancedSection>
         </>
     );
 };

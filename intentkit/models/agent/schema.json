@@ -147,39 +147,6 @@
       "x-str-type": "prompt",
       "x-group": "llm"
     },
-    "temperature": {
-      "title": "Temperature",
-      "type": "number",
-      "description": "Controls creativity: higher values are more creative, lower values are more precise. CHANGING THIS SETTING MAY INTRODUCE UNEXPECTED BEHAVIOR. USE WITH CAUTION.",
-      "default": 0.7,
-      "minimum": 0.0,
-      "maximum": 1.5,
-      "x-group": "llm",
-      "x-step": 0.1,
-      "x-advanced": true
-    },
-    "frequency_penalty": {
-      "title": "Frequency Penalty",
-      "type": "number",
-      "description": "Adjusts repetition: higher values encourage new topics, lower values allow repetition.",
-      "default": 0.0,
-      "minimum": -2.0,
-      "maximum": 2.0,
-      "x-group": "llm",
-      "x-step": 0.1,
-      "x-advanced": true
-    },
-    "presence_penalty": {
-      "title": "Presence Penalty",
-      "type": "number",
-      "description": "Controls topic focus: higher values promote diversity, lower values stay closely on topic.",
-      "default": 0.0,
-      "minimum": -2.0,
-      "maximum": 2.0,
-      "x-group": "llm",
-      "x-step": 0.1,
-      "x-advanced": true
-    },
     "telegram_entrypoint_enabled": {
       "title": "Enable Telegram Communication",
       "type": "boolean",
