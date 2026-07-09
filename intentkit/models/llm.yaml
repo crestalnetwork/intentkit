@@ -110,7 +110,7 @@
   cached_input_price: "0.12"
   output_price: "2.4"
   price_level: 2
-  context_length: 524288
+  context_length: 1000000
   output_length: 512000
   intelligence: 5
   speed: 3
@@ -889,7 +889,7 @@
   cached_input_price: "0.12"
   output_price: "2.4"
   price_level: 2
-  context_length: 524288
+  context_length: 1000000
   output_length: 512000
   intelligence: 5
   speed: 3
