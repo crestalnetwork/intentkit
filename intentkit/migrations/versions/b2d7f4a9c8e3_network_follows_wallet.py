@@ -23,10 +23,33 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
-    """Upgrade schema (idempotent)."""
-    op.execute("ALTER TABLE agents DROP COLUMN IF EXISTS network_id")
-    op.execute("ALTER TABLE agent_drafts DROP COLUMN IF EXISTS network_id")
-    op.execute("ALTER TABLE templates DROP COLUMN IF EXISTS network_id")
+    """Upgrade schema (idempotent).
+
+    Guard every DROP on the table's existence. Some environments were onboarded
+    to Alembic by stamping the baseline without physically creating every
+    baseline table (e.g. ``agent_drafts``). ``DROP COLUMN IF EXISTS`` only
+    guards the column, not the table, so a bare ``ALTER TABLE`` on a missing
+    table would raise ``UndefinedTable`` and abort the whole migration.
+    """
+    op.execute(
+        """
+        DO $$
+        DECLARE
+            t text;
+        BEGIN
+            FOREACH t IN ARRAY ARRAY['agents', 'agent_drafts', 'templates'] LOOP
+                IF EXISTS (
+                    SELECT 1 FROM information_schema.tables
+                    WHERE table_schema = 'public' AND table_name = t
+                ) THEN
+                    EXECUTE format(
+                        'ALTER TABLE %I DROP COLUMN IF EXISTS network_id', t
+                    );
+                END IF;
+            END LOOP;
+        END $$;
+        """
+    )
     op.execute(
         """
         DO $$
@@ -48,10 +71,29 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
-    """Re-add the agent columns (values are not recoverable)."""
-    op.execute("ALTER TABLE agents ADD COLUMN IF NOT EXISTS network_id VARCHAR")
-    op.execute("ALTER TABLE agent_drafts ADD COLUMN IF NOT EXISTS network_id VARCHAR")
-    op.execute("ALTER TABLE templates ADD COLUMN IF NOT EXISTS network_id VARCHAR")
+    """Re-add the agent columns (values are not recoverable).
+
+    Guarded on table existence for the same reason as ``upgrade``.
+    """
+    op.execute(
+        """
+        DO $$
+        DECLARE
+            t text;
+        BEGIN
+            FOREACH t IN ARRAY ARRAY['agents', 'agent_drafts', 'templates'] LOOP
+                IF EXISTS (
+                    SELECT 1 FROM information_schema.tables
+                    WHERE table_schema = 'public' AND table_name = t
+                ) THEN
+                    EXECUTE format(
+                        'ALTER TABLE %I ADD COLUMN IF NOT EXISTS network_id VARCHAR', t
+                    );
+                END IF;
+            END LOOP;
+        END $$;
+        """
+    )
     op.execute(
         """
         DO $$
