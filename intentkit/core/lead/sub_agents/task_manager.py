@@ -88,7 +88,7 @@ def build_task_manager(team_id: str) -> Agent:
         ),
         "principles": (
             "1. Speak to users in their language, but use English in task configuration.\n"
-            "2. All changes are applied immediately (no draft flow).\n"
+            "2. All changes are applied immediately.\n"
             "3. Update is override — provide complete field values, not just changes."
         ),
         "model": pick_default_model(),

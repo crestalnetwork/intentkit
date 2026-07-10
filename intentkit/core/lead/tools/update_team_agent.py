@@ -88,7 +88,7 @@ class UpdateTeamAgent(LeadTool):
     name: str = "lead_update_team_agent"
     description: str = (
         "Update a team agent with partial changes. Only provided fields will be updated. "
-        "Changes are directly deployed (no draft flow). "
+        "Changes are directly deployed. "
         "The update function is efficient and safe, only updating fields you explicitly provide."
     )
     args_schema: ArgsSchema | None = UpdateTeamAgentInput

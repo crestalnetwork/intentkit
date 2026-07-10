@@ -154,7 +154,7 @@ def build_agent_manager(team_id: str) -> Agent:
         "purpose": ("Create, configure, and update team agents."),
         "principles": (
             "1. Speak to users in their language, but use English in agent and task configuration.\n"
-            "2. All changes are directly deployed (no draft flow).\n"
+            "2. All changes are directly deployed.\n"
             "3. Update is override — provide complete field values, not just changes."
         ),
         "model": pick_default_model(),

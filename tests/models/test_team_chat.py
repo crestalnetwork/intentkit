@@ -1,4 +1,4 @@
-"""Tests for Team, Chat, and Draft model validation and serialization.
+"""Tests for Team and Chat model validation and serialization.
 
 Pure Pydantic validation tests — no DB or async required.
 """
@@ -14,7 +14,6 @@ from intentkit.models.chat import (
     ChatMessageAttachmentType,
     ChatMessageCreate,
 )
-from intentkit.models.draft import AgentDraft
 from intentkit.models.team import TeamCreate, TeamInvite, TeamMember, TeamRole
 
 # ---------------------------------------------------------------------------
@@ -207,60 +206,3 @@ class TestChatMessageCreate:
         data = msg.model_dump()
         assert "team_id" not in data
         assert "call_depth" not in data
-
-
-# ---------------------------------------------------------------------------
-# Draft Models
-# ---------------------------------------------------------------------------
-
-
-class TestAgentDraft:
-    def test_agent_draft_creation(self):
-        """AgentDraft extends AgentUserInput with draft-specific fields.
-
-        The 'model' field is inherited from AgentCore and is required,
-        but its validator accepts None and fills in a default LLM model.
-        """
-        now = datetime.now(UTC)
-        draft = AgentDraft(
-            agent_id="my-agent",
-            name="Test Agent",
-            model="",
-            created_at=now,
-            updated_at=now,
-        )
-        assert draft.agent_id == "my-agent"
-        assert draft.name == "Test Agent"
-        # id should be auto-generated
-        assert draft.id is not None and len(draft.id) > 0
-        # optional fields default to None
-        assert draft.owner is None
-        assert draft.team_id is None
-        assert draft.version is None
-        assert draft.project_id is None
-        assert draft.last_draft_id is None
-        assert draft.deployed_at is None
-
-    def test_agent_draft_with_all_draft_fields(self):
-        now = datetime.now(UTC)
-        draft = AgentDraft(
-            id="draft-123",
-            agent_id="my-agent",
-            name="Test Agent",
-            model="",
-            owner="user-1",
-            team_id="team-1",
-            version="abc123",
-            project_id="proj-1",
-            last_draft_id="draft-100",
-            deployed_at=now,
-            created_at=now,
-            updated_at=now,
-        )
-        assert draft.id == "draft-123"
-        assert draft.owner == "user-1"
-        assert draft.team_id == "team-1"
-        assert draft.version == "abc123"
-        assert draft.project_id == "proj-1"
-        assert draft.last_draft_id == "draft-100"
-        assert draft.deployed_at == now

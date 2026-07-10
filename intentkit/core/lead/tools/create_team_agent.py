@@ -65,8 +65,8 @@ class CreateTeamAgent(LeadTool):
 
     name: str = "lead_create_team_agent"
     description: str = (
-        "Create a new agent for the team. The agent will be directly deployed "
-        "(no draft flow). Auto-sets team_id and owner from context, visibility defaults to TEAM."
+        "Create a new agent for the team. The agent will be directly deployed. "
+        "Auto-sets team_id and owner from context, visibility defaults to TEAM."
     )
     args_schema: ArgsSchema | None = CreateTeamAgentInput
 
