@@ -226,6 +226,13 @@ class LLMModelInfo(BaseModel):
             "provider routing slug. None lets OpenRouter choose."
         ),
     )
+    legacy_ids: list[str] = Field(
+        default_factory=list,
+        description=(
+            "Retired model ids this model supersedes. Agents still storing "
+            "one of these ids are routed to this model at resolve time."
+        ),
+    )
     enabled: bool = Field(default=True)
     input_price: Decimal  # Price per 1M input tokens in USD
     cached_input_price: Decimal | None = None  # Price per 1M cached input tokens in USD
@@ -282,8 +289,9 @@ class LLMModelInfo(BaseModel):
 
         1. Exact key — supports both the composite ``provider:id`` key and a
            legacy bare ``id``.
-        2. Backward-compatible fallback by bare model id; when several providers
-           expose the same id, native providers are preferred over OpenRouter.
+        2. Backward-compatible fallback via the id index (bare ids, base names
+           after "/", and ``legacy_ids`` of superseding models); when several
+           providers match, native providers are preferred over OpenRouter.
 
         Args:
             model_id: ID of the model to retrieve.
@@ -307,12 +315,24 @@ class LLMModelInfo(BaseModel):
             ):
                 fallback = candidate
         if fallback is not None:
-            logger.debug(
-                "Model %s resolved via index to %s:%s",
-                model_id,
-                fallback.provider.value,
-                fallback.id,
-            )
+            base = fallback.id.rsplit("/", 1)[1] if "/" in fallback.id else fallback.id
+            if model_id in (fallback.id, base):
+                logger.debug(
+                    "Model %s resolved via index to %s:%s",
+                    model_id,
+                    fallback.provider.value,
+                    fallback.id,
+                )
+            else:
+                # Legacy id routed to its successor: pricing/capabilities
+                # differ from what the agent originally stored, so keep this
+                # visible in logs.
+                logger.info(
+                    "Legacy model id %s routed to %s:%s",
+                    model_id,
+                    fallback.provider.value,
+                    fallback.id,
+                )
             return fallback
 
         # Not found anywhere
@@ -399,15 +419,55 @@ class LLMModelInfo(BaseModel):
 # Default models loaded from the YAML catalog
 AVAILABLE_MODELS = load_default_llm_models()
 
-# Reverse index: model id → list of composite keys in AVAILABLE_MODELS.
-# Indexed by both full id (e.g. "openai/gpt-5.4-mini") and base name after "/"
-# (e.g. "gpt-5.4-mini") for backward compatibility with legacy agent configs.
-_MODEL_ID_INDEX: dict[str, list[str]] = {}
-for _key, _model in AVAILABLE_MODELS.items():
-    _MODEL_ID_INDEX.setdefault(_model.id, []).append(_key)
-    if "/" in _model.id:
-        _base = _model.id.rsplit("/", 1)[1]
-        _MODEL_ID_INDEX.setdefault(_base, []).append(_key)
+
+def build_model_id_index(models: dict[str, "LLMModelInfo"]) -> dict[str, list[str]]:
+    """Build the reverse index: model id → list of composite keys in ``models``.
+
+    Each model is indexed by its full id (e.g. "openai/gpt-5.6-luna"), the
+    base name after "/" (e.g. "gpt-5.6-luna"), and its ``legacy_ids`` (retired
+    ids routed to their successor), so agents storing any of those keep
+    resolving. A legacy id (or its base name) that collides with anything a
+    live model claims is ignored — the live model always wins.
+    """
+    index: dict[str, list[str]] = {}
+
+    for key, model in models.items():
+        index.setdefault(model.id, []).append(key)
+        if "/" in model.id:
+            index.setdefault(model.id.rsplit("/", 1)[1], []).append(key)
+
+    # Everything live models claim (full ids and base names); legacy routing
+    # must never shadow these. Snapshot before adding any legacy entry so the
+    # guard does not depend on catalog order.
+    live_claims = set(index)
+
+    for key, model in models.items():
+        for legacy in model.legacy_ids:
+            if legacy in live_claims:
+                logger.warning(
+                    "legacy id %s on %s collides with a live model id; ignored",
+                    legacy,
+                    model.id,
+                )
+                continue
+            index.setdefault(legacy, []).append(key)
+            if "/" in legacy:
+                base = legacy.rsplit("/", 1)[1]
+                if base not in live_claims:
+                    index.setdefault(base, []).append(key)
+    return index
+
+
+_MODEL_ID_INDEX: dict[str, list[str]] = build_model_id_index(AVAILABLE_MODELS)
+
+
+def is_model_resolvable(model_id: str) -> bool:
+    """Whether ``LLMModelInfo.get`` would resolve this id in this deployment.
+
+    Covers composite keys, bare ids, base names after "/", and legacy ids.
+    """
+    return model_id in AVAILABLE_MODELS or model_id in _MODEL_ID_INDEX
+
 
 # USD cost per single web search call, by provider.
 # OpenRouter bundles search cost in token billing — no separate charge.

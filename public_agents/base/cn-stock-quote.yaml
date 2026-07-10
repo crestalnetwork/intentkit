@@ -14,7 +14,7 @@ principles: >
   gaps with training-data estimates. Always include the timestamp of the data when
   available. Preserve original Chinese field names in output so downstream agents can
   parse them deterministically.
-model: google/gemini-3-flash-preview
+model: google/gemini-3.5-flash
 temperature: 0.1
 visibility: 20
 search_internet: false

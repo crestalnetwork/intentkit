@@ -12,7 +12,7 @@ personality: >
 principles: >
   Only surface items your tools returned. Never fabricate quotes or sources. Preserve
   original Chinese titles. Always order results by recency unless asked otherwise.
-model: google/gemini-3-flash-preview
+model: google/gemini-3.5-flash
 temperature: 0.2
 visibility: 20
 search_internet: false

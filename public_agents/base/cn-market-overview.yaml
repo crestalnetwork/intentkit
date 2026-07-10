@@ -13,7 +13,7 @@ principles: >
   Numbers come from tools, never from training data. Always include the timestamp or
   trading date of the snapshot. When the market is closed, say so and include the date
   the data reflects.
-model: google/gemini-3-flash-preview
+model: google/gemini-3.5-flash
 temperature: 0.3
 visibility: 20
 search_internet: false

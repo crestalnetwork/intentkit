@@ -171,7 +171,7 @@ async def test_calculate_cost_cached_exceeds_input_clamps_to_zero(monkeypatch):
 
 
 def test_csv_loads_cached_input_price_for_claude():
-    """Claude Sonnet 4.6 should have cached_input_price=0.3 from CSV."""
+    """Claude Sonnet 5 should have cached_input_price=0.2 from the catalog."""
     with patch("intentkit.models.llm.config") as mock_config:
         mock_config.openai_api_key = None
         mock_config.google_api_key = None
@@ -188,10 +188,10 @@ def test_csv_loads_cached_input_price_for_claude():
 
         models = load_default_llm_models()
 
-    claude = models.get("openrouter:anthropic/claude-sonnet-4.6")
+    claude = models.get("openrouter:anthropic/claude-sonnet-5")
     assert claude is not None
-    assert claude.cached_input_price == Decimal("0.3")
-    assert claude.input_price == Decimal("3")
+    assert claude.cached_input_price == Decimal("0.2")
+    assert claude.input_price == Decimal("2")
 
 
 def test_csv_cached_input_price_for_deepseek():
@@ -219,7 +219,7 @@ def test_csv_cached_input_price_for_deepseek():
 
 
 def test_csv_cached_input_price_for_grok4():
-    """Grok 4.20 (non-reasoning) should have cached_input_price=0.125."""
+    """Grok 4.20 (non-reasoning) should have cached_input_price=0.2."""
     with patch("intentkit.models.llm.config") as mock_config:
         mock_config.openai_api_key = None
         mock_config.google_api_key = None
@@ -238,4 +238,4 @@ def test_csv_cached_input_price_for_grok4():
 
     grok4 = models.get("xai:grok-4.20-non-reasoning")
     assert grok4 is not None
-    assert grok4.cached_input_price == Decimal("0.125")
+    assert grok4.cached_input_price == Decimal("0.2")

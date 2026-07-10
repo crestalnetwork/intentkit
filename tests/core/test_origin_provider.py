@@ -63,10 +63,15 @@ def test_origin_provider_loaded_from_catalog():
     assert kimi is not None
     assert kimi.origin_provider == "moonshotai/int4"
 
-    # Unlocked OpenRouter models leave routing to OpenRouter.
-    grok = models.get("openrouter:x-ai/grok-4.3")
+    grok = models.get("openrouter:x-ai/grok-4.5")
     assert grok is not None
-    assert grok.origin_provider is None
+    assert grok.origin_provider == "xai"
+
+    # Unlocked OpenRouter models (no first-party endpoint) leave routing
+    # to OpenRouter.
+    glm_flash = models.get("openrouter:z-ai/glm-4.7-flash")
+    assert glm_flash is not None
+    assert glm_flash.origin_provider is None
 
 
 @pytest.mark.asyncio

@@ -130,11 +130,65 @@ def test_pick_default_model_different_providers_yield_different_models():
 # ── pick_lead_model ──────────────────────────────────────────────────
 
 
-def test_pick_lead_model_differs_from_default_on_google():
-    """The lead runs an upgraded model, so it must not match the per-agent
-    default when Google (the top provider for both) is configured."""
+def test_picker_entries_reference_live_catalog_ids():
+    """Every model a picker can return must be a live id in the raw catalog.
+
+    Guards against a retired id lingering in a preference list: legacy_ids
+    routing would silently mask the mistake and keep minting new agents
+    with a retired id.
+    """
+    from pathlib import Path
+
+    import yaml as pyyaml
+
+    import intentkit.models.llm as llm_module
+    from intentkit.models.llm_picker import (
+        _DEFAULT_FALLBACK_MODEL,
+        pick_tool_selector_model,
+    )
+
+    rows = pyyaml.safe_load(
+        (Path(llm_module.__file__).with_name("llm.yaml")).read_text(encoding="utf-8")
+    )
+    live_ids = {row["id"] for row in rows}
+
+    assert _DEFAULT_FALLBACK_MODEL in live_ids
+
+    provider_keys = [
+        "google_api_key",
+        "openai_api_key",
+        "openrouter_api_key",
+        "xai_api_key",
+        "deepseek_api_key",
+        "minimax_plan_api_key",
+        "mimo_plan_api_key",
+    ]
+    all_pickers = [pick_summarize_model, pick_default_model, *CATEGORY_PICKERS]
+    for key in provider_keys:
+        with mock_llm_config(**{key: "test-key"}):
+            for picker in all_pickers:
+                result = picker()
+                assert result in live_ids, (
+                    f"{picker.__name__} with only {key} returned {result!r}, "
+                    "which is not a live catalog id"
+                )
+            try:
+                result = pick_long_context_model()
+            except RuntimeError:
+                result = None
+            if result is not None:
+                assert result in live_ids
+            selector = pick_tool_selector_model()
+            if selector is not None:
+                assert selector in live_ids
+
+
+def test_pick_lead_model_on_google():
+    """The lead runs a flash model at least as strong as the per-agent
+    default; since Gemini 3 Flash retired, both land on 3.5 Flash."""
     with mock_llm_config(google_api_key="gk"):
-        assert pick_lead_model() != pick_default_model()
+        assert pick_lead_model() == "gemini-3.5-flash"
+        assert pick_default_model() == "gemini-3.5-flash"
 
 
 # ── pick_long_context_model ──────────────────────────────────────────

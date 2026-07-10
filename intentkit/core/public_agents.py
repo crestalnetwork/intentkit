@@ -16,7 +16,7 @@ from intentkit.config.db import get_session
 from intentkit.models.agent.core import AgentVisibility
 from intentkit.models.agent.db import AgentTable
 from intentkit.models.agent.user_input import AgentUpdate
-from intentkit.models.llm import AVAILABLE_MODELS
+from intentkit.models.llm import is_model_resolvable
 from intentkit.models.team import TeamMemberTable, TeamRole, TeamTable
 from intentkit.models.user import UserTable
 
@@ -29,13 +29,15 @@ TEAM_ID = "predefined"
 
 
 def _is_model_available(model_id: str) -> bool:
-    """Check if a model is available in the current deployment."""
+    """Check if a model resolves in the current deployment.
+
+    Uses the same resolution as ``LLMModelInfo.get`` so base-name and
+    ``legacy_ids`` routing count as available — anything the runtime would
+    resolve must not get a public agent archived here.
+    """
     if not model_id:
         return True  # Empty string triggers pick_default_model()
-    if model_id in AVAILABLE_MODELS:
-        return True
-    # Check by bare model ID (AVAILABLE_MODELS is keyed by provider:id)
-    return any(m.id == model_id for m in AVAILABLE_MODELS.values())
+    return is_model_resolvable(model_id)
 
 
 async def ensure_public_agent_prerequisites() -> None:

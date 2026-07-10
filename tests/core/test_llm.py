@@ -1,6 +1,29 @@
+from decimal import Decimal
 from unittest.mock import patch
 
-from intentkit.models.llm import LLMProvider, load_default_llm_models
+from intentkit.models.llm import (
+    LLMModelInfo,
+    LLMProvider,
+    build_model_id_index,
+    load_default_llm_models,
+)
+
+
+def _model_info(model_id: str, provider: LLMProvider, **overrides) -> LLMModelInfo:
+    """Minimal valid LLMModelInfo for index tests."""
+    attrs = {
+        "id": model_id,
+        "name": model_id,
+        "provider": provider,
+        "input_price": Decimal("1"),
+        "output_price": Decimal("2"),
+        "context_length": 100000,
+        "output_length": 8192,
+        "intelligence": 3,
+        "speed": 3,
+        **overrides,
+    }
+    return LLMModelInfo.model_validate(attrs)
 
 
 def test_llm_model_filtering():
@@ -112,14 +135,14 @@ def test_llm_model_filtering():
         models = load_default_llm_models()
 
         # Both native and OpenRouter variants should exist
-        gpt5mini_openai = models.get("openai:gpt-5.4-mini")
-        gpt5mini_openrouter = models.get("openrouter:openai/gpt-5.4-mini")
+        luna_openai = models.get("openai:gpt-5.6-luna")
+        luna_openrouter = models.get("openrouter:openai/gpt-5.6-luna")
 
-        assert gpt5mini_openai is not None
-        assert gpt5mini_openai.provider == LLMProvider.OPENAI
+        assert luna_openai is not None
+        assert luna_openai.provider == LLMProvider.OPENAI
 
-        assert gpt5mini_openrouter is not None
-        assert gpt5mini_openrouter.provider == LLMProvider.OPENROUTER
+        assert luna_openrouter is not None
+        assert luna_openrouter.provider == LLMProvider.OPENROUTER
 
     # Case 5: Only OpenRouter when vendor key is missing
     with patch("intentkit.models.llm.config") as mock_config:
@@ -140,12 +163,12 @@ def test_llm_model_filtering():
         models = load_default_llm_models()
 
         # Native variant should not exist
-        assert models.get("openai:gpt-5.4-mini") is None
+        assert models.get("openai:gpt-5.6-luna") is None
 
         # OpenRouter variant should exist
-        gpt5mini_or = models.get("openrouter:openai/gpt-5.4-mini")
-        assert gpt5mini_or is not None
-        assert gpt5mini_or.provider == LLMProvider.OPENROUTER
+        luna_or = models.get("openrouter:openai/gpt-5.6-luna")
+        assert luna_or is not None
+        assert luna_or.provider == LLMProvider.OPENROUTER
 
     # Case 6: MiMo Token Plan models load when only MIMO_PLAN key is set
     with patch("intentkit.models.llm.config") as mock_config:
@@ -175,11 +198,9 @@ def test_llm_model_filtering():
         assert mimo_v25.provider == LLMProvider.MIMO_PLAN
 
 
-def test_model_id_index_suffix_matching():
-    """Test that _MODEL_ID_INDEX includes base name entries for backward compat."""
+def test_model_id_index_suffix_and_legacy_matching():
+    """The id index covers base names after "/" and legacy_ids routing."""
 
-    # Models with slash in id (e.g. "openai/gpt-5.4-mini") should also be
-    # indexed by the base name ("gpt-5.4-mini") for legacy agent configs.
     with patch("intentkit.models.llm.config") as mock_config:
         mock_config.openai_api_key = None
         mock_config.google_api_key = None
@@ -197,15 +218,78 @@ def test_model_id_index_suffix_matching():
 
         models = load_default_llm_models()
 
-        # Build index the same way the module does
-        index: dict[str, list[str]] = {}
-        for key, model in models.items():
-            index.setdefault(model.id, []).append(key)
-            if "/" in model.id:
-                base = model.id.rsplit("/", 1)[1]
-                index.setdefault(base, []).append(key)
+        index = build_model_id_index(models)
 
-        # "gpt-5.4-mini" should resolve via suffix to the OpenRouter entry
-        assert "gpt-5.4-mini" in index
-        matching_keys = index["gpt-5.4-mini"]
-        assert any("openrouter:" in k for k in matching_keys)
+        # Models with slash in id (e.g. "openai/gpt-5.6-luna") should also be
+        # indexed by the base name ("gpt-5.6-luna") for legacy agent configs.
+        assert "gpt-5.6-luna" in index
+        assert any("openrouter:" in k for k in index["gpt-5.6-luna"])
+
+        # Every legacy id in the catalog routes to its successor and does not
+        # linger as a live model.
+        live_ids = {model.id for model in models.values()}
+        for key, model in models.items():
+            for legacy in model.legacy_ids:
+                assert legacy not in live_ids
+                assert key in index[legacy]
+
+        # Explicit regression pin for one retirement.
+        assert index.get("x-ai/grok-4.3") == ["openrouter:x-ai/grok-4.5"]
+
+
+def test_catalog_legacy_ids_are_disjoint():
+    """Raw catalog invariants, independent of configured providers.
+
+    Legacy ids must never collide with live ids or live base names, and no
+    legacy id may be claimed by two entries — otherwise old agents would
+    route to an arbitrary winner.
+    """
+    from pathlib import Path
+
+    import yaml as pyyaml
+
+    import intentkit.models.llm as llm_module
+
+    rows = pyyaml.safe_load(
+        (Path(llm_module.__file__).with_name("llm.yaml")).read_text(encoding="utf-8")
+    )
+    live = {row["id"] for row in rows}
+    live_bases = {row["id"].rsplit("/", 1)[1] for row in rows if "/" in row["id"]}
+    seen: set[str] = set()
+    for row in rows:
+        for legacy in row.get("legacy_ids", []):
+            assert legacy not in live, f"{legacy} is both legacy and live"
+            assert legacy not in live_bases, f"{legacy} collides with a live base name"
+            assert legacy not in seen, f"{legacy} claimed by multiple entries"
+            seen.add(legacy)
+
+
+def test_model_id_index_legacy_collision_ignored():
+    """A legacy id (or its base name) colliding with a live claim is ignored."""
+
+    live = _model_info("vendor/live-model", LLMProvider.OPENROUTER)
+    # Collides with the live full id, its base name, and — via the base name
+    # of a slash-prefixed legacy id — the live base name again.
+    usurper = _model_info(
+        "usurper",
+        LLMProvider.OPENAI,
+        legacy_ids=[
+            "vendor/live-model",
+            "live-model",
+            "other-vendor/live-model",
+            "gone-model",
+        ],
+    )
+    index = build_model_id_index(
+        {
+            "openrouter:vendor/live-model": live,
+            "openai:usurper": usurper,
+        }
+    )
+    # The live model keeps exclusive ownership of its id and base name.
+    assert index["vendor/live-model"] == ["openrouter:vendor/live-model"]
+    assert index["live-model"] == ["openrouter:vendor/live-model"]
+    # A non-colliding slash-prefixed legacy id still routes by full id...
+    assert index["other-vendor/live-model"] == ["openai:usurper"]
+    # ...and the genuinely retired id routes to the successor.
+    assert index["gone-model"] == ["openai:usurper"]
