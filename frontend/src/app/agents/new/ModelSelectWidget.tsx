@@ -110,7 +110,6 @@ export const ModelSelectWidget = (props: WidgetProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const [hoveredModel, setHoveredModel] = useState<LLMModelInfo | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-  const dropdownRef = useRef<HTMLDivElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
 
   const { data: models } = useQuery<LLMModelInfo[]>({
@@ -123,18 +122,6 @@ export const ModelSelectWidget = (props: WidgetProps) => {
     () => models?.filter((m) => m.enabled !== false) ?? [],
     [models],
   );
-
-  const grouped = useMemo(() => {
-    return enabledModels.reduce<Record<string, LLMModelInfo[]>>(
-      (acc, model) => {
-        const key = model.provider_name;
-        if (!acc[key]) acc[key] = [];
-        acc[key].push(model);
-        return acc;
-      },
-      {},
-    );
-  }, [enabledModels]);
 
   const selectedModel = useMemo(
     () => enabledModels.find((m) => m.id === value) ?? null,
@@ -231,56 +218,58 @@ export const ModelSelectWidget = (props: WidgetProps) => {
         aria-expanded={isOpen}
         aria-haspopup="listbox"
       >
-        <span className={value ? "" : "text-muted-foreground"}>
+        <span className={`truncate ${value ? "" : "text-muted-foreground"}`}>
           {selectedModel ? selectedModel.name : "Select..."}
         </span>
-        <svg
-          className={`h-4 w-4 opacity-50 transition-transform ${isOpen ? "rotate-180" : ""}`}
-          xmlns="http://www.w3.org/2000/svg"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        >
-          <path d="m6 9 6 6 6-6" />
-        </svg>
+        <span className="flex shrink-0 items-center gap-2">
+          {selectedModel && (
+            <span className="text-xs text-muted-foreground">
+              {selectedModel.provider_name}
+            </span>
+          )}
+          <svg
+            className={`h-4 w-4 opacity-50 transition-transform ${isOpen ? "rotate-180" : ""}`}
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="m6 9 6 6 6-6" />
+          </svg>
+        </span>
       </button>
 
       {/* Dropdown list */}
       {isOpen && (
         <div
-          ref={dropdownRef}
           className="absolute z-50 mt-1 w-full max-h-64 overflow-auto rounded-md border bg-popover text-popover-foreground shadow-md"
           role="listbox"
+          onMouseLeave={() => setHoveredModel(null)}
         >
-          {Object.entries(grouped).map(([providerName, providerModels]) => (
-            <div key={providerName}>
-              <div className="px-3 py-1.5 text-xs font-semibold text-muted-foreground bg-muted/50 sticky top-0">
-                {providerName}
-              </div>
-              {providerModels.map((model) => (
-                <div
-                  key={model.id}
-                  role="option"
-                  aria-selected={model.id === value}
-                  className={`px-3 py-2 text-sm cursor-pointer ${
-                    model.id === value
-                      ? "bg-accent text-accent-foreground"
-                      : "hover:bg-accent/50"
-                  } ${
-                    hoveredModel?.id === model.id && model.id !== value
-                      ? "bg-accent/50"
-                      : ""
-                  }`}
-                  onClick={() => handleSelect(model.id)}
-                  onMouseEnter={() => setHoveredModel(model)}
-                  onMouseLeave={() => setHoveredModel(null)}
-                >
-                  {model.name}
-                </div>
-              ))}
+          {enabledModels.map((model) => (
+            <div
+              key={model.id}
+              role="option"
+              aria-selected={model.id === value}
+              className={`flex items-center justify-between gap-2 px-3 py-2 text-sm cursor-pointer ${
+                model.id === value
+                  ? "bg-accent text-accent-foreground"
+                  : "hover:bg-accent/50"
+              } ${
+                hoveredModel?.id === model.id && model.id !== value
+                  ? "bg-accent/50"
+                  : ""
+              }`}
+              onClick={() => handleSelect(model.id)}
+              onMouseEnter={() => setHoveredModel(model)}
+            >
+              <span className="truncate">{model.name}</span>
+              <span className="shrink-0 text-xs text-muted-foreground">
+                {model.provider_name}
+              </span>
             </div>
           ))}
         </div>
