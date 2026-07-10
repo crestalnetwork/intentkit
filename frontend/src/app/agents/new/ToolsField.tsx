@@ -54,8 +54,8 @@ export function ToolsField(props: FieldProps<string[]>) {
         setSelected(next);
     };
 
-    // Sort by title; web3 toolsets go into a collapsed Advanced Settings
-    // group, which is hidden entirely until the team owns a wallet
+    // Sort by title; web3 toolsets go into a collapsible "Web3 Tools" group,
+    // which is hidden entirely until the team owns a wallet
     const sortedCategories = Object.entries(catalog).sort(
         ([keyA, a], [keyB, b]) =>
             (a.title || keyA).localeCompare(b.title || keyB)
@@ -117,6 +117,7 @@ export function ToolsField(props: FieldProps<string[]>) {
             {regularCategories.map(renderCategory)}
             {hasWallets && web3Categories.length > 0 && (
                 <AdvancedSection
+                    title="Web3 Tools"
                     defaultOpen={hasWeb3Selection}
                     bodyClassName="space-y-4"
                 >
