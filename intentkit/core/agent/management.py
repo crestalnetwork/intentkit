@@ -66,7 +66,12 @@ async def _validate_slug_unique(
 
 
 async def _validate_sub_agents(sub_agents: list[str]) -> None:
-    """Validate that all sub-agents exist and have a purpose defined."""
+    """Validate that all sub-agents exist.
+
+    Routing text is intentionally not required: the sub-agents prompt section
+    uses the optional public ``description``, and requiring it would block
+    wiring existing agents that never set one.
+    """
     for agent_ref in sub_agents:
         target = await get_agent_by_id_or_slug(agent_ref)
         if not target:
@@ -74,12 +79,6 @@ async def _validate_sub_agents(sub_agents: list[str]) -> None:
                 400,
                 "InvalidSubAgent",
                 f"Sub-agent '{agent_ref}' not found",
-            )
-        if not target.purpose:
-            raise IntentKitAPIError(
-                400,
-                "InvalidSubAgent",
-                f"Sub-agent '{agent_ref}' must have a purpose defined",
             )
 
 

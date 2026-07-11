@@ -270,10 +270,6 @@ async def patch_agent_endpoint(
 
     latest_agent, agent_data = await patch_agent(agent_id, agent)
 
-    # Invalidate lead cache when purpose changes, so lead agent rebuilds sub-agents list
-    if "purpose" in update_fields:
-        invalidate_lead_cache(team_id)
-
     if should_backfill_avatar:
         background_tasks.add_task(backfill_agent_avatar, agent_id)
 
@@ -363,19 +359,20 @@ async def publish_agent_endpoint(
 ) -> Response:
     """Publish a team agent.
 
-    The team UI only collects four public-info fields (description,
-    example_intro, examples, tags); ``fee_percentage`` is fixed at ``1`` for
-    every team publish and other public-info fields are not touched here.
+    The team UI only collects four fields (description, example_intro,
+    examples, tags); ``fee_percentage`` is fixed at ``1`` for every team
+    publish and other public-info fields are not touched here.
 
-    Sets visibility to PUBLIC and updates the listed public-info fields using
-    update semantics. The owning team's ``public_agent_limit`` is enforced
-    for newly published agents; re-publishing an already public agent always
-    succeeds.
+    Sets visibility to PUBLIC and updates the listed fields using update
+    semantics. The owning team's ``public_agent_limit`` is enforced for newly
+    published agents; re-publishing an already public agent always succeeds.
     """
     _user_id, team_id = auth
     agent = await get_team_agent(agent_id, team_id)
     latest_agent = await publish_agent(
-        agent_id=agent.id, public_info=body.to_public_info()
+        agent_id=agent.id,
+        public_info=body.to_public_info(),
+        description=body.description,
     )
     agent_data = await AgentData.get(latest_agent.id)
     agent_response = await AgentResponse.from_agent(latest_agent, agent_data)

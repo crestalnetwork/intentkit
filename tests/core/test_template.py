@@ -25,7 +25,7 @@ async def test_create_agent_from_template():
         "description": "A template agent",
         "model": "gpt-4o",
         "temperature": 0.5,
-        "prompt": "You are a template.",
+        "system_prompt": "You are a template.",
     }
 
     # Mock TemplateTable instance
@@ -93,7 +93,7 @@ async def test_create_agent_from_template():
         assert added_agent.model == "gpt-4o"
         assert agent.model == "gpt-4o"
         assert agent.temperature == 0.5
-        assert agent.prompt == "You are a template."
+        assert agent.system_prompt == "You are a template."
 
         # Verify commit and refresh
         assert mock_session.commit.called
@@ -115,7 +115,7 @@ async def test_create_agent_from_template_without_team():
         "description": "A template agent",
         "model": "gpt-4o",
         "temperature": 0.5,
-        "prompt": "You are a template.",
+        "system_prompt": "You are a template.",
     }
 
     # Mock TemplateTable instance
@@ -183,7 +183,7 @@ async def test_create_template_from_agent():
         description="Agent Description",
         model="gpt-4o",
         temperature=0.8,
-        prompt="You are a source agent.",
+        system_prompt="You are a source agent.",
         owner="owner_1",
         team_id="team_1",
         created_at=datetime.now(),
@@ -222,7 +222,7 @@ async def test_create_template_from_agent():
         assert added_template.name == agent.name
         assert added_template.model == agent.model
         assert added_template.temperature == agent.temperature
-        assert added_template.prompt == agent.prompt
+        assert added_template.system_prompt == agent.system_prompt
 
         assert mock_session.commit.called
         assert mock_session.refresh.called
@@ -242,7 +242,7 @@ async def test_render_agent():
         "picture": "template_pic.png",
         "model": "gpt-4-template",
         "temperature": 0.1,
-        "prompt": "Template Prompts",
+        "system_prompt": "Template Prompts",
     }
     mock_template_row = TemplateTable(**template_data)
 
@@ -252,7 +252,7 @@ async def test_render_agent():
         picture="agent_pic.png",  # Should KEEP agent's
         model="legacy-model",
         temperature=0.9,
-        prompt="Legacy Prompt",
+        system_prompt="Legacy Prompt",
         created_at=datetime.now(),
         updated_at=datetime.now(),
     )
@@ -284,7 +284,7 @@ async def test_render_agent():
         # Other core fields should be overwritten by template
         assert rendered_agent.model == "gpt-4-template"
         assert rendered_agent.temperature == 0.1
-        assert rendered_agent.prompt == "Template Prompts"
+        assert rendered_agent.system_prompt == "Template Prompts"
 
 
 @pytest.mark.asyncio

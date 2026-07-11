@@ -17,7 +17,7 @@ interface AgentCardProps {
 
 export function AgentCard({ agent }: AgentCardProps) {
   const displayName = agent.name || agent.id;
-  const displayDescription = agent.description || agent.purpose || "No description available";
+  const displayDescription = agent.description || "No description available";
   const resolvedImage = getImageUrl(agent.picture);
 
   // Extract active toolsets

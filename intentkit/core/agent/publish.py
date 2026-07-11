@@ -110,12 +110,19 @@ async def ensure_not_referenced_by_public_agent(
         )
 
 
-async def publish_agent(*, agent_id: str, public_info: AgentPublicInfo) -> "Agent":
+async def publish_agent(
+    *,
+    agent_id: str,
+    public_info: AgentPublicInfo,
+    description: str | None = None,
+) -> "Agent":
     """Mark an agent as public after merging in the supplied public info.
 
     Enforces the owning team's ``public_agent_limit`` before flipping
     visibility. Only fields explicitly provided in ``public_info`` are written
     so callers can update a single field (matches ``update_public_info``).
+    ``description`` is a core agent field collected by the publish form, so
+    it is written here alongside the public info when provided.
 
     Raises:
         IntentKitAPIError 404: agent missing.
@@ -177,6 +184,8 @@ async def publish_agent(*, agent_id: str, public_info: AgentPublicInfo) -> "Agen
                 )
 
         apply_public_info_update(db_agent, public_info)
+        if description is not None:
+            db_agent.description = description
         db_agent.visibility = AgentVisibility.PUBLIC
 
         await session.commit()

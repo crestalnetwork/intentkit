@@ -18,7 +18,7 @@ class AgentSummary(BaseModel):
     id: str
     name: str | None = None
     slug: str | None = None
-    purpose: str | None = None
+    description: str | None = None
     model: str | None = None
     visibility: int | None = None
     owner: str | None = None
@@ -36,7 +36,11 @@ class ListTeamAgents(LeadTool):
     """Tool to list all agents in the team."""
 
     name: str = "lead_list_team_agents"
-    description: str = "List all agents in the team with summary info: id, name, slug, purpose, model, visibility, owner, deployed_at, created_at."
+    description: str = (
+        "List all agents in the team with summary info: id, name, slug, "
+        "description, model, visibility, owner, deployed_at, created_at. "
+        "Use lead_get_team_agent for the full config."
+    )
     args_schema: ArgsSchema | None = NoArgsSchema
 
     @override
@@ -49,7 +53,7 @@ class ListTeamAgents(LeadTool):
                 id=a.id,
                 name=a.name,
                 slug=a.slug,
-                purpose=a.purpose,
+                description=a.description,
                 model=a.model,
                 visibility=a.visibility,
                 owner=a.owner,

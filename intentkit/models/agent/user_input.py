@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from datetime import datetime
 from typing import Annotated, Any, ClassVar
 
@@ -8,6 +9,11 @@ from pydantic import ConfigDict, field_validator
 from pydantic import Field as PydanticField
 
 from intentkit.models.agent.core import AgentCore, AgentVisibility
+
+# Forbidden markdown heading patterns, precompiled: these validators run on
+# every agent hydration and scan prompts up to 200k chars.
+_LEVEL1_HEADING = re.compile(r"^# ", re.MULTILINE)
+_LEVEL1_LEVEL2_HEADING = re.compile(r"^(# |## )", re.MULTILINE)
 
 
 class AgentUserInput(AgentCore):
@@ -144,29 +150,37 @@ class AgentUpdate(AgentUserInput):
         ),
     ] = None
 
+    @staticmethod
+    def _reject_headings(
+        v: str | None, pattern: re.Pattern[str], message: str
+    ) -> str | None:
+        """Reject text where any line matches the forbidden heading pattern."""
+        if v is not None and pattern.search(v):
+            raise ValueError(message)
+        return v
+
+    @field_validator("system_prompt")
+    @classmethod
+    def validate_no_level1_headings(cls, v: str | None) -> str | None:
+        """Validate that the text doesn't contain level 1 headings."""
+        return cls._reject_headings(
+            v,
+            _LEVEL1_HEADING,
+            "Level 1 headings (#) are not allowed. Please use level 2+ headings (##, ###, etc.) instead.",
+        )
+
     @field_validator(
-        "purpose",
-        "personality",
-        "principles",
-        "prompt",
-        "prompt_append",
         "extra_prompt",
         "sub_agent_prompt",
     )
     @classmethod
     def validate_no_level1_level2_headings(cls, v: str | None) -> str | None:
         """Validate that the text doesn't contain level 1 or level 2 headings."""
-        if v is None:
-            return v
-
-        import re
-
-        # Check if any line starts with # or ## followed by a space
-        if re.search(r"^(# |## )", v, re.MULTILINE):
-            raise ValueError(
-                "Level 1 and 2 headings (# and ##) are not allowed. Please use level 3+ headings (###, ####, etc.) instead."
-            )
-        return v
+        return cls._reject_headings(
+            v,
+            _LEVEL1_LEVEL2_HEADING,
+            "Level 1 and 2 headings (# and ##) are not allowed. Please use level 3+ headings (###, ####, etc.) instead.",
+        )
 
 
 class AgentCreate(AgentUpdate):

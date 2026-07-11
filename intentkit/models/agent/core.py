@@ -46,28 +46,15 @@ class AgentCore(BaseModel):
             description="Avatar of the agent",
         ),
     ] = None
-    purpose: Annotated[
+    description: Annotated[
         str | None,
         PydanticField(
             default=None,
-            description="Purpose or role of the agent",
-            max_length=20000,
-        ),
-    ] = None
-    personality: Annotated[
-        str | None,
-        PydanticField(
-            default=None,
-            description="Personality traits of the agent",
-            max_length=20000,
-        ),
-    ] = None
-    principles: Annotated[
-        str | None,
-        PydanticField(
-            default=None,
-            description="Principles or values of the agent",
-            max_length=20000,
+            description=(
+                "Short public summary of what the agent does, shown in agent "
+                "listings and used to describe it when wired as a sub-agent. "
+                "Not injected into the agent's own prompt."
+            ),
         ),
     ] = None
     # AI part
@@ -85,20 +72,12 @@ class AgentCore(BaseModel):
             return pick_default_model()
         return v
 
-    prompt: Annotated[
+    system_prompt: Annotated[
         str | None,
         PydanticField(
             default=None,
-            description="Base system prompt that defines the agent's behavior and capabilities",
-            max_length=20000,
-        ),
-    ] = None
-    prompt_append: Annotated[
-        str | None,
-        PydanticField(
-            default=None,
-            description="Additional system prompt that has higher priority than the base prompt",
-            max_length=20000,
+            description="System prompt that defines the agent's purpose, personality, principles, and behavior",
+            max_length=200000,
         ),
     ] = None
     temperature: Annotated[

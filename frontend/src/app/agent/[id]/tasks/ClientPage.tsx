@@ -208,7 +208,7 @@ export default function AgentTasksPage() {
             <div>
               <h1 className="text-xl font-bold">{displayName}</h1>
               <p className="text-sm text-muted-foreground line-clamp-1">
-                {agent?.purpose || "No description"}
+                {agent?.description || "No description"}
               </p>
             </div>
           </Link>

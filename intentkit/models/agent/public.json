@@ -4,13 +4,6 @@
   "title": "AgentPublicInfo",
   "description": "Public information of the agent",
   "properties": {
-    "description": {
-      "title": "Description",
-      "type": "string",
-      "description": "Description of the agent, for public view, not contained in prompt",
-      "x-group": "basic",
-      "x-placeholder": "Introduce your agent"
-    },
     "external_website": {
       "title": "External Website",
       "type": "string",

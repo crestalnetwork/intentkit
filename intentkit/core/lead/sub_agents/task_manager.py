@@ -7,6 +7,7 @@ from datetime import datetime, timezone
 
 from langchain_core.tools import BaseTool
 
+from intentkit.core.lead.constants import compose_system_prompt
 from intentkit.core.lead.tools.add_autonomous_task import (
     lead_add_autonomous_task_tool,
 )
@@ -39,7 +40,7 @@ def build_task_manager(team_id: str) -> Agent:
     """Build an in-memory Task Manager sub-agent."""
     now = datetime.now(timezone.utc)
 
-    prompt = (
+    rules = (
         "### Autonomous Tasks\n\n"
         "Tasks belong to the team and run on a cron schedule. Each run executes "
         "either directly on a pinned agent or through the team lead.\n\n"
@@ -77,22 +78,26 @@ def build_task_manager(team_id: str) -> Agent:
         "- Prefer disabling (`enabled=False`) over deleting for temporary pauses.\n"
     )
 
+    system_prompt = compose_system_prompt(
+        purpose=(
+            "Schedule and manage the team's autonomous (cron) tasks, including "
+            "which agent each task targets."
+        ),
+        principles=(
+            "1. Speak to users in their language, but use English in task configuration.\n"
+            "2. All changes are applied immediately.\n"
+            "3. Update is override — provide complete field values, not just changes."
+        ),
+        rules=rules,
+    )
+
     agent_data = {
         "id": f"team-{team_id}-task-manager",
         "owner": "system",
         "team_id": team_id,
         "name": "Task Manager",
-        "purpose": (
-            "Schedule and manage the team's autonomous (cron) tasks, including "
-            "which agent each task targets."
-        ),
-        "principles": (
-            "1. Speak to users in their language, but use English in task configuration.\n"
-            "2. All changes are applied immediately.\n"
-            "3. Update is override — provide complete field values, not just changes."
-        ),
         "model": pick_default_model(),
-        "prompt": prompt,
+        "system_prompt": system_prompt,
         "temperature": 0.2,
         "search_internet": False,
         "super_mode": False,

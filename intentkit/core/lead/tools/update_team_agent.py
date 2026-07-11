@@ -8,6 +8,7 @@ from langchain_core.tools import ArgsSchema
 from pydantic import BaseModel, Field
 
 from intentkit.core.agent.management import patch_agent
+from intentkit.core.lead.constants import SYSTEM_PROMPT_FIELD_DESCRIPTION
 from intentkit.core.lead.service import verify_agent_in_team
 from intentkit.core.lead.tools.base import LeadTool
 from intentkit.models.agent import AgentUpdate
@@ -18,14 +19,18 @@ class UpdateTeamAgentInput(BaseModel):
 
     agent_id: str = Field(description="The ID of the agent to update")
     name: str | None = Field(default=None, description="Display name")
-    purpose: str | None = Field(default=None, description="Purpose or role")
-    personality: str | None = Field(default=None, description="Personality traits")
-    principles: str | None = Field(default=None, description="Principles or values")
-    model: str | None = Field(default=None, description="LLM model ID")
-    prompt: str | None = Field(default=None, description="Base system prompt")
-    prompt_append: str | None = Field(
-        default=None, description="Additional system prompt"
+    system_prompt: str | None = Field(
+        default=None, description=SYSTEM_PROMPT_FIELD_DESCRIPTION, max_length=200000
     )
+    description: str | None = Field(
+        default=None,
+        max_length=1000,
+        description=(
+            "Short public summary of what the agent does; shown in agent "
+            "listings and used to describe it when wired as a sub-agent."
+        ),
+    )
+    model: str | None = Field(default=None, description="LLM model ID")
     temperature: float | None = Field(default=None, description="Temperature (0.0~2.0)")
     tools: list[str] | None = Field(
         default=None, description="List of enabled tool names"
@@ -98,12 +103,9 @@ class UpdateTeamAgent(LeadTool):
         self,
         agent_id: str,
         name: str | None = None,
-        purpose: str | None = None,
-        personality: str | None = None,
-        principles: str | None = None,
+        system_prompt: str | None = None,
+        description: str | None = None,
         model: str | None = None,
-        prompt: str | None = None,
-        prompt_append: str | None = None,
         temperature: float | None = None,
         tools: list[str] | None = None,
         slug: str | None = None,
@@ -133,12 +135,9 @@ class UpdateTeamAgent(LeadTool):
         update_data: dict[str, Any] = {}
         local_vars = {
             "name": name,
-            "purpose": purpose,
-            "personality": personality,
-            "principles": principles,
+            "system_prompt": system_prompt,
+            "description": description,
             "model": model,
-            "prompt": prompt,
-            "prompt_append": prompt_append,
             "temperature": temperature,
             "tools": tools,
             "slug": slug,
@@ -166,12 +165,6 @@ class UpdateTeamAgent(LeadTool):
         # AgentUpdate has name with default=None, so it's safe to omit
         agent_update = AgentUpdate.model_validate(update_data)
         updated_agent, _ = await patch_agent(agent_id, agent_update)
-
-        # Invalidate lead cache when purpose changes, so lead agent rebuilds sub-agents list
-        if purpose is not None:
-            from intentkit.core.lead.cache import invalidate_lead_cache
-
-            invalidate_lead_cache(context.team_id)
 
         return UpdateTeamAgentOutput(
             agent_id=updated_agent.id,

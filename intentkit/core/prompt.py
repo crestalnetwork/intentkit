@@ -87,7 +87,7 @@ def build_system_tools_section(agent: Agent, context: AgentContext) -> str:
 
 
 async def build_sub_agents_section(agent: Agent, context: AgentContext) -> str:
-    """Build sub-agents section listing available sub-agents and their purposes."""
+    """Build sub-agents section listing available sub-agents and their descriptions."""
     # call_agent is open to guests too: sub-agent runs recompute their own
     # access context per message, so delegation grants no extra privileges.
     if not agent.sub_agents:
@@ -102,8 +102,9 @@ async def build_sub_agents_section(agent: Agent, context: AgentContext) -> str:
 
     for agent_ref in agent.sub_agents:
         target = await get_agent_by_id_or_slug(agent_ref)
-        if target and target.purpose:
-            lines.append(f"- {agent_ref}: {target.purpose}\n")
+        if target:
+            suffix = f": {target.description}" if target.description else ""
+            lines.append(f"- {agent_ref}{suffix}\n")
 
     lines.append("\n")
 
@@ -197,19 +198,10 @@ async def _build_wallet_section(agent: Agent, context: AgentContext) -> str:
 
 
 def _build_agent_characteristics_section(agent: Agent) -> str:
-    """Build agent characteristics section (purpose, personality, principles, etc.)."""
-    sections = []
-
-    if agent.purpose:
-        sections.append(f"## Purpose\n\n{agent.purpose}")
-    if agent.personality:
-        sections.append(f"## Personality\n\n{agent.personality}")
-    if agent.principles:
-        sections.append(f"## Principles\n\n{agent.principles}")
-    if agent.prompt:
-        sections.append(f"## Initial Rules\n\n{agent.prompt}")
-
-    return "\n\n".join(sections) + ("\n\n" if sections else "")
+    """Build agent characteristics section from the agent's system prompt."""
+    if not agent.system_prompt:
+        return ""
+    return agent.system_prompt + "\n\n"
 
 
 async def _build_user_info_section(context: AgentContext) -> str:
@@ -265,7 +257,7 @@ async def build_agent_prompt(
     - Agent identity (name, ticker)
     - Social accounts (Telegram)
     - Wallet information
-    - Agent characteristics (purpose, personality, principles)
+    - Agent characteristics (the agent's system prompt)
     - Tools-specific guides
     - Extra prompt from template
 
@@ -283,7 +275,7 @@ async def build_agent_prompt(
         _build_agent_characteristics_section(agent),
         _build_social_accounts_section(agent, agent_data),
         await _build_wallet_section(agent, context),
-        "\n",  # Add spacing before characteristics
+        "\n",  # Trailing spacing before the sections appended below
     ]
 
     base_prompt = "".join(section for section in prompt_sections if section)
@@ -505,10 +497,5 @@ async def build_system_prompt(
     if agent.enable_long_term_memory:
         memory_section = await _build_memory_section(agent, context)
         final_system_prompt = f"{final_system_prompt}{memory_section}"
-
-    if agent.prompt_append:
-        final_system_prompt = (
-            f"{final_system_prompt}## Additional Instructions\n\n{agent.prompt_append}"
-        )
 
     return final_system_prompt

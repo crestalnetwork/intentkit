@@ -22,11 +22,7 @@ OPENROUTER_IMAGE_MODEL = "bytedance-seed/seedream-4.5"
 _PROMPT_FIELDS: list[tuple[str, str]] = [
     ("name", "Name"),
     ("description", "Description"),
-    ("purpose", "Purpose"),
-    ("personality", "Personality"),
-    ("principles", "Principles"),
-    ("prompt", "System Prompt"),
-    ("prompt_append", "Additional Prompt"),
+    ("system_prompt", "System Prompt"),
     ("extra_prompt", "Extra Prompt"),
 ]
 
@@ -254,12 +250,16 @@ async def select_model_and_generate(prompt: str) -> bytes | None:
 
 
 def build_agent_profile(agent_id: str, agent: Any) -> str:
-    """Extract prompt-related fields from an agent object and build a profile string."""
+    """Extract prompt-related fields from an agent object and build a profile string.
+
+    Fields are capped so a maximum-size system prompt (200k chars) doesn't
+    blow up the avatar-prompt LLM call — the gist is enough for an avatar.
+    """
     sections: list[str] = []
     for field_name, label in _PROMPT_FIELDS:
         value = getattr(agent, field_name, None)
         if value and isinstance(value, str) and value.strip():
-            sections.append(f"### {label}\n{value.strip()}")
+            sections.append(f"### {label}\n{value.strip()[:4000]}")
 
     if not sections:
         # Fallback: at least use the agent id

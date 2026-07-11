@@ -7,7 +7,7 @@ from typing import Annotated, ClassVar
 
 from pydantic import ConfigDict
 from pydantic import Field as PydanticField
-from sqlalchemy import Boolean, DateTime, String, func
+from sqlalchemy import Boolean, DateTime, String, Text, func
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -53,36 +53,16 @@ class TemplateTable(Base):
         nullable=True,
         comment="Avatar of the template",
     )
-    purpose: Mapped[str | None] = mapped_column(
-        String,
-        nullable=True,
-        comment="Purpose or role of the template",
-    )
-    personality: Mapped[str | None] = mapped_column(
-        String,
-        nullable=True,
-        comment="Personality traits of the template",
-    )
-    principles: Mapped[str | None] = mapped_column(
-        String,
-        nullable=True,
-        comment="Principles or values of the template",
-    )
     model: Mapped[str] = mapped_column(
         String,
         nullable=False,
         default=pick_default_model,
         comment="LLM of the template",
     )
-    prompt: Mapped[str | None] = mapped_column(
-        String,
+    system_prompt: Mapped[str | None] = mapped_column(
+        Text,
         nullable=True,
-        comment="Base system prompt that defines the template's behavior and capabilities",
-    )
-    prompt_append: Mapped[str | None] = mapped_column(
-        String,
-        nullable=True,
-        comment="Additional system prompt that has higher priority than the base prompt",
+        comment="System prompt that defines the template's purpose, personality, principles, and behavior",
     )
     temperature: Mapped[float | None] = mapped_column(
         nullable=True,
@@ -180,13 +160,6 @@ class Template(AgentCore):
         PydanticField(
             default=None,
             description="Team identifier of the template, used for access control",
-        ),
-    ]
-    description: Annotated[
-        str | None,
-        PydanticField(
-            default=None,
-            description="Description of the template",
         ),
     ]
     created_at: Annotated[

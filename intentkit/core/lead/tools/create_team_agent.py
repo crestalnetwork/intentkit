@@ -9,6 +9,7 @@ from langchain_core.tools import ArgsSchema
 from pydantic import BaseModel, Field
 
 from intentkit.core.agent.management import create_agent
+from intentkit.core.lead.constants import SYSTEM_PROMPT_FIELD_DESCRIPTION
 from intentkit.core.lead.tools.base import LeadTool
 from intentkit.models.agent import AgentCreate, AgentVisibility
 
@@ -20,14 +21,18 @@ class CreateTeamAgentInput(BaseModel):
 
     name: str = Field(description="Display name of the agent")
     slug: str = Field(description="URL-friendly slug", min_length=3, max_length=20)
-    purpose: str = Field(description="Purpose or role of the agent")
-    personality: str | None = Field(default=None, description="Personality traits")
-    principles: str | None = Field(default=None, description="Principles or values")
-    model: str | None = Field(default=None, description="LLM model ID")
-    prompt: str | None = Field(default=None, description="Base system prompt")
-    prompt_append: str | None = Field(
-        default=None, description="Additional system prompt"
+    system_prompt: str = Field(
+        description=SYSTEM_PROMPT_FIELD_DESCRIPTION, max_length=200000
     )
+    description: str | None = Field(
+        default=None,
+        max_length=1000,
+        description=(
+            "Short public summary of what the agent does; shown in agent "
+            "listings and used to describe it when wired as a sub-agent."
+        ),
+    )
+    model: str | None = Field(default=None, description="LLM model ID")
     temperature: float | None = Field(default=None, description="Temperature (0.0~2.0)")
     tools: list[str] | None = Field(
         default=None, description="List of enabled tool names"
@@ -74,13 +79,10 @@ class CreateTeamAgent(LeadTool):
     async def _arun(
         self,
         name: str,
-        purpose: str,
+        system_prompt: str,
         slug: str,
-        personality: str | None = None,
-        principles: str | None = None,
+        description: str | None = None,
         model: str | None = None,
-        prompt: str | None = None,
-        prompt_append: str | None = None,
         temperature: float | None = None,
         tools: list[str] | None = None,
         search_internet: bool | None = None,
@@ -96,17 +98,15 @@ class CreateTeamAgent(LeadTool):
         context = self.get_context()
         assert context.team_id is not None
 
-        agent_data: dict[str, Any] = {"name": name, "slug": slug, "purpose": purpose}
-        if personality is not None:
-            agent_data["personality"] = personality
-        if principles is not None:
-            agent_data["principles"] = principles
+        agent_data: dict[str, Any] = {
+            "name": name,
+            "slug": slug,
+            "system_prompt": system_prompt,
+        }
+        if description is not None:
+            agent_data["description"] = description
         if model is not None:
             agent_data["model"] = model
-        if prompt is not None:
-            agent_data["prompt"] = prompt
-        if prompt_append is not None:
-            agent_data["prompt_append"] = prompt_append
         if temperature is not None:
             agent_data["temperature"] = temperature
         if tools is not None:

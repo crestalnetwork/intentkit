@@ -57,7 +57,7 @@ export default function DiscoverAgentsPage() {
                 </Badge>
               </div>
               <p className="text-sm text-muted-foreground line-clamp-2 mt-1">
-                {agent.description || agent.purpose || "No description"}
+                {agent.description || "No description"}
               </p>
             </div>
           </div>

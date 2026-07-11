@@ -112,10 +112,8 @@ async def sync_public_agents() -> None:
     logger.info("Syncing %d public agent definitions...", len(yaml_files))
 
     # Parse and validate all YAML files first
-    # Each entry: (slug, AgentUpdate, hash, description, tags)
-    agents_to_sync: list[
-        tuple[str, AgentUpdate, str, str | None, list[str] | None]
-    ] = []
+    # Each entry: (slug, AgentUpdate, hash, tags)
+    agents_to_sync: list[tuple[str, AgentUpdate, str, list[str] | None]] = []
     for yaml_file in yaml_files:
         try:
             with open(yaml_file) as f:
@@ -128,9 +126,8 @@ async def sync_public_agents() -> None:
             # Hash from validated model ensures consistency with what gets written
             new_hash = agent_update.hash()
             # Fields on AgentTable but not AgentUpdate, extract separately
-            description = data.get("description")
             tags = data.get("tags")
-            agents_to_sync.append((slug, agent_update, new_hash, description, tags))
+            agents_to_sync.append((slug, agent_update, new_hash, tags))
         except Exception:
             logger.exception("Failed to parse public agent from %s", yaml_file.name)
 
@@ -174,7 +171,7 @@ async def sync_public_agents() -> None:
             )
         taken_slugs: set[str] = {row[0] for row in slug_result.all() if row[0]}
 
-        for slug, agent_update, new_hash, description, tags in agents_to_sync:
+        for slug, agent_update, new_hash, tags in agents_to_sync:
             existing = existing_by_slug.get(slug)
             model_available = _is_model_available(agent_update.model)
 
@@ -212,8 +209,6 @@ async def sync_public_agents() -> None:
             if existing:
                 for key, value in update_data.items():
                     setattr(existing, key, value)
-                if description is not None:
-                    existing.description = description
                 if tags is not None:
                     existing.tags = tags
                 existing.version = new_hash
@@ -239,8 +234,6 @@ async def sync_public_agents() -> None:
                 db_agent.version = new_hash
                 db_agent.deployed_at = func.now()
                 db_agent.visibility = AgentVisibility.PUBLIC
-                if description is not None:
-                    db_agent.description = description
                 if tags is not None:
                     db_agent.tags = tags
                 session.add(db_agent)
@@ -263,7 +256,7 @@ async def sync_public_agents() -> None:
         # Collect agent IDs for auto-subscription before leaving the session.
         # ORM objects become detached after session close, so we capture IDs now.
         synced_agent_ids: list[str] = []
-        for slug, _agent_update, _new_hash, _description, _tags in agents_to_sync:
+        for slug, _agent_update, _new_hash, _tags in agents_to_sync:
             existing = existing_by_slug.get(slug)
             if existing:
                 synced_agent_ids.append(existing.id)

@@ -4,7 +4,7 @@ from datetime import UTC, datetime
 from decimal import Decimal
 from typing import Any
 
-from sqlalchemy import Boolean, DateTime, Float, Integer, Numeric, String, func
+from sqlalchemy import Boolean, DateTime, Float, Integer, Numeric, String, Text, func
 from sqlalchemy.dialects.postgresql import ARRAY, JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -27,37 +27,21 @@ class AgentUserInputColumns:
         nullable=True,
         comment="Picture of the agent",
     )
-    purpose: Mapped[str | None] = mapped_column(
+    description: Mapped[str | None] = mapped_column(
         String,
         nullable=True,
-        comment="Purpose or role of the agent",
+        comment="Short public summary of the agent, shown in listings and sub-agent references",
     )
-    personality: Mapped[str | None] = mapped_column(
-        String,
-        nullable=True,
-        comment="Personality traits of the agent",
-    )
-    principles: Mapped[str | None] = mapped_column(
-        String,
-        nullable=True,
-        comment="Principles or values of the agent",
-    )
-
     # AI model configuration fields from AgentCore
     model: Mapped[str] = mapped_column(
         String,
         nullable=False,
         comment="AI model identifier to be used by this agent for processing requests.",
     )
-    prompt: Mapped[str | None] = mapped_column(
-        String,
+    system_prompt: Mapped[str | None] = mapped_column(
+        Text,
         nullable=True,
-        comment="Base system prompt that defines the agent's behavior and capabilities",
-    )
-    prompt_append: Mapped[str | None] = mapped_column(
-        String,
-        nullable=True,
-        comment="Additional system prompt that has higher priority than the base prompt",
+        comment="System prompt that defines the agent's purpose, personality, principles, and behavior",
     )
     temperature: Mapped[float | None] = mapped_column(
         Float,
@@ -237,11 +221,6 @@ class AgentTable(Base, AgentUserInputColumns):
     )
 
     # Fields moved from AgentUserInputColumns that are no longer in AgentUserInput
-    description: Mapped[str | None] = mapped_column(
-        String,
-        nullable=True,
-        comment="Description of the agent, for public view, not contained in prompt",
-    )
     external_website: Mapped[str | None] = mapped_column(
         String,
         nullable=True,

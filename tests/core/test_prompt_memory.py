@@ -107,11 +107,7 @@ class TestBuildSystemPromptMemory:
         agent.is_post_enabled = True
         agent.tools = None
         agent.telegram_entrypoint_enabled = False
-        agent.purpose = None
-        agent.personality = None
-        agent.principles = None
-        agent.prompt = None
-        agent.prompt_append = None
+        agent.system_prompt = None
         agent.extra_prompt = None
         agent.sub_agents = None
         return agent
@@ -235,6 +231,20 @@ class TestBuildSystemPromptMemory:
 
         assert "## Memory" not in result
 
+    @pytest.mark.asyncio
+    async def test_agent_system_prompt_rendered(self):
+        agent = self._make_agent(enable_long_term_memory=False)
+        agent.system_prompt = "## Purpose\n\nBe helpful.\n\n## Principles\n\nBe kind."
+        context = self._make_context(user_id="user-1")
+        agent_data = MagicMock()
+        agent_data.telegram_id = None
+
+        with self._config_patch():
+            result = await build_system_prompt(agent, agent_data, context)
+
+        assert "## Purpose\n\nBe helpful." in result
+        assert "## Principles\n\nBe kind." in result
+
 
 class TestSystemToolInstances:
     """Test that system tool singleton instances are correctly initialized."""
@@ -293,7 +303,7 @@ class TestSubAgentsPromptSection:
         context.is_own_team = False
 
         target_agent = MagicMock()
-        target_agent.purpose = "Help with tasks"
+        target_agent.description = "Help with tasks"
 
         with patch(
             "intentkit.core.agent.queries.get_agent_by_id_or_slug",
@@ -312,7 +322,7 @@ class TestSubAgentsPromptSection:
         agent.sub_agent_prompt = None
 
         target_agent = MagicMock()
-        target_agent.purpose = "Help with tasks"
+        target_agent.description = "Help with tasks"
 
         context = MagicMock(spec=AgentContext)
         context.is_own_team = True
@@ -329,13 +339,13 @@ class TestSubAgentsPromptSection:
         assert "helper-bot" in result
 
     @pytest.mark.asyncio
-    async def test_sub_agents_section_includes_purpose(self):
+    async def test_sub_agents_section_includes_description(self):
         agent = MagicMock()
         agent.sub_agents = ["helper-bot"]
         agent.sub_agent_prompt = None
 
         target_agent = MagicMock()
-        target_agent.purpose = "Help with complex tasks"
+        target_agent.description = "Help with complex tasks"
 
         context = MagicMock(spec=AgentContext)
         context.is_own_team = True
@@ -356,7 +366,7 @@ class TestSubAgentsPromptSection:
         agent.sub_agent_prompt = "Always delegate math questions."
 
         target_agent = MagicMock()
-        target_agent.purpose = "Math helper"
+        target_agent.description = "Math helper"
 
         context = MagicMock(spec=AgentContext)
         context.is_own_team = True
@@ -382,11 +392,7 @@ class TestSubAgentsPromptSection:
         agent.tools = None
         agent.telegram_entrypoint_enabled = False
         agent.wallet_id = None
-        agent.purpose = None
-        agent.personality = None
-        agent.principles = None
-        agent.prompt = None
-        agent.prompt_append = None
+        agent.system_prompt = None
         agent.extra_prompt = None
         agent.sub_agents = ["helper-bot"]
         agent.sub_agent_prompt = None
@@ -403,7 +409,7 @@ class TestSubAgentsPromptSection:
         context.team_id = "team-1"
 
         target_agent = MagicMock()
-        target_agent.purpose = "Help with tasks"
+        target_agent.description = "Help with tasks"
 
         with (
             patch(

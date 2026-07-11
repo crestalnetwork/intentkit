@@ -54,9 +54,9 @@ async def render_agent(agent: Agent) -> Agent:
     """Render an agent by applying its template's AgentCore fields.
 
     This function reads the template_id from the agent, fetches the template,
-    and overlays the template's AgentCore fields onto the agent. The `name`
-    and `picture` fields are only overwritten if the agent doesn't already
-    have them set.
+    and overlays the template's AgentCore fields onto the agent. The `name`,
+    `picture`, and `description` fields are only overwritten if the agent
+    doesn't already have them set.
 
     Args:
         agent: The agent to render with template data
@@ -100,8 +100,8 @@ async def render_agent(agent: Agent) -> Agent:
     for field_name in AgentCore.model_fields:
         template_value = getattr(template, field_name, None)
 
-        # Special handling for name and picture: only overwrite if agent doesn't have them
-        if field_name in ("name", "picture"):
+        # Special handling for identity fields: only overwrite if agent doesn't have them
+        if field_name in ("name", "picture", "description"):
             current_value = getattr(agent, field_name, None)
             if current_value is not None:
                 # Agent already has this field, don't overwrite

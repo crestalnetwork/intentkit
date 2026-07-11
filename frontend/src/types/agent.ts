@@ -7,13 +7,8 @@ export interface Agent {
   name: string | null;
   slug: string | null;
   picture: string | null;
-  purpose: string | null;
   description: string | null;
-  personality: string | null;
-  principles: string | null;
   model: string;
-  prompt: string | null;
-  prompt_append: string | null;
   temperature: number | null;
   frequency_penalty: number | null;
   presence_penalty: number | null;

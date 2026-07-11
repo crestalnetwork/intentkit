@@ -77,6 +77,13 @@
       "x-group": "basic",
       "x-component": "picture-upload"
     },
+    "description": {
+      "title": "Description",
+      "type": "string",
+      "description": "Short public summary of what the agent does, shown in agent listings and used to describe it when wired as a sub-agent. Not injected into the agent's own prompt.",
+      "x-group": "basic",
+      "x-placeholder": "Introduce your agent"
+    },
     "model": {
       "title": "AI Model",
       "type": "string",
@@ -84,68 +91,18 @@
       "x-component": "category-select",
       "x-group": "llm"
     },
-    "purpose": {
-      "title": "Purpose",
+    "system_prompt": {
+      "title": "System Prompt",
       "type": "string",
-      "description": "Tell the agent what's its purpose and what needs should it serve.",
-      "maxLength": 20000,
-      "pattern": "^(([^#].*)|#[^# ].*|#{3,}[ ].*|$)(\n(([^#].*)|#[^# ].*|#{3,}[ ].*|$))*$",
+      "description": "Define the agent's purpose, personality, principles, knowledge, and behavior. Markdown is supported; organize sections with level 2+ headings (##, ###).",
+      "maxLength": 200000,
+      "pattern": "^(([^#].*)|#[^# ].*|#{2,}[ ].*|$)(\n(([^#].*)|#[^# ].*|#{2,}[ ].*|$))*$",
       "errorMessage": {
-        "pattern": "Level 1 and 2 headings (# and ##) are not allowed. Please use level 3+ headings (###, ####, etc.) instead."
+        "pattern": "Level 1 headings (#) are not allowed. Please use level 2+ headings (##, ###, etc.) instead."
       },
       "x-group": "llm",
       "x-str-type": "prompt",
-      "x-placeholder": "Enter agent purpose"
-    },
-    "personality": {
-      "title": "Personality",
-      "type": "string",
-      "description": "Tell the agent what personality it should have and how it should communicate with the users.",
-      "maxLength": 20000,
-      "pattern": "^(([^#].*)|#[^# ].*|#{3,}[ ].*|$)(\n(([^#].*)|#[^# ].*|#{3,}[ ].*|$))*$",
-      "errorMessage": {
-        "pattern": "Level 1 and 2 headings (# and ##) are not allowed. Please use level 3+ headings (###, ####, etc.) instead."
-      },
-      "x-group": "llm",
-      "x-str-type": "prompt",
-      "x-placeholder": "Enter agent personality"
-    },
-    "principles": {
-      "title": "Principles",
-      "type": "string",
-      "description": "Tell the agents what it should and shouldn't do when it interacts with users or tools.",
-      "maxLength": 20000,
-      "pattern": "^(([^#].*)|#[^# ].*|#{3,}[ ].*|$)(\n(([^#].*)|#[^# ].*|#{3,}[ ].*|$))*$",
-      "errorMessage": {
-        "pattern": "Level 1 and 2 headings (# and ##) are not allowed. Please use level 3+ headings (###, ####, etc.) instead."
-      },
-      "x-group": "llm",
-      "x-str-type": "prompt",
-      "x-placeholder": "Enter agent principles"
-    },
-    "prompt": {
-      "title": "Knowledge Base",
-      "type": "string",
-      "description": "Give the agent any additional knowledge. Text only.",
-      "maxLength": 20000,
-      "pattern": "^(([^#].*)|#[^# ].*|#{3,}[ ].*|$)(\n(([^#].*)|#[^# ].*|#{3,}[ ].*|$))*$",
-      "errorMessage": {
-        "pattern": "Level 1 and 2 headings (# and ##) are not allowed. Please use level 3+ headings (###, ####, etc.) instead."
-      },
-      "x-str-type": "prompt",
-      "x-group": "llm"
-    },
-    "prompt_append": {
-      "title": "Advanced",
-      "type": "string",
-      "description": "Additional system prompt that has higher priority than initial system prompt, only some models support this, if not supported, this part will append to the end of initial system prompt",
-      "maxLength": 20000,
-      "pattern": "^(([^#].*)|#[^# ].*|#{3,}[ ].*|$)(\n(([^#].*)|#[^# ].*|#{3,}[ ].*|$))*$",
-      "errorMessage": {
-        "pattern": "Level 1 and 2 headings (# and ##) are not allowed. Please use level 3+ headings (###, ####, etc.) instead."
-      },
-      "x-str-type": "prompt",
-      "x-group": "llm"
+      "x-placeholder": "Enter the agent system prompt"
     },
     "telegram_entrypoint_enabled": {
       "title": "Enable Telegram Communication",

@@ -7,6 +7,7 @@ from datetime import datetime, timezone
 
 from langchain_core.tools import BaseTool
 
+from intentkit.core.lead.constants import compose_system_prompt
 from intentkit.core.lead.tools.create_team_agent import create_team_agent_tool
 from intentkit.core.lead.tools.get_team_agent import get_team_agent_tool
 from intentkit.core.lead.tools.get_team_info import get_team_info_tool
@@ -89,17 +90,17 @@ def build_agent_manager(team_id: str) -> Agent:
     """Build an in-memory Agent Manager sub-agent."""
     now = datetime.now(timezone.utc)
 
-    prompt = (
+    rules = (
         "### Workflow\n\n"
         "- Call `lead_list_team_agents` first when asked about existing agents.\n"
         "- Call `lead_get_team_agent` before updating to see current config.\n\n"
         "### Agent Creation\n\n"
         "Guide user through:\n"
-        "1. Name, slug, and purpose\n"
-        "2. Model — pick by purpose using the Model Selection section below.\n"
+        "1. Name, slug, a short description, and the system prompt\n"
+        "2. Model — pick by the agent's role using the Model Selection section below.\n"
         "3. Tools — ALWAYS call `lead_list_available_tools` first to see all "
         "available categories and individual tools. Pick only the tools the "
-        "agent needs based on its purpose. Keep under 20.\n"
+        "agent needs based on its role. Keep under 20.\n"
         "4. Additional settings as needed\n\n"
         + _model_selection_section()
         + "### Tool Configuration (IMPORTANT)\n\n"
@@ -130,10 +131,13 @@ def build_agent_manager(team_id: str) -> Agent:
         "the lead to route the request to `task-manager`.\n\n"
         "### Agent Fields Reference\n\n"
         "- `name`: Display name (max 50 chars)\n"
-        "- `purpose`, `personality`, `principles`: Agent character\n"
+        "- `description`: Short public summary shown in listings and used to "
+        "describe the agent when wired as a sub-agent\n"
         "- `model`: LLM model ID\n"
-        "- `prompt`: Base system prompt\n"
-        "- `prompt_append`: Additional system prompt (higher priority)\n"
+        "- `system_prompt`: System prompt defining the agent's purpose, "
+        "personality, principles, and behavior. Markdown; organize sections "
+        "with level 2+ headings (##, ###). Level 1 headings (#) are not "
+        "allowed.\n"
         "- `temperature`: Randomness (0.0~2.0, lower for rigorous tasks)\n"
         "- `tools`: Tool configurations dict (see format above)\n"
         "- `slug`: URL-friendly slug (immutable once set)\n"
@@ -146,19 +150,23 @@ def build_agent_manager(team_id: str) -> Agent:
         "- `visibility`: PRIVATE(0), TEAM(10), PUBLIC(20)\n"
     )
 
+    system_prompt = compose_system_prompt(
+        purpose="Create, configure, and update team agents.",
+        principles=(
+            "1. Speak to users in their language, but use English in agent and task configuration.\n"
+            "2. All changes are directly deployed.\n"
+            "3. Update is override — provide complete field values, not just changes."
+        ),
+        rules=rules,
+    )
+
     agent_data = {
         "id": f"team-{team_id}-agent-manager",
         "owner": "system",
         "team_id": team_id,
         "name": "Agent Manager",
-        "purpose": ("Create, configure, and update team agents."),
-        "principles": (
-            "1. Speak to users in their language, but use English in agent and task configuration.\n"
-            "2. All changes are directly deployed.\n"
-            "3. Update is override — provide complete field values, not just changes."
-        ),
         "model": pick_default_model(),
-        "prompt": prompt,
+        "system_prompt": system_prompt,
         "temperature": 0.2,
         "search_internet": False,
         "super_mode": False,

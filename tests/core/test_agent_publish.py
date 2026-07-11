@@ -173,8 +173,10 @@ async def test_publish_agent_under_limit_writes_public_info(
     session.scalar = AsyncMock(return_value=0)
     mock_agent_cls.model_validate.return_value = MagicMock()
 
-    public_info = AgentPublicInfo(description="Hello world", x402_price=0.5)
-    await publish_agent(agent_id="agent-1", public_info=public_info)
+    public_info = AgentPublicInfo(x402_price=0.5)
+    await publish_agent(
+        agent_id="agent-1", public_info=public_info, description="Hello world"
+    )
 
     assert db_agent.visibility == AgentVisibility.PUBLIC
     assert db_agent.description == "Hello world"
@@ -201,8 +203,10 @@ async def test_publish_agent_already_public_skips_quota(
     session.scalar = AsyncMock()  # Should never be called.
     mock_agent_cls.model_validate.return_value = MagicMock()
 
-    public_info = AgentPublicInfo(description="Updated")
-    await publish_agent(agent_id="agent-1", public_info=public_info)
+    public_info = AgentPublicInfo()
+    await publish_agent(
+        agent_id="agent-1", public_info=public_info, description="Updated"
+    )
 
     session.get.assert_not_awaited()
     session.scalar.assert_not_awaited()

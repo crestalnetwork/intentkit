@@ -42,7 +42,7 @@ def _make_existing_agent(**overrides):
         id="agent-1",
         owner="owner-1",
         slug="my-slug",
-        purpose="some purpose",
+        system_prompt="## Purpose\n\nsome purpose",
         team_id=None,
         visibility=None,
         archived_at=None,
@@ -136,7 +136,7 @@ class TestValidateSubAgents:
     async def test_all_valid(self, mock_get):
         from intentkit.core.agent.management import _validate_sub_agents
 
-        mock_get.return_value = MagicMock(purpose="do stuff")
+        mock_get.return_value = MagicMock()
         await _validate_sub_agents(["sub-1", "sub-2"])
         assert mock_get.call_count == 2
 
@@ -151,18 +151,6 @@ class TestValidateSubAgents:
         assert exc_info.value.status_code == 400
         assert exc_info.value.key == "InvalidSubAgent"
         assert "not found" in exc_info.value.message
-
-    @pytest.mark.asyncio
-    @patch(f"{MODULE}.get_agent_by_id_or_slug", new_callable=AsyncMock)
-    async def test_sub_agent_no_purpose(self, mock_get):
-        from intentkit.core.agent.management import _validate_sub_agents
-
-        mock_get.return_value = MagicMock(purpose=None)
-        with pytest.raises(IntentKitAPIError) as exc_info:
-            await _validate_sub_agents(["no-purpose-agent"])
-        assert exc_info.value.status_code == 400
-        assert exc_info.value.key == "InvalidSubAgent"
-        assert "purpose" in exc_info.value.message
 
 
 # ===========================================================================

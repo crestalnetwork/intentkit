@@ -99,7 +99,7 @@ async def test_simple_conversation() -> None:
         name="Simple Conversation Agent",
         model=MODEL,
         owner="system",
-        prompt="You are a helpful assistant. Reply concisely.",
+        system_prompt="You are a helpful assistant. Reply concisely.",
     )
     await create_agent(agent_input)
 
@@ -167,7 +167,7 @@ async def test_tool_call_current_time() -> None:
         name="Tool Agent",
         model=MODEL,
         owner="system",
-        prompt=prompt,
+        system_prompt=prompt,
         tools=[],
     )
     await create_agent(agent_input)
@@ -250,7 +250,7 @@ async def test_multi_turn_conversation() -> None:
         name="Multi-turn Agent",
         model=MODEL,
         owner="system",
-        prompt="You are a helpful assistant. Remember what the user tells you. Reply concisely.",
+        system_prompt="You are a helpful assistant. Remember what the user tells you. Reply concisely.",
     )
     await create_agent(agent_input)
 

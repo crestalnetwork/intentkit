@@ -58,7 +58,7 @@ async def test_create_agent_full_config():
         id="test-agent-full",
         name="Full Config Agent",
         model="gpt-4o-mini",
-        prompt="You are a helpful assistant.",
+        system_prompt="You are a helpful assistant.",
     )
     agent, _ = await create_agent(agent_data)
 
@@ -66,7 +66,7 @@ async def test_create_agent_full_config():
     assert agent.id == "test-agent-full"
     assert agent.name == "Full Config Agent"
     assert agent.model == "gpt-4o-mini"
-    assert agent.prompt == "You are a helpful assistant."
+    assert agent.system_prompt == "You are a helpful assistant."
 
 
 @pytest.mark.bdd
@@ -169,16 +169,16 @@ async def test_create_agent_with_valid_sub_agents():
     """
     Scenario: Create Agent with Valid Sub-Agents
 
-    Given a sub-agent with `id=sub-agent-helper` exists and has a purpose
+    Given a sub-agent with `id=sub-agent-helper` exists
     When I call `create_agent` with `sub_agents=["sub-agent-helper"]`
     Then the agent is created successfully with sub_agents set
     """
-    # Given: create the sub-agent with a purpose
+    # Given: create the sub-agent
     helper = AgentCreate(
         id="sub-agent-helper",
         name="Helper Agent",
         model="gpt-4o-mini",
-        purpose="Help with complex tasks",
+        system_prompt="## Purpose\n\nHelp with complex tasks",
     )
     await create_agent(helper)
 
@@ -193,37 +193,6 @@ async def test_create_agent_with_valid_sub_agents():
 
     # Then
     assert agent.sub_agents == ["sub-agent-helper"]
-
-
-@pytest.mark.bdd
-async def test_create_agent_with_invalid_sub_agents_no_purpose():
-    """
-    Scenario: Create Agent with Sub-Agent Missing Purpose
-
-    Given a sub-agent with `id=sub-agent-no-purpose` exists but has no purpose
-    When I call `create_agent` with `sub_agents=["sub-agent-no-purpose"]`
-    Then an `IntentKitAPIError` with `status_code=400` and `key=InvalidSubAgent` is raised
-    """
-    # Given
-    no_purpose = AgentCreate(
-        id="sub-agent-no-purpose",
-        name="No Purpose Agent",
-        model="gpt-4o-mini",
-    )
-    await create_agent(no_purpose)
-
-    # When/Then
-    with pytest.raises(IntentKitAPIError) as exc_info:
-        agent_data = AgentCreate(
-            id="sub-agent-parent-fail-1",
-            name="Parent Agent",
-            model="gpt-4o-mini",
-            sub_agents=["sub-agent-no-purpose"],
-        )
-        await create_agent(agent_data)
-
-    assert exc_info.value.status_code == 400
-    assert exc_info.value.key == "InvalidSubAgent"
 
 
 @pytest.mark.bdd

@@ -29,7 +29,7 @@ def _wechat_agent() -> Agent:
         created_at=now,
         owner="user_1",
         tools=None,
-        prompt="You are a helper.",
+        system_prompt="You are a helper.",
         temperature=0.7,
         visibility=AgentVisibility.PRIVATE,
         public_info_updated_at=now,

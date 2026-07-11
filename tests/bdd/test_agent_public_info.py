@@ -26,8 +26,8 @@ async def test_update_public_info_partial():
     Scenario: Update Public Info with Partial Fields
 
     Given a deployed agent with `id=pub-agent-1`
-    When I call `update_public_info` with only `description` and `ticker`
-    Then the agent's `description` and `ticker` are updated
+    When I call `update_public_info` with only `external_website` and `ticker`
+    Then the agent's `external_website` and `ticker` are updated
     And other public info fields remain at their defaults
     """
     # Given
@@ -40,7 +40,7 @@ async def test_update_public_info_partial():
 
     # When
     public_info = AgentPublicInfo(
-        description="A helpful trading bot",
+        external_website="https://trade.example.com",
         ticker="TRADE",
     )
     updated_agent = await update_public_info(
@@ -48,7 +48,7 @@ async def test_update_public_info_partial():
     )
 
     # Then
-    assert updated_agent.description == "A helpful trading bot"
+    assert updated_agent.external_website == "https://trade.example.com"
     assert updated_agent.ticker == "TRADE"
 
 
@@ -61,7 +61,7 @@ async def test_update_public_info_nonexistent_agent_fails():
     When I call `update_public_info`
     Then an `IntentKitAPIError` with `status_code=404` is raised
     """
-    public_info = AgentPublicInfo(description="Should fail")
+    public_info = AgentPublicInfo(ticker="FAIL")
 
     with pytest.raises(IntentKitAPIError) as exc_info:
         await update_public_info(agent_id="no-such-pub-agent", public_info=public_info)
@@ -74,10 +74,10 @@ async def test_override_public_info_resets_unset_fields():
     """
     Scenario: Override Public Info Resets Unset Fields to Defaults
 
-    Given a deployed agent with `id=pub-agent-2` that has `description` and `ticker` set
+    Given a deployed agent with `id=pub-agent-2` that has `example_intro` and `ticker` set
     When I call `override_public_info` with only `external_website`
     Then `external_website` is set
-    And `description` and `ticker` are reset to None (defaults)
+    And `example_intro` and `ticker` are reset to None (defaults)
     """
     # Given
     agent_data = AgentCreate(
@@ -90,7 +90,7 @@ async def test_override_public_info_resets_unset_fields():
     # First, set some fields
     await update_public_info(
         agent_id="pub-agent-2",
-        public_info=AgentPublicInfo(description="Initial desc", ticker="INIT"),
+        public_info=AgentPublicInfo(example_intro="Initial intro", ticker="INIT"),
     )
 
     # When: override with only external_website
@@ -101,7 +101,7 @@ async def test_override_public_info_resets_unset_fields():
 
     # Then
     assert overridden.external_website == "https://example.com"
-    assert overridden.description is None  # Reset
+    assert overridden.example_intro is None  # Reset
     assert overridden.ticker is None  # Reset
 
 
@@ -154,10 +154,10 @@ async def test_partial_update_preserves_existing_fields():
     """
     Scenario: Partial Update Preserves Previously Set Fields
 
-    Given a deployed agent with `id=pub-agent-4` that has `description` set
+    Given a deployed agent with `id=pub-agent-4` that has `example_intro` set
     When I call `update_public_info` with only `ticker`
     Then `ticker` is updated
-    And `description` remains unchanged from the first update
+    And `example_intro` remains unchanged from the first update
     """
     # Given
     agent_data = AgentCreate(
@@ -169,7 +169,7 @@ async def test_partial_update_preserves_existing_fields():
 
     await update_public_info(
         agent_id="pub-agent-4",
-        public_info=AgentPublicInfo(description="Persistent description"),
+        public_info=AgentPublicInfo(example_intro="Persistent intro"),
     )
 
     # When: update only ticker
@@ -180,7 +180,7 @@ async def test_partial_update_preserves_existing_fields():
 
     # Then
     assert updated_agent.ticker == "KEEP"
-    assert updated_agent.description == "Persistent description"
+    assert updated_agent.example_intro == "Persistent intro"
 
 
 @pytest.mark.bdd
@@ -205,7 +205,6 @@ async def test_public_info_updated_at_is_set():
     updated_agent = await update_public_info(
         agent_id="pub-agent-5",
         public_info=AgentPublicInfo(
-            description="Trigger timestamp",
             fee_percentage=Decimal("2.5"),
         ),
     )

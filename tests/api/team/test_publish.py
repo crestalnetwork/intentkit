@@ -154,8 +154,9 @@ class TestPublishAgentEndpoint:
         assert mock_publish_agent.await_args is not None
         kwargs = mock_publish_agent.await_args.kwargs
         assert kwargs["agent_id"] == "agent-1"
+        # description is a core agent field now, passed alongside public info.
+        assert kwargs["description"] == "A public description"
         public_info: AgentPublicInfo = kwargs["public_info"]
-        assert public_info.description == "A public description"
         assert public_info.example_intro == "Try these prompts:"
         assert public_info.examples == [_example("Greet")]
         assert public_info.tags == ["music"]

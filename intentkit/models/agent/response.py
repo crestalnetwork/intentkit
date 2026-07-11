@@ -27,10 +27,7 @@ class AgentResponse(Agent):
     )
 
     # Override privacy fields to exclude them from JSON schema
-    personality: SkipJsonSchema[str | None] = None
-    principles: SkipJsonSchema[str | None] = None
-    prompt: SkipJsonSchema[str | None] = None
-    prompt_append: SkipJsonSchema[str | None] = None
+    system_prompt: SkipJsonSchema[str | None] = None
     temperature: SkipJsonSchema[float | None] = None
     frequency_penalty: SkipJsonSchema[float | None] = None
     telegram_entrypoint_prompt: SkipJsonSchema[str | None] = None
@@ -160,10 +157,7 @@ class AgentResponse(Agent):
 
         # Remove privacy fields that might still be present
         privacy_fields = {
-            "personality",
-            "principles",
-            "prompt",
-            "prompt_append",
+            "system_prompt",
             "temperature",
             "frequency_penalty",
             "telegram_entrypoint_prompt",

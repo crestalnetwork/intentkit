@@ -50,7 +50,7 @@ async def list_public_agents(search: str | None = None, limit: int = 30) -> list
     """List public agents from across the platform.
 
     Returns agents with ``visibility >= PUBLIC`` that are not archived, newest
-    first. ``search`` filters by name/purpose substring (case-insensitive).
+    first. ``search`` filters by name/description substring (case-insensitive).
     """
     async with get_session() as db:
         stmt = select(AgentTable).where(
@@ -60,7 +60,7 @@ async def list_public_agents(search: str | None = None, limit: int = 30) -> list
         if search:
             like = f"%{search}%"
             stmt = stmt.where(
-                or_(AgentTable.name.ilike(like), AgentTable.purpose.ilike(like))
+                or_(AgentTable.name.ilike(like), AgentTable.description.ilike(like))
             )
         stmt = stmt.order_by(AgentTable.created_at.desc()).limit(limit)
         result = await db.scalars(stmt)

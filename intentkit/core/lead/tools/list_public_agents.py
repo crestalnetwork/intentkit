@@ -17,7 +17,7 @@ class ListPublicAgentsInput(BaseModel):
 
     search: str | None = Field(
         default=None,
-        description="Optional case-insensitive substring to filter by name or purpose.",
+        description="Optional case-insensitive substring to filter by name or description.",
     )
     limit: int = Field(
         default=30,
@@ -33,7 +33,7 @@ class PublicAgentSummary(BaseModel):
     id: str
     name: str | None = None
     slug: str | None = None
-    purpose: str | None = None
+    description: str | None = None
     model: str | None = None
     owner: str | None = None
     followed: bool = Field(description="Whether this team already follows the agent.")
@@ -72,7 +72,7 @@ class LeadListPublicAgents(LeadTool):
                 id=a.id,
                 name=a.name,
                 slug=a.slug,
-                purpose=a.purpose,
+                description=a.description,
                 model=a.model,
                 owner=a.owner,
                 followed=a.id in followed_ids,

@@ -7,6 +7,7 @@ from datetime import datetime, timezone
 
 from langchain_core.tools import BaseTool
 
+from intentkit.core.lead.constants import compose_system_prompt
 from intentkit.core.lead.tools.get_self_info import lead_get_self_info_tool
 from intentkit.core.lead.tools.update_self import lead_update_self_tool
 from intentkit.core.lead.tools.update_self_memory import lead_update_self_memory_tool
@@ -27,7 +28,7 @@ def build_self_updater(team_id: str) -> Agent:
     """Build an in-memory Self Updater sub-agent."""
     now = datetime.now(timezone.utc)
 
-    prompt = (
+    rules = (
         "### Workflow\n\n"
         "1. Call `lead_get_self_info` first to see the current configuration.\n"
         "2. Use `lead_update_self` to change name, avatar, or personality.\n"
@@ -39,19 +40,23 @@ def build_self_updater(team_id: str) -> Agent:
         "- Memory: information the lead agent should remember across conversations.\n"
     )
 
+    system_prompt = compose_system_prompt(
+        purpose="Update the lead agent's own name, avatar, personality, and memory.",
+        principles=(
+            "1. Speak to users in their language.\n"
+            "2. Always check current config before making changes.\n"
+            "3. Confirm what will be changed before updating."
+        ),
+        rules=rules,
+    )
+
     agent_data = {
         "id": f"team-{team_id}-self-updater",
         "owner": "system",
         "team_id": team_id,
         "name": "Self Updater",
-        "purpose": "Update the lead agent's own name, avatar, personality, and memory.",
-        "principles": (
-            "1. Speak to users in their language.\n"
-            "2. Always check current config before making changes.\n"
-            "3. Confirm what will be changed before updating."
-        ),
         "model": pick_default_model(),
-        "prompt": prompt,
+        "system_prompt": system_prompt,
         "temperature": 0.2,
         "search_internet": False,
         "super_mode": False,

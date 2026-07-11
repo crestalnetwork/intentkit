@@ -67,16 +67,6 @@ class AgentPublicInfo(BaseModel):
             },
         ),
     ] = 0.01
-    description: Annotated[
-        str | None,
-        PydanticField(
-            default=None,
-            description="Description of the agent, for public view, not contained in prompt",
-            json_schema_extra={
-                "x-placeholder": "Introduce your agent",
-            },
-        ),
-    ] = None
     external_website: Annotated[
         str | None,
         PydanticField(
@@ -175,8 +165,9 @@ class AgentPublicInfo(BaseModel):
 class AgentPublishInput(BaseModel):
     """Request body for publishing an agent to public.
 
-    Carries only the four user-collected public-info fields. Anything else
-    on ``AgentPublicInfo`` (ticker, token_*, x402_price, fee_percentage,
+    Carries only the four user-collected fields: ``description`` (a core
+    agent field) plus three public-info fields. Anything else on
+    ``AgentPublicInfo`` (ticker, token_*, x402_price, fee_percentage,
     public_extra, external_website) is intentionally not accepted here —
     callers should leave existing values on the agent untouched and let
     the platform fill in fee_percentage server-side.
@@ -216,10 +207,11 @@ class AgentPublishInput(BaseModel):
 
         Forces ``fee_percentage = 1`` and leaves all other public-info fields
         unset so existing values on the agent are preserved by the
-        partial-update merge in ``apply_public_info_update``.
+        partial-update merge in ``apply_public_info_update``. ``description``
+        is a core agent field, not public info — the publish flow writes it
+        separately.
         """
         return AgentPublicInfo(
-            description=self.description,
             example_intro=self.example_intro,
             examples=self.examples,
             tags=[t.value for t in self.tags] if self.tags is not None else None,

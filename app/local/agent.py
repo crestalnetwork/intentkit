@@ -187,10 +187,6 @@ async def patch_agent_endpoint(
 
     latest_agent, agent_data = await patch_agent(agent_id, agent)
 
-    # Invalidate lead cache when purpose changes, so lead agent rebuilds sub-agents list
-    if "purpose" in update_fields:
-        invalidate_lead_cache(latest_agent.team_id or "system")
-
     # backfill_agent_avatar re-reads the row and short-circuits if picture is
     # already set, so we can schedule unconditionally whenever the caller
     # didn't hand us one and skip a hot-path DB round-trip here.

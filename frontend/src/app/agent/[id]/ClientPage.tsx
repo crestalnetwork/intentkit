@@ -745,7 +745,7 @@ export default function AgentChatPage() {
                 )}
               </h1>
               <p className="text-sm text-muted-foreground line-clamp-1">
-                {agent.description || agent.purpose || "No description"}
+                {agent.description || "No description"}
               </p>
             </div>
           </Link>
