@@ -9,7 +9,7 @@ toolset = ToolsetMeta(
     title="WETH",
     description="Wrap and unwrap ETH to/from WETH (Wrapped ETH)",
     tags=["Crypto", "DeFi"],
-    web3=True,
+    wallet=True,
     icon="/tools/weth/weth.svg",
 )
 

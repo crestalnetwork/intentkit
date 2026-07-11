@@ -14,6 +14,7 @@ toolset = ToolsetMeta(
     title="CARV",
     description="Configuration for the CARV tool.",
     tags=["Analytics", "Crypto"],
+    web3=True,
     icon="/tools/carv/carv.webp",
 )
 

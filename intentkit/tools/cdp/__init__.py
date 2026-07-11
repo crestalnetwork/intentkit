@@ -15,7 +15,7 @@ toolset = ToolsetMeta(
     title="Wallet Operations",
     description="Basic wallet operations including balance checking, wallet details, and native token transfers. Works with any EVM-compatible wallet.",
     tags=["Crypto", "DeFi"],
-    web3=True,
+    wallet=True,
     icon="/tools/cdp/cdp.png",
 )
 

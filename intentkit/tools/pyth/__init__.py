@@ -9,6 +9,7 @@ toolset = ToolsetMeta(
     title="Pyth",
     description="Pyth oracle price data for crypto, equities, forex, and metals",
     tags=["Analytics", "Crypto", "DeFi"],
+    web3=True,
     icon="/tools/pyth/pyth.svg",
 )
 

@@ -10,7 +10,7 @@ toolset = ToolsetMeta(
     title="ERC20",
     description="ERC20 token balance, transfer, and lookup actions",
     tags=["Crypto", "DeFi"],
-    web3=True,
+    wallet=True,
     icon="/tools/erc20/erc20.svg",
 )
 

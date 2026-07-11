@@ -19,7 +19,7 @@ toolset = ToolsetMeta(
     title="OpenSea",
     description="Integration with OpenSea marketplace API for NFT collection data, listings, offers, events, and marketplace operations (buy, list, cancel, update)",
     tags=["NFT"],
-    web3=True,
+    wallet=True,
     icon="/tools/opensea/opensea.svg",
 )
 

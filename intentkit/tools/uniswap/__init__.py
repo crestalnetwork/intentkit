@@ -12,7 +12,7 @@ toolset = ToolsetMeta(
     title="Uniswap",
     description="Swap tokens and manage V3 liquidity positions on Uniswap DEX",
     tags=["DeFi"],
-    web3=True,
+    wallet=True,
     icon="/tools/uniswap/uniswap.svg",
 )
 

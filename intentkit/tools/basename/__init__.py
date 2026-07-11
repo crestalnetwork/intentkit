@@ -11,7 +11,7 @@ toolset = ToolsetMeta(
     title="Basename",
     description="Basename ENS-style name registration on Base network",
     tags=["Crypto", "Identity"],
-    web3=True,
+    wallet=True,
     icon="/tools/basename/basename.svg",
 )
 

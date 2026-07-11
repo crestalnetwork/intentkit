@@ -207,7 +207,7 @@ class TestOverrideAgent:
 
     @pytest.mark.asyncio
     @patch(f"{MODULE}.send_agent_notification")
-    @patch(f"{MODULE}._validate_web3_tools", new_callable=AsyncMock)
+    @patch(f"{MODULE}._validate_wallet_tools", new_callable=AsyncMock)
     @patch(f"{MODULE}.get_session")
     @patch(f"{MODULE}.get_agent", new_callable=AsyncMock)
     async def test_successful_override(
@@ -230,7 +230,7 @@ class TestOverrideAgent:
         mock_session.get = AsyncMock(return_value=db_agent)
         mock_session.scalar = AsyncMock(return_value=None)  # slug unique check
 
-        mock_validate_wallet.return_value = None  # web3 gating no-op
+        mock_validate_wallet.return_value = None  # wallet gating no-op
 
         agent_update = _make_agent_update(slug="my-slug")
 
@@ -278,7 +278,7 @@ class TestPatchAgent:
 
     @pytest.mark.asyncio
     @patch(f"{MODULE}.send_agent_notification")
-    @patch(f"{MODULE}._validate_web3_tools", new_callable=AsyncMock)
+    @patch(f"{MODULE}._validate_wallet_tools", new_callable=AsyncMock)
     @patch(f"{MODULE}.get_session")
     @patch(f"{MODULE}.get_agent", new_callable=AsyncMock)
     async def test_successful_patch(
@@ -301,7 +301,7 @@ class TestPatchAgent:
         mock_session.get = AsyncMock(return_value=db_agent)
         mock_session.scalar = AsyncMock(return_value=None)
 
-        mock_validate_wallet.return_value = None  # web3 gating no-op
+        mock_validate_wallet.return_value = None  # wallet gating no-op
 
         # Updating slug (same value) and tools via exclude_unset
         agent_update = _make_agent_update(slug="my-slug", tools=["http_get"])
@@ -356,7 +356,7 @@ class TestCreateAgent:
         agent_create.upstream_id = None
         agent_create.sub_agents = None
         agent_create.slug = None
-        # No tools set, so the real web3 gating is a no-op
+        # No tools set, so the real wallet gating is a no-op
         agent_create.tools = None
 
         with patch(f"{MODULE}.AgentTable") as mock_table:
@@ -368,7 +368,7 @@ class TestCreateAgent:
 
     @pytest.mark.asyncio
     @patch(f"{MODULE}.send_agent_notification")
-    @patch(f"{MODULE}._validate_web3_tools", new_callable=AsyncMock)
+    @patch(f"{MODULE}._validate_wallet_tools", new_callable=AsyncMock)
     @patch(f"{MODULE}.get_session")
     async def test_successful_creation(
         self, mock_get_session, mock_validate_wallet, mock_notify, agent_data_table
@@ -379,7 +379,7 @@ class TestCreateAgent:
         mock_get_session.return_value = session_ctx
         mock_session.scalar = AsyncMock(return_value=None)
 
-        mock_validate_wallet.return_value = None  # web3 gating no-op
+        mock_validate_wallet.return_value = None  # wallet gating no-op
 
         agent_create = _make_agent_create(owner="owner-1")
         agent_create.upstream_id = None

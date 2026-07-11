@@ -11,6 +11,7 @@ toolset = ToolsetMeta(
     title="AIXBT API",
     description="Cryptocurrency project data and analytics through the AIXBT API",
     tags=["Analytics", "Crypto", "Knowledge Base"],
+    web3=True,
     icon="/tools/aixbt/aixbt.jpg",
 )
 

@@ -161,14 +161,16 @@ def get_tool_catalog(*, available_only: bool = False) -> dict[str, dict[str, Any
 
 
 @lru_cache(maxsize=1)
-def get_web3_categories() -> frozenset[str]:
-    """Categories whose tools operate on team wallets (``web3`` in their meta).
+def get_wallet_categories() -> frozenset[str]:
+    """Categories whose tools operate on team wallets (``wallet`` in their meta).
 
     These are only selectable for agents whose team owns at least one
     wallet, and their tools take a ``wallet_address`` chosen by the agent.
+    Broader web3-themed categories (``web3`` without ``wallet``) are grouped
+    with them in pickers but carry none of these runtime requirements.
     """
     return frozenset(
-        category for category, entry in _load_catalog().items() if entry.meta.web3
+        category for category, entry in _load_catalog().items() if entry.meta.wallet
     )
 
 
@@ -183,11 +185,11 @@ def get_team_only_tool_names() -> frozenset[str]:
     )
 
 
-def filter_web3_tool_names(tool_names: list[str]) -> list[str]:
-    """The subset of the given tool names that belong to web3 categories."""
-    web3 = get_web3_categories()
+def filter_wallet_tool_names(tool_names: list[str]) -> list[str]:
+    """The subset of the given tool names that operate on team wallets."""
+    wallet = get_wallet_categories()
     index = get_tool_category_index()
-    return [name for name in tool_names if index.get(name) in web3]
+    return [name for name in tool_names if index.get(name) in wallet]
 
 
 @lru_cache(maxsize=1)

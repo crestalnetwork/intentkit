@@ -36,6 +36,9 @@ class McpServerDef:
     """Tags for catalog categorization."""
 
     web3: bool = False
+    """Whether the server belongs to the web3/crypto domain (grouping only)."""
+
+    wallet: bool = False
     """Whether the server's tools operate on team wallets."""
 
     icon: str | None = None
@@ -53,6 +56,7 @@ MCP_SERVERS: dict[str, McpServerDef] = {
         api_key_header="x-cg-demo-api-key",
         api_key_prefix=None,
         tags=["Crypto", "Market Data"],
+        web3=True,
         icon="/tools/mcp_coingecko/coingecko.svg",
     ),
 }

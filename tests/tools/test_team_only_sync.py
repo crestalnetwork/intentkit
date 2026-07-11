@@ -11,7 +11,7 @@ and compares it with the declared flag in both directions.
 import ast
 from pathlib import Path
 
-from intentkit.core.agent.tool_registry import get_tool_catalog, get_web3_categories
+from intentkit.core.agent.tool_registry import get_tool_catalog
 from intentkit.tools.base import collect_tool_classes, tool_field_default
 
 TOOLS_DIR = Path(__file__).resolve().parents[2] / "intentkit" / "tools"
@@ -97,7 +97,9 @@ def _signing_tool_names(category: str) -> set[str]:
 
 
 def test_signing_tools_are_marked_team_only():
-    web3 = get_web3_categories()
+    # Scan every category, not just wallet-flagged ones: a signing tool
+    # accidentally added to a themed (or unflagged) category must be caught
+    # too, or it would ship without the team_only guest guard.
     catalog = get_tool_catalog()
     flags = {}
     for cls in collect_tool_classes():
@@ -106,7 +108,7 @@ def test_signing_tools_are_marked_team_only():
             flags[name] = bool(tool_field_default(cls, "team_only"))
 
     problems = []
-    for category in sorted(web3):
+    for category in sorted(catalog):
         signing = _signing_tool_names(category)
         for tool_name in catalog[category]["tools"]:
             expected = tool_name in signing

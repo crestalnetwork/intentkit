@@ -1,6 +1,6 @@
 """Tests for the class-derived tool catalog."""
 
-from intentkit.core.agent.tool_registry import get_tool_catalog
+from intentkit.core.agent.tool_registry import get_tool_catalog, get_wallet_categories
 
 
 def test_get_tool_catalog_returns_categories():
@@ -28,10 +28,24 @@ def test_ui_tools_absent_from_catalog():
 
 
 def test_web3_categories_flagged():
-    """Web3 toolsets carry x-web3 so pickers can gate them on team wallets."""
+    """Web3 toolsets carry x-web3 so pickers can group them under Web3 Tools."""
     catalog = get_tool_catalog()
+    # Wallet-operating toolsets are web3 by definition.
     assert catalog["erc20"].get("x-web3") is True
+    # Read/analytics crypto toolsets are web3-themed without wallet semantics.
+    assert catalog["moralis"].get("x-web3") is True
     assert "x-web3" not in catalog["http"]
+
+
+def test_wallet_categories_are_wallet_operating_only():
+    """Only wallet-operating toolsets carry runtime wallet requirements."""
+    wallet = get_wallet_categories()
+    assert "erc20" in wallet
+    assert "cdp" in wallet
+    # Web3-themed data toolsets must not be wallet-gated.
+    assert "moralis" not in wallet
+    assert "dexscreener" not in wallet
+    assert "http" not in wallet
 
 
 def test_get_tool_catalog_has_no_empty_categories():

@@ -15,6 +15,7 @@ toolset = ToolsetMeta(
     title="ACP Commerce",
     description="Purchase products from ACP (Agentic Commerce Protocol) merchants using x402 crypto payments.",
     tags=["Commerce", "Crypto"],
+    web3=True,
     icon="/tools/acp/acp.png",
 )
 

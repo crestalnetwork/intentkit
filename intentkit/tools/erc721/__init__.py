@@ -10,7 +10,7 @@ toolset = ToolsetMeta(
     title="ERC721",
     description="ERC721 NFT management actions including balance checking, minting, and transfers",
     tags=["Crypto", "NFT"],
-    web3=True,
+    wallet=True,
     icon="/tools/erc721/erc721.svg",
 )
 

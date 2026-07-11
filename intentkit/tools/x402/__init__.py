@@ -11,7 +11,7 @@ toolset = ToolsetMeta(
     title="x402",
     description="Interact with other IntentKit agents through the x402 payment protocol.",
     tags=["Communication", "Infrastructure"],
-    web3=True,
+    wallet=True,
     icon="/tools/x402/x402.webp",
 )
 

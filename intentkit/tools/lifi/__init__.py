@@ -9,7 +9,7 @@ toolset = ToolsetMeta(
     title="LiFi Token Transfer",
     description="Cross-chain token transfer and swap capabilities using the LiFi protocol",
     tags=["DeFi"],
-    web3=True,
+    wallet=True,
     icon="/tools/lifi/lifi.png",
 )
 

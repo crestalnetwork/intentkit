@@ -15,7 +15,7 @@ toolset = ToolsetMeta(
     title="Morpho",
     description="Morpho protocol actions for vaults (deposit/withdraw) and Morpho Blue markets (collateral, borrow, repay)",
     tags=["DeFi"],
-    web3=True,
+    wallet=True,
     icon="/tools/morpho/morpho.svg",
 )
 

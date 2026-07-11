@@ -12,7 +12,7 @@ toolset = ToolsetMeta(
     title="PancakeSwap",
     description="Swap tokens and manage V3 liquidity positions on PancakeSwap DEX",
     tags=["DeFi"],
-    web3=True,
+    wallet=True,
     icon="/tools/pancakeswap/pancakeswap.png",
 )
 

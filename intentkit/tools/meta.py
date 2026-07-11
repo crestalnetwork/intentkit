@@ -36,8 +36,18 @@ class ToolsetMeta:
     """Grouping tags; the first tag is the primary group in the LLM catalog."""
 
     web3: bool = False
-    """Whether the tools operate on team wallets (selectable only when the
-    agent's team owns at least one wallet; tools take a ``wallet_address``)."""
+    """Whether the toolset belongs to the web3/crypto domain (on-chain data,
+    DeFi analytics, crypto markets, ...). Pickers group these under a
+    "Web3 Tools" section shown only when the team owns a wallet. Purely a
+    catalog/grouping flag; implies nothing about wallet usage at runtime."""
+
+    wallet: bool = False
+    """Whether the tools operate on team wallets: tools take a
+    ``wallet_address``, selecting them requires the team to own at least one
+    wallet, and the team's last wallet cannot be deleted while they are in
+    use. Wallet toolsets are web3 by definition — ``__post_init__`` forces
+    ``web3`` on, so metas set only ``wallet=True`` and every reader can
+    trust ``web3`` alone for grouping."""
 
     icon: str | None = None
     """Icon URL path served by the API, e.g. ``/tools/erc20/erc20.svg``."""
@@ -45,3 +55,8 @@ class ToolsetMeta:
     tools: dict[str, ToolMeta] | None = None
     """Explicit catalog override. When None (the default), the catalog is
     derived from the package's ``IntentKitTool`` subclasses."""
+
+    def __post_init__(self) -> None:
+        if self.wallet and not self.web3:
+            # frozen dataclass: bypass the immutability guard for normalization
+            object.__setattr__(self, "web3", True)

@@ -14,6 +14,7 @@ toolset = ToolsetMeta(
     title="Dune",
     description="Dune tools for querying blockchain analytics data via the Dune API.",
     tags=["Analytics", "Crypto", "Knowledge Base"],
+    web3=True,
     icon="/tools/dune/dune.png",
 )
 

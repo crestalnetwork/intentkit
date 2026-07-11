@@ -20,21 +20,22 @@ from .publish import (
     is_public_visibility,
 )
 from .queries import get_agent, get_agent_by_id_or_slug
-from .tool_registry import filter_web3_tool_names, sanitize_tools, validate_tools
+from .tool_registry import filter_wallet_tool_names, sanitize_tools, validate_tools
 
 logger = logging.getLogger(__name__)
 
 
-async def _validate_web3_tools(tools: list[str] | None, team_id: str | None) -> None:
-    """Reject web3 tools for teams that own no wallets.
+async def _validate_wallet_tools(tools: list[str] | None, team_id: str | None) -> None:
+    """Reject wallet-operating tools for teams that own no wallets.
 
-    Web3 tools operate on team wallets; without at least one wallet they can
-    never run, so they are not selectable.
+    Wallet tools operate on team wallets; without at least one wallet they
+    can never run, so they are not selectable. Web3-themed tools that only
+    read on-chain or market data carry no such requirement.
     """
     if not tools:
         return
-    web3_names = filter_web3_tool_names(tools)
-    if not web3_names:
+    wallet_names = filter_wallet_tool_names(tools)
+    if not wallet_names:
         return
     from intentkit.models.wallet import TeamWallet, wallet_owner_team
 
@@ -42,9 +43,11 @@ async def _validate_web3_tools(tools: list[str] | None, team_id: str | None) -> 
     if not wallets:
         raise IntentKitAPIError(
             400,
+            # Key predates the web3/wallet flag split; kept for API stability.
             "Web3ToolsRequireWallet",
-            "This team has no crypto wallets, so web3 tools cannot be enabled. "
-            "Create a wallet first in the Crypto Wallets page.",
+            "This team has no crypto wallets, so wallet-operating web3 tools "
+            "cannot be enabled. Create a wallet first in the Crypto Wallets "
+            "page.",
         )
 
 
@@ -162,8 +165,8 @@ async def override_agent(
     ):
         raise IntentKitAPIError(400, "SlugImmutable", "Slug cannot be changed once set")
 
-    # Web3 tools are only usable when the team owns at least one wallet
-    await _validate_web3_tools(agent.tools, existing_agent.team_id)
+    # Wallet-operating tools are only usable when the team owns a wallet
+    await _validate_wallet_tools(agent.tools, existing_agent.team_id)
 
     # Visibility invariants (override replaces every field)
     await _ensure_visibility_invariants(
@@ -255,9 +258,9 @@ async def patch_agent(
     ):
         raise IntentKitAPIError(400, "SlugImmutable", "Slug cannot be changed once set")
 
-    # Web3 tools are only usable when the team owns at least one wallet
+    # Wallet-operating tools are only usable when the team owns a wallet
     if "tools" in update_fields:
-        await _validate_web3_tools(update_fields["tools"], existing_agent.team_id)
+        await _validate_wallet_tools(update_fields["tools"], existing_agent.team_id)
 
     # Visibility invariants (patch changes only the provided fields)
     await _ensure_visibility_invariants(
@@ -350,8 +353,8 @@ async def create_agent(agent: AgentCreate) -> tuple[Agent, AgentData]:
     if agent.tools:
         validate_tools(agent.tools)
 
-    # Web3 tools are only usable when the team owns at least one wallet
-    await _validate_web3_tools(agent.tools, agent.team_id)
+    # Wallet-operating tools are only usable when the team owns a wallet
+    await _validate_wallet_tools(agent.tools, agent.team_id)
 
     async with get_session() as db:
         try:

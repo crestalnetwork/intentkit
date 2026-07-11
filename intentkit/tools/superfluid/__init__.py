@@ -10,7 +10,7 @@ toolset = ToolsetMeta(
     title="Superfluid",
     description="Superfluid streaming payment actions for continuous real-time token transfers",
     tags=["DeFi"],
-    web3=True,
+    wallet=True,
     icon="/tools/superfluid/superfluid.svg",
 )
 

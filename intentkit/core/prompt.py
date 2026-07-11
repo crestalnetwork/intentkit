@@ -147,27 +147,29 @@ def _build_social_accounts_section(agent: Agent, agent_data: AgentData) -> str:
 
 
 async def _build_wallet_section(agent: Agent, context: AgentContext) -> str:
-    """List the team's wallets when web3 tools are bound in this context.
+    """List the team's wallets when wallet-operating tools are bound here.
 
-    Agents do not own wallets. When at least one web3 tool survives the
-    per-request team_only filtering and the team owns wallets, every team
-    wallet is listed so the agent can choose which one to use by passing its
-    address to the tool. A guest whose agent carries only signing web3 tools
-    gets no section — those tools are not bound for them.
+    Agents do not own wallets. When at least one wallet-operating tool
+    survives the per-request team_only filtering and the team owns wallets,
+    every team wallet is listed so the agent can choose which one to use by
+    passing its address to the tool. Web3-themed tools that only read
+    on-chain or market data take no wallet and get no section. A guest whose
+    agent carries only signing tools gets no section either — those tools
+    are not bound for them.
     """
     from intentkit.core.agent.tool_registry import (
-        filter_web3_tool_names,
+        filter_wallet_tool_names,
         get_team_only_tool_names,
     )
     from intentkit.models.wallet import TeamWallet, wallet_owner_team
 
     if not agent.tools:
         return ""
-    web3_names = filter_web3_tool_names(agent.tools)
+    wallet_names = filter_wallet_tool_names(agent.tools)
     if not context.is_own_team:
         team_only = get_team_only_tool_names()
-        web3_names = [name for name in web3_names if name not in team_only]
-    if not web3_names:
+        wallet_names = [name for name in wallet_names if name not in team_only]
+    if not wallet_names:
         return ""
 
     wallets = await TeamWallet.list_for_team(wallet_owner_team(agent.team_id))
@@ -176,7 +178,7 @@ async def _build_wallet_section(agent: Agent, context: AgentContext) -> str:
 
     lines = [
         "## Team Wallets\n",
-        "Your team owns the following crypto wallets. Web3 tools take a "
+        "Your team owns the following crypto wallets. Wallet-operating tools take a "
         "`wallet_address` argument — pass the address of the wallet you "
         "want to use. Ask the user which wallet to use when it is unclear.\n",
     ]

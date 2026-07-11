@@ -12,6 +12,7 @@ toolset = ToolsetMeta(
     title="Token Tools",
     description="Token analysis tools powered by Moralis API",
     tags=["Analytics", "Crypto"],
+    web3=True,
     icon="/tools/portfolio/moralis.png",
 )
 

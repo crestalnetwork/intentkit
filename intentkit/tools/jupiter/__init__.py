@@ -8,6 +8,7 @@ toolset = ToolsetMeta(
     title="Jupiter Solana Integration",
     description="Swap and Price Check on Solana via Jupiter Aggregator",
     tags=["Crypto", "DeFi"],
+    web3=True,
     icon="/tools/jupiter/jupiter.png",
 )
 

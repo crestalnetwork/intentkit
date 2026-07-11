@@ -17,6 +17,7 @@ toolset = ToolsetMeta(
     title="Elfa",
     description="Integration with Elfa AI API providing data analysis and processing capabilities with secure authentication for advanced data operations",
     tags=["AI", "Analytics"],
+    web3=True,
     icon="/tools/elfa/elfa.jpg",
 )
 

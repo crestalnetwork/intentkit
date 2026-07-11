@@ -14,6 +14,7 @@ toolset = ToolsetMeta(
     title="Moralis",
     description="Comprehensive blockchain data access via Moralis API providing wallet portfolio information, NFT data, and transaction details across multiple EVM chains and Solana networks",
     tags=["Analytics", "Crypto", "DeFi"],
+    web3=True,
     icon="/tools/moralis/moralis.png",
 )
 

@@ -14,7 +14,7 @@ toolset = ToolsetMeta(
     title="Aerodrome",
     description="Swap tokens and manage Slipstream CL liquidity positions on Aerodrome DEX (Base)",
     tags=["DeFi"],
-    web3=True,
+    wallet=True,
     icon="/tools/aerodrome/aerodrome.svg",
 )
 

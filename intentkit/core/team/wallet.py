@@ -286,15 +286,16 @@ async def delete_team_wallet(team_id: str, wallet_id: str) -> None:
     """Delete a team wallet.
 
     Deleting the team's LAST wallet is refused while any live team agent has
-    web3 tools configured — agent create/update enforces "team owns a wallet"
-    for web3 tools, and deletion must not silently break that invariant.
-    Funds are NOT swept: the caller is expected to have emptied the wallet.
+    wallet-operating tools configured — agent create/update enforces "team
+    owns a wallet" for those tools, and deletion must not silently break that
+    invariant. Funds are NOT swept: the caller is expected to have emptied
+    the wallet.
 
     Raises:
         IntentKitAPIError 404: wallet missing or not owned by the team.
-        IntentKitAPIError 409: last wallet while web3-tool agents exist.
+        IntentKitAPIError 409: last wallet while wallet-tool agents exist.
     """
-    from intentkit.core.agent.tool_registry import filter_web3_tool_names
+    from intentkit.core.agent.tool_registry import filter_wallet_tool_names
     from intentkit.models.agent.db import AgentTable
 
     wallet = await TeamWallet.get_for_team(wallet_id, team_id)
@@ -323,14 +324,14 @@ async def delete_team_wallet(team_id: str, wallet_id: str) -> None:
         blocking = [
             str(name or agent_id)
             for agent_id, name, tools in rows
-            if tools and filter_web3_tool_names(tools)
+            if tools and filter_wallet_tool_names(tools)
         ]
         if blocking:
             raise IntentKitAPIError(
                 409,
                 "WalletRequiredByAgents",
                 "Cannot delete the team's last wallet: these agents have "
-                f"web3 tools configured: {', '.join(blocking[:5])}",
+                f"wallet-operating tools configured: {', '.join(blocking[:5])}",
             )
 
     await TeamWallet.delete(wallet_id)

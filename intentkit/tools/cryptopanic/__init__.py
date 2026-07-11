@@ -14,6 +14,7 @@ toolset = ToolsetMeta(
     title="CryptoPanic",
     description="CryptoPanic is a news aggregator platform indicating impact on price and market for traders and cryptocurrency enthusiasts.",
     tags=["Analytics", "Crypto", "Knowledge Base"],
+    web3=True,
     icon="/tools/cryptopanic/cryptopanic.png",
 )
 

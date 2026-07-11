@@ -11,6 +11,7 @@ toolset = ToolsetMeta(
     title="DappLooker",
     description="Retrieve comprehensive market data and analytics for AI agent tokens using DappLooker. This API specializes in AI-focused crypto projects and may not provide data for general cryptocurrencies like BTC or ETH.",
     tags=["Analytics", "Crypto"],
+    web3=True,
     icon="/tools/dapplooker/dapplooker.jpg",
 )
 

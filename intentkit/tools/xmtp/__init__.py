@@ -10,6 +10,7 @@ toolset = ToolsetMeta(
     title="XMTP",
     description="Use this tool only if you want make an XMTP Agent. XMTP protocol tools for creating blockchain transaction requests that can be sent to users for signing",
     tags=["Communication", "Crypto", "DeFi"],
+    web3=True,
     icon="/tools/xmtp/xmtp.png",
 )
 

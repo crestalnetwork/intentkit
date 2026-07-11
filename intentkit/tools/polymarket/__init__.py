@@ -16,7 +16,7 @@ toolset = ToolsetMeta(
     title="Polymarket",
     description="Integration with Polymarket prediction market for browsing markets, checking prices, and trading outcome tokens",
     tags=["Crypto", "Analytics"],
-    web3=True,
+    wallet=True,
     icon="/tools/polymarket/polymarket.png",
 )
 

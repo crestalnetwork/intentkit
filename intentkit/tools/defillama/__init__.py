@@ -75,6 +75,7 @@ toolset = ToolsetMeta(
     title="DeFiLlama",
     description="Integration with DeFi Llama API providing comprehensive decentralized finance data including token prices, protocol TVL, DEX volumes, and stablecoin metrics",
     tags=["Analytics", "DeFi"],
+    web3=True,
     icon="/tools/defillama/defillama.jpeg",
 )
 

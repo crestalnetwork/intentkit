@@ -11,6 +11,7 @@ toolset = ToolsetMeta(
     title="Dexscreener",
     description="Integration with DexScreener API, enabling crypto token pair information",
     tags=["Analytics", "DeFi"],
+    web3=True,
     icon="/tools/dexscreener/dexscreener.png",
 )
 

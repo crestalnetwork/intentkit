@@ -1,5 +1,5 @@
 """Tests for the wallet-by-address model: signing guard, prompt injection,
-and web3 tool gating."""
+and wallet tool gating."""
 
 from datetime import datetime
 from unittest.mock import MagicMock
@@ -8,7 +8,7 @@ import pytest
 import pytest_asyncio
 
 from intentkit.config.base import Base
-from intentkit.core.agent.management import _validate_web3_tools
+from intentkit.core.agent.management import _validate_wallet_tools
 from intentkit.core.prompt import _build_wallet_section
 from intentkit.models.agent import Agent, AgentVisibility
 from intentkit.models.wallet import TeamWallet, TeamWalletTable
@@ -181,15 +181,15 @@ class TestPromptWalletSection:
         assert "wallet_address" in section
 
 
-class TestWeb3ToolGating:
+class TestWalletToolGating:
     @pytest.mark.asyncio
-    async def test_rejects_web3_tools_without_wallets(self, wallet_tables):
+    async def test_rejects_wallet_tools_without_wallets(self, wallet_tables):
         with pytest.raises(IntentKitAPIError) as exc_info:
-            await _validate_web3_tools(["erc20_transfer"], "team-1")
+            await _validate_wallet_tools(["erc20_transfer"], "team-1")
         assert exc_info.value.key == "Web3ToolsRequireWallet"
 
     @pytest.mark.asyncio
-    async def test_allows_web3_tools_with_wallet(self, wallet_tables):
+    async def test_allows_wallet_tools_with_wallet(self, wallet_tables):
         await TeamWallet.create(
             team_id="team-1",
             name="main",
@@ -197,13 +197,13 @@ class TestWeb3ToolGating:
             evm_wallet_address="0xw",
             created_by="user-1",
         )
-        await _validate_web3_tools(["erc20_transfer"], "team-1")  # must not raise
+        await _validate_wallet_tools(["erc20_transfer"], "team-1")  # must not raise
 
     @pytest.mark.asyncio
-    async def test_non_web3_tools_never_gated(self, wallet_tables):
-        await _validate_web3_tools(["http_get", "firecrawl_scrape"], "team-1")
+    async def test_non_wallet_tools_never_gated(self, wallet_tables):
+        await _validate_wallet_tools(["http_get", "firecrawl_scrape"], "team-1")
 
     @pytest.mark.asyncio
     async def test_empty_tools_never_gated(self, wallet_tables):
-        await _validate_web3_tools(None, "team-1")
-        await _validate_web3_tools([], "team-1")
+        await _validate_wallet_tools(None, "team-1")
+        await _validate_wallet_tools([], "team-1")

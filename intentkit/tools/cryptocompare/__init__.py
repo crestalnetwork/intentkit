@@ -23,6 +23,7 @@ toolset = ToolsetMeta(
     title="CryptoCompare",
     description="Integration with CryptoCompare API providing cryptocurrency market data, price information, and crypto news with rate limiting capabilities",
     tags=["Analytics", "Crypto"],
+    web3=True,
     icon="/tools/cryptocompare/cryptocompare.png",
 )
 

@@ -21,7 +21,7 @@ toolset = ToolsetMeta(
     title="Enso Finance",
     description="Integration with Enso Finance API providing DeFi trading and portfolio management capabilities across multiple blockchain networks",
     tags=["Analytics", "DeFi"],
-    web3=True,
+    wallet=True,
     icon="/tools/enso/enso.jpg",
 )
 

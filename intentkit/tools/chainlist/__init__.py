@@ -10,6 +10,7 @@ toolset = ToolsetMeta(
     title="Chainlist Tools",
     description="Access blockchain RPC endpoints and network information from chainlist.org. Enable this tool to look up EVM-compatible networks by name, symbol, or chain ID and get their RPC endpoints, native currencies, and explorer links.",
     tags=["Crypto", "Infrastructure"],
+    web3=True,
     icon="/tools/chainlist/chainlist.png",
 )
 

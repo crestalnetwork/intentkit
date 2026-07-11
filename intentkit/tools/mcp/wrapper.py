@@ -84,6 +84,7 @@ class McpCategoryModule:
             description=self._server_def.description,
             tags=list(self._server_def.tags),
             web3=self._server_def.web3,
+            wallet=self._server_def.wallet,
             icon=self._server_def.icon,
             tools={
                 self._server_def.name: ToolMeta(

@@ -15,6 +15,7 @@ toolset = ToolsetMeta(
     title="CookieFun Tools",
     description="Access Twitter/X analytics and insights using CookieFun API. Get data about accounts, tweets, followers, and trends across different industry sectors.",
     tags=["Analytics", "Social"],
+    web3=True,
     icon="/tools/cookiefun/cookiefun.png",
 )
 

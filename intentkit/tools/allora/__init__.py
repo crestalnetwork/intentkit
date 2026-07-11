@@ -11,6 +11,7 @@ toolset = ToolsetMeta(
     title="Allora",
     description="Integration with Allora API for blockchain-based price predictions and market forecasting services via Upshot's prediction markets",
     tags=["Analytics", "Crypto"],
+    web3=True,
     icon="/tools/allora/allora.jpeg",
 )
 

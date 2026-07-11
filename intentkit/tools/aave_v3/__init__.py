@@ -16,7 +16,7 @@ toolset = ToolsetMeta(
     title="Aave V3",
     description="Aave V3 lending protocol: supply, borrow, repay, and manage collateral positions across multiple EVM chains",
     tags=["DeFi"],
-    web3=True,
+    wallet=True,
     icon="/tools/aave_v3/aave_v3.svg",
 )
 

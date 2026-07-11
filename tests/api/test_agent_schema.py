@@ -26,11 +26,13 @@ async def test_agent_schema_includes_tool_catalog():
     assert "erc20" in catalog
     erc20 = catalog["erc20"]
     assert erc20["title"] == "ERC20"
-    # Web3 flag must reach the frontend so pickers can gate on team wallets.
+    # Web3 flag must reach the frontend so pickers can group on it.
     assert erc20["x-web3"] is True
     assert "erc20_get_balance" in erc20["tools"]
     assert "erc20_transfer" in erc20["tools"]
     assert erc20["tools"]["erc20_transfer"]["title"]
+    # Web3-themed data toolsets carry the flag too (no wallet semantics).
+    assert catalog["dexscreener"]["x-web3"] is True
     # Non-web3 categories must not carry the flag at all.
     assert "x-web3" not in catalog["http"]
 

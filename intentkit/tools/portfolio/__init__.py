@@ -20,6 +20,7 @@ toolset = ToolsetMeta(
     title="Portfolio Analysis",
     description="Access blockchain wallet data and analytics through Moralis APIs for portfolio tracking, token balances, and investment performance",
     tags=["Analytics", "Crypto", "DeFi"],
+    web3=True,
     icon="/tools/portfolio/moralis.png",
 )
 
