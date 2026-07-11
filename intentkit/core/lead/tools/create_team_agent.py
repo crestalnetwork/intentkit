@@ -40,15 +40,11 @@ class CreateTeamAgentInput(BaseModel):
     search_internet: bool | None = Field(
         default=None, description="Enable internet search"
     )
-    super_mode: bool | None = Field(default=None, description="Enable super mode")
     enable_todo: bool | None = Field(default=None, description="Enable todo list")
     enable_activity: bool | None = Field(
         default=None, description="Enable activity tools"
     )
     enable_post: bool | None = Field(default=None, description="Enable post tools")
-    enable_long_term_memory: bool | None = Field(
-        default=None, description="Enable long-term memory"
-    )
     sub_agents: list[str] | None = Field(
         default=None, description="Sub-agent IDs or slugs"
     )
@@ -86,11 +82,9 @@ class CreateTeamAgent(LeadTool):
         temperature: float | None = None,
         tools: list[str] | None = None,
         search_internet: bool | None = None,
-        super_mode: bool | None = None,
         enable_todo: bool | None = None,
         enable_activity: bool | None = None,
         enable_post: bool | None = None,
-        enable_long_term_memory: bool | None = None,
         sub_agents: list[str] | None = None,
         sub_agent_prompt: str | None = None,
         **kwargs: Any,
@@ -113,16 +107,12 @@ class CreateTeamAgent(LeadTool):
             agent_data["tools"] = tools
         if search_internet is not None:
             agent_data["search_internet"] = search_internet
-        if super_mode is not None:
-            agent_data["super_mode"] = super_mode
         if enable_todo is not None:
             agent_data["enable_todo"] = enable_todo
         if enable_activity is not None:
             agent_data["enable_activity"] = enable_activity
         if enable_post is not None:
             agent_data["enable_post"] = enable_post
-        if enable_long_term_memory is not None:
-            agent_data["enable_long_term_memory"] = enable_long_term_memory
         if sub_agents is not None:
             agent_data["sub_agents"] = sub_agents
         if sub_agent_prompt is not None:

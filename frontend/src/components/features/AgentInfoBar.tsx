@@ -27,19 +27,9 @@ export function AgentInfoBar({ agent }: AgentInfoBarProps) {
             search
           </span>
         )}
-        {agent.super_mode && (
-          <span className="inline-flex items-center rounded-md bg-purple-500/10 text-purple-700 dark:text-purple-400 px-2 py-0.5 text-xs font-medium ring-1 ring-inset ring-purple-500/20">
-            super
-          </span>
-        )}
         {agent.enable_todo && (
           <span className="inline-flex items-center rounded-md bg-green-500/10 text-green-700 dark:text-green-400 px-2 py-0.5 text-xs font-medium ring-1 ring-inset ring-green-500/20">
             todo
-          </span>
-        )}
-        {agent.enable_long_term_memory && (
-          <span className="inline-flex items-center rounded-md bg-amber-500/10 text-amber-700 dark:text-amber-400 px-2 py-0.5 text-xs font-medium ring-1 ring-inset ring-amber-500/20">
-            memory
           </span>
         )}
       </div>

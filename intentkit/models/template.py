@@ -87,9 +87,6 @@ class TemplateTable(Base):
     search_internet: Mapped[bool | None] = mapped_column(
         Boolean, nullable=True, comment="Enable LLM native internet search"
     )
-    super_mode: Mapped[bool | None] = mapped_column(
-        Boolean, nullable=True, comment="Enable super mode with higher recursion limit"
-    )
     enable_todo: Mapped[bool | None] = mapped_column(
         Boolean,
         nullable=True,
@@ -104,11 +101,6 @@ class TemplateTable(Base):
         Boolean,
         nullable=True,
         comment="Enable post tools (create post, get post, recent posts)",
-    )
-    enable_long_term_memory: Mapped[bool | None] = mapped_column(
-        Boolean,
-        nullable=True,
-        comment="Enable long-term memory for the agent",
     )
     sub_agents: Mapped[list[str] | None] = mapped_column(
         JSONB(),

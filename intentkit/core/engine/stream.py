@@ -67,7 +67,7 @@ from intentkit.utils.error import IntentKitAPIError
 logger = logging.getLogger(__name__)
 
 
-# Cap raw_chunks to prevent unbounded memory growth in super_mode
+# Cap raw_chunks to prevent unbounded memory growth in long runs
 _MAX_RAW_CHUNKS = 200
 
 
@@ -227,10 +227,7 @@ def build_stream_config(
     a depth of 0.
     """
     team_names = team_names or {}
-    # super mode — determined by agent config
     recursion_limit = config.recursion_limit
-    if agent.super_mode:
-        recursion_limit = max(config.super_recursion_limit, 1000)
 
     agent_name = agent.name or message.agent_id
     owner_team_name = team_names.get(agent.team_id) if agent.team_id else None

@@ -242,11 +242,9 @@ async def _build_lead_agent(team_id: str, user_id: str | None = None) -> Agent:
         "frequency_penalty": 0.0,
         "presence_penalty": 0.0,
         "search_internet": True,
-        "super_mode": False,
         "enable_todo": False,
         "enable_activity": False,
         "enable_post": False,
-        "enable_long_term_memory": True,
         "sub_agents": None,
         # ui_show_card / ui_ask_user are system tools now, bound automatically
         "tools": None,

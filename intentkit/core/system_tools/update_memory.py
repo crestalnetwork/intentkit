@@ -41,6 +41,7 @@ class UpdateMemoryTool(SystemTool):
         "and provide the new information to remember."
     )
     args_schema: ArgsSchema | None = UpdateMemoryInput
+    requires_memory_scope: bool = True
 
     @override
     async def _arun(self, scope: str, content: str) -> str:

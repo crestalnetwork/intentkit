@@ -39,15 +39,11 @@ class UpdateTeamAgentInput(BaseModel):
     search_internet: bool | None = Field(
         default=None, description="Enable internet search"
     )
-    super_mode: bool | None = Field(default=None, description="Enable super mode")
     enable_todo: bool | None = Field(default=None, description="Enable todo list")
     enable_activity: bool | None = Field(
         default=None, description="Enable activity tools"
     )
     enable_post: bool | None = Field(default=None, description="Enable post tools")
-    enable_long_term_memory: bool | None = Field(
-        default=None, description="Enable long-term memory"
-    )
     sub_agents: list[str] | None = Field(
         default=None, description="Sub-agent IDs or slugs"
     )
@@ -110,11 +106,9 @@ class UpdateTeamAgent(LeadTool):
         tools: list[str] | None = None,
         slug: str | None = None,
         search_internet: bool | None = None,
-        super_mode: bool | None = None,
         enable_todo: bool | None = None,
         enable_activity: bool | None = None,
         enable_post: bool | None = None,
-        enable_long_term_memory: bool | None = None,
         sub_agents: list[str] | None = None,
         sub_agent_prompt: str | None = None,
         visibility: int | None = None,
@@ -142,11 +136,9 @@ class UpdateTeamAgent(LeadTool):
             "tools": tools,
             "slug": slug,
             "search_internet": search_internet,
-            "super_mode": super_mode,
             "enable_todo": enable_todo,
             "enable_activity": enable_activity,
             "enable_post": enable_post,
-            "enable_long_term_memory": enable_long_term_memory,
             "sub_agents": sub_agents,
             "sub_agent_prompt": sub_agent_prompt,
             "visibility": visibility,

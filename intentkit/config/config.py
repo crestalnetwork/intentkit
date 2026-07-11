@@ -304,8 +304,7 @@ class Config:
             self.chain_provider.init_chain_configs()
 
         # Agent Execution Limits
-        self.recursion_limit: int = self.load_int("RECURSION_LIMIT", 100)
-        self.super_recursion_limit: int = self.load_int("SUPER_RECURSION_LIMIT", 1000)
+        self.recursion_limit: int = self.load_int("RECURSION_LIMIT", 1000)
 
         # ===== config loaded
         # Now we know the env, set up logging

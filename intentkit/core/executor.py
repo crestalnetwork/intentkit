@@ -191,10 +191,9 @@ async def build_executor(
         tools.append(get_post)
         tools.append(recent_posts)
 
-    # scoped long-term memory: guests update their own rows (their user
-    # memory and their team's memory of this agent), so everyone gets it
-    if agent.enable_long_term_memory:
-        tools.append(update_memory)
+    # scoped long-term memory is always on: guests update their own rows
+    # (their user memory and their team's memory of this agent)
+    tools.append(update_memory)
 
     # search-related tools based on provider
     extra_llm_params: dict[str, Any] = {}
@@ -326,10 +325,6 @@ async def build_executor(
             model=summarize_model,
             trigger=[
                 ("tokens", int(llm_model.info.context_length * 0.8)),
-            ]
-            if agent.super_mode
-            else [
-                ("tokens", int(llm_model.info.context_length * 0.6)),
             ],
         )
     )

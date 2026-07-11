@@ -30,7 +30,6 @@ class TestSystemToolsSection:
         agent = MagicMock()
         agent.is_activity_enabled = overrides.get("is_activity_enabled", True)
         agent.is_post_enabled = overrides.get("is_post_enabled", True)
-        agent.enable_long_term_memory = overrides.get("enable_long_term_memory", False)
         agent.tools = None
         agent.telegram_entrypoint_enabled = False
         return agent
@@ -53,7 +52,7 @@ class TestSystemToolsSection:
     def test_update_memory_not_in_guide(self):
         """The Memory section documents update_memory itself; the own-team
         guide must not duplicate it (the tool is bound for guests too)."""
-        agent = self._make_agent(enable_long_term_memory=True)
+        agent = self._make_agent()
         context = MagicMock(spec=AgentContext)
         context.is_own_team = True
 
@@ -96,13 +95,12 @@ def _memory(content: str) -> MagicMock:
 
 class TestBuildSystemPromptMemory:
     @staticmethod
-    def _make_agent(enable_long_term_memory) -> MagicMock:
+    def _make_agent() -> MagicMock:
         agent = MagicMock()
         agent.id = "agent-1"
         agent.name = "Test"
         agent.ticker = None
         agent.team_id = "team-owner"
-        agent.enable_long_term_memory = enable_long_term_memory
         agent.is_activity_enabled = True
         agent.is_post_enabled = True
         agent.tools = None
@@ -152,7 +150,7 @@ class TestBuildSystemPromptMemory:
 
     @pytest.mark.asyncio
     async def test_lists_team_and_user_memory(self):
-        agent = self._make_agent(enable_long_term_memory=True)
+        agent = self._make_agent()
         context = self._make_context(user_id="user-1")
         agent_data = MagicMock()
         agent_data.telegram_id = None
@@ -182,7 +180,7 @@ class TestBuildSystemPromptMemory:
 
     @pytest.mark.asyncio
     async def test_cron_run_lists_cron_memory(self):
-        agent = self._make_agent(enable_long_term_memory=True)
+        agent = self._make_agent()
         context = self._make_context(
             entrypoint=AuthorType.TRIGGER, chat_id="autonomous-task-1"
         )
@@ -209,7 +207,7 @@ class TestBuildSystemPromptMemory:
 
     @pytest.mark.asyncio
     async def test_subagent_run_has_no_memory_section(self):
-        agent = self._make_agent(enable_long_term_memory=True)
+        agent = self._make_agent()
         context = self._make_context(is_subagent=True, user_id="user-1")
         agent_data = MagicMock()
         agent_data.telegram_id = None
@@ -220,26 +218,20 @@ class TestBuildSystemPromptMemory:
         assert "## Memory" not in result
 
     @pytest.mark.asyncio
-    async def test_no_memory_section_when_disabled(self):
-        agent = self._make_agent(enable_long_term_memory=False)
-        context = self._make_context(user_id="user-1")
-        agent_data = MagicMock()
-        agent_data.telegram_id = None
-
-        with self._config_patch():
-            result = await build_system_prompt(agent, agent_data, context)
-
-        assert "## Memory" not in result
-
-    @pytest.mark.asyncio
     async def test_agent_system_prompt_rendered(self):
-        agent = self._make_agent(enable_long_term_memory=False)
+        agent = self._make_agent()
         agent.system_prompt = "## Purpose\n\nBe helpful.\n\n## Principles\n\nBe kind."
         context = self._make_context(user_id="user-1")
         agent_data = MagicMock()
         agent_data.telegram_id = None
 
-        with self._config_patch():
+        with (
+            self._config_patch(),
+            patch(
+                "intentkit.models.memory.Memory.get",
+                new=AsyncMock(return_value=None),
+            ),
+        ):
             result = await build_system_prompt(agent, agent_data, context)
 
         assert "## Purpose\n\nBe helpful." in result
@@ -386,7 +378,6 @@ class TestSubAgentsPromptSection:
         agent.id = "agent-1"
         agent.name = "Test"
         agent.ticker = None
-        agent.enable_long_term_memory = False
         agent.is_activity_enabled = True
         agent.is_post_enabled = True
         agent.tools = None
@@ -401,6 +392,7 @@ class TestSubAgentsPromptSection:
         agent_data.telegram_id = None
 
         context = MagicMock(spec=AgentContext)
+        context.agent_id = "agent-1"
         context.is_own_team = True
         context.is_subagent = False
         context.entrypoint = AuthorType.WEB
@@ -425,6 +417,10 @@ class TestSubAgentsPromptSection:
                 "intentkit.core.agent.queries.get_agent_by_id_or_slug",
                 new_callable=AsyncMock,
                 return_value=target_agent,
+            ),
+            patch(
+                "intentkit.models.memory.Memory.get",
+                new=AsyncMock(return_value=None),
             ),
         ):
             result = await build_system_prompt(agent, agent_data, context)

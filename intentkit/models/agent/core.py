@@ -121,13 +121,6 @@ class AgentCore(BaseModel):
             description="Enable LLM native internet search for this agent",
         ),
     ] = True
-    super_mode: Annotated[
-        bool,
-        PydanticField(
-            default=False,
-            description="Enable super mode with higher recursion limit for this agent",
-        ),
-    ] = False
     enable_todo: Annotated[
         bool,
         PydanticField(
@@ -147,13 +140,6 @@ class AgentCore(BaseModel):
         PydanticField(
             default=None,
             description="Enable post tools (create post, get post, recent posts)",
-        ),
-    ] = None
-    enable_long_term_memory: Annotated[
-        bool | None,
-        PydanticField(
-            default=None,
-            description="Enable long-term memory for the agent",
         ),
     ] = None
     sub_agents: Annotated[
@@ -187,7 +173,7 @@ class AgentCore(BaseModel):
     def _set_search_internet_default(cls, v: bool | None) -> bool:
         return True if v is None else v
 
-    @field_validator("super_mode", "enable_todo", mode="before")
+    @field_validator("enable_todo", mode="before")
     @classmethod
     def _set_bool_false_default(cls, v: bool | None) -> bool:
         return False if v is None else v

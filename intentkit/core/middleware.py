@@ -22,6 +22,7 @@ if TYPE_CHECKING:
     from langgraph.types import Command
 
 from intentkit.abstracts.graph import AgentContext, AgentState
+from intentkit.core.memory import resolve_memory_scopes
 from intentkit.core.prompt import build_system_prompt
 from intentkit.models.agent import Agent
 from intentkit.models.agent_data import AgentData
@@ -160,6 +161,10 @@ class ToolBindingMiddleware(AgentMiddleware[AgentState, AgentContext]):
         interactive_allowed = (
             context.entrypoint != AuthorType.TRIGGER and not context.is_subagent
         )
+        # Tools marked requires_memory_scope (update_memory) are dropped when
+        # the conversation resolves no memory scope — sub-agent runs and
+        # teamless anonymous chats — where every call would just error.
+        memory_scope_active = bool(resolve_memory_scopes(context.agent, context))
         # The display_message swap is deliberately unconditional: cron and
         # sub-agent runs have no live viewer, but their tool calls are shown
         # later in execution history, so the status line is still worth it.
@@ -168,6 +173,7 @@ class ToolBindingMiddleware(AgentMiddleware[AgentState, AgentContext]):
             for t in self.all_tools
             if (context.is_own_team or not getattr(t, "team_only", False))
             and (interactive_allowed or not getattr(t, "interactive_only", False))
+            and (memory_scope_active or not getattr(t, "requires_memory_scope", False))
         ]
 
         model = await self.llm_model.create_instance(llm_params)

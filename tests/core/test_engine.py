@@ -593,13 +593,11 @@ def test_build_stream_config_omits_missing_optional_fields(mock_agent):
     from intentkit.config.config import config
     from intentkit.core.engine.stream import build_stream_config
 
-    agent = mock_agent.model_copy(update={"team_id": "team-owner", "super_mode": True})
+    agent = mock_agent.model_copy(update={"team_id": "team-owner"})
     user_message = _make_user_message(user_id=None, author_type=AuthorType.TRIGGER)
     stream_config = build_stream_config(user_message, agent, None, "agent-123-chat-456")
 
-    assert stream_config.get("recursion_limit") == max(
-        config.super_recursion_limit, 1000
-    )
+    assert stream_config.get("recursion_limit") == config.recursion_limit
     # Owning team present but no caller team => not an external call.
     assert stream_config.get("run_name") == "Test Agent"
     metadata = stream_config.get("metadata")

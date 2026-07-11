@@ -9,6 +9,7 @@ call_agent delegation at any depth: sub-agent input messages carry it in
 """
 
 from datetime import UTC, datetime
+from unittest.mock import AsyncMock, patch
 
 import pytest
 
@@ -157,10 +158,15 @@ async def test_system_prompt_subagent_mode_section():
         updated_at=datetime.now(UTC),
     )
 
-    subagent_prompt = await build_system_prompt(
-        agent, agent_data, _context(call_depth=1)
-    )
-    top_level_prompt = await build_system_prompt(agent, agent_data, _context())
+    # The top-level prompt loads scoped memories; keep this test off the DB.
+    with patch(
+        "intentkit.models.memory.Memory.get",
+        new=AsyncMock(return_value=None),
+    ):
+        subagent_prompt = await build_system_prompt(
+            agent, agent_data, _context(call_depth=1)
+        )
+        top_level_prompt = await build_system_prompt(agent, agent_data, _context())
 
     assert "## Sub-agent Mode" in subagent_prompt
     assert "## Sub-agent Mode" not in top_level_prompt

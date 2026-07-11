@@ -49,6 +49,13 @@ class SystemTool(BaseTool, metaclass=ABCMeta):
     them for cron-triggered runs (entrypoint TRIGGER) and sub-agent calls,
     where nobody can see or click the component."""
 
+    requires_memory_scope: bool = False
+    """Tools that read/write the conversation's scoped memories only work
+    when the conversation resolves at least one memory scope.
+    ToolBindingMiddleware drops them from sub-agent runs (stateless by
+    design) and teamless anonymous conversations, where every call would
+    fail."""
+
     def ensure_own_team(self) -> None:
         """Refuse execution unless the owning team is running the agent."""
         context = self.get_context()

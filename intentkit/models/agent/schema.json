@@ -167,13 +167,6 @@
       "default": true,
       "x-group": "llm"
     },
-    "super_mode": {
-      "title": "Super Mode",
-      "type": "boolean",
-      "description": "Enable super mode with higher recursion limit for this agent",
-      "default": false,
-      "x-group": "llm"
-    },
     "enable_todo": {
       "title": "Todo List",
       "type": "boolean",
@@ -193,13 +186,6 @@
       "type": "boolean",
       "description": "Enable post tools (create post, get post, recent posts)",
       "default": true,
-      "x-group": "llm"
-    },
-    "enable_long_term_memory": {
-      "title": "Long-Term Memory",
-      "type": "boolean",
-      "description": "Enable long-term memory that persists across conversations",
-      "default": false,
       "x-group": "llm"
     },
     "sub_agents": {

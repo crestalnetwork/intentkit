@@ -59,11 +59,9 @@ def build_self_updater(team_id: str) -> Agent:
         "system_prompt": system_prompt,
         "temperature": 0.2,
         "search_internet": False,
-        "super_mode": False,
         "enable_todo": False,
         "enable_activity": False,
         "enable_post": False,
-        "enable_long_term_memory": False,
         "sub_agents": None,
         # ui_show_card / ui_ask_user are interactive_only system tools now;
         # ToolBindingMiddleware drops them per request for sub-agent runs
