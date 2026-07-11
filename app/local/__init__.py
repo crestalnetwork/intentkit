@@ -9,6 +9,7 @@ from app.local.content import content_router
 from app.local.health import health_router
 from app.local.lead import lead_router
 from app.local.link import link_router
+from app.local.memory import memory_router
 from app.local.metadata import metadata_router
 from app.local.public import public_router
 from app.local.schema import schema_router
@@ -23,6 +24,7 @@ __all__ = [
     "health_router",
     "lead_router",
     "link_router",
+    "memory_router",
     "public_router",
     "schema_router",
     "wallet_router",

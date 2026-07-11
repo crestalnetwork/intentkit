@@ -1,5 +1,7 @@
 """Tests for scoped long-term memory: scope resolution, merge, persistence."""
 
+from types import SimpleNamespace
+from typing import Any, cast
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -9,12 +11,15 @@ from intentkit.abstracts.graph import AgentContext
 from intentkit.config.base import Base
 from intentkit.core.memory import (
     MAX_MEMORY_BYTES,
+    list_account_memories,
     merge_memory_content,
+    overwrite_memory,
     resolve_memory_scopes,
     update_scoped_memory,
 )
 from intentkit.models.chat import AuthorType
 from intentkit.models.memory import Memory, MemoryTable
+from intentkit.utils.error import IntentKitAPIError
 
 
 @pytest_asyncio.fixture()
@@ -237,3 +242,187 @@ class TestMemoryPersistence:
         mock_merge.assert_awaited_once_with("", "new")
         stored = await Memory.get("agent-1", "user", "user-1")
         assert stored is not None and stored.content == "merged doc"
+
+
+class TestAccountMemoryManagement:
+    """Management-API helpers: list an account's memories, overwrite one."""
+
+    @pytest.fixture(autouse=True)
+    def _no_agent_info_lookups(self, monkeypatch):
+        """Agent-info enrichment needs Redis and the lead-name fallback needs
+        the teams table; stub both out."""
+
+        async def fake_get_agent_infos(agent_ids):
+            return {}
+
+        async def fake_lead_config(team_id):
+            return None
+
+        monkeypatch.setattr(
+            "intentkit.core.agent.info.get_agent_infos", fake_get_agent_infos
+        )
+        monkeypatch.setattr(
+            "intentkit.models.team.Team.get_lead_agent_config", fake_lead_config
+        )
+
+    @pytest.mark.asyncio
+    async def test_list_returns_only_own_team_and_user_rows(self, memory_tables):
+        await Memory.upsert("agent-1", "team", "team-1", "team doc")
+        await Memory.upsert("team-team-1", "team", "team-1", "lead doc")
+        await Memory.upsert("agent-1", "user", "user-1", "user doc")
+        # None of these belong to (team-1, user-1):
+        await Memory.upsert("agent-1", "team", "team-2", "other team")
+        await Memory.upsert("agent-1", "user", "user-2", "other user")
+        await Memory.upsert("agent-1", "channel", "chat-1", "channel doc")
+        await Memory.upsert("agent-1", "cron", "task-1", "cron doc")
+
+        memories = await list_account_memories("team-1", "user-1")
+
+        assert {(m.scope, m.agent_id, m.content) for m in memories} == {
+            ("team", "agent-1", "team doc"),
+            ("team", "team-team-1", "lead doc"),
+            ("user", "agent-1", "user doc"),
+        }
+        # Team scope sorts before user scope for stable section grouping.
+        assert [m.scope for m in memories] == ["team", "team", "user"]
+
+    @pytest.mark.asyncio
+    async def test_list_labels_lead_agent(self, memory_tables):
+        await Memory.upsert("team-team-1", "team", "team-1", "lead doc")
+        await Memory.upsert("agent-1", "team", "team-1", "team doc")
+
+        with patch(
+            "intentkit.models.team.Team.get_lead_agent_config",
+            new=AsyncMock(return_value={"name": "Concierge", "avatar": "lead.png"}),
+        ):
+            memories = await list_account_memories("team-1", "user-1")
+
+        by_agent = {m.agent_id: m for m in memories}
+        assert by_agent["team-team-1"].agent_name == "Concierge"
+        assert by_agent["team-team-1"].agent_picture == "lead.png"
+        assert by_agent["agent-1"].agent_name is None
+
+    @pytest.mark.asyncio
+    async def test_list_lead_agent_default_name(self, memory_tables):
+        await Memory.upsert("team-team-1", "team", "team-1", "lead doc")
+
+        with patch(
+            "intentkit.models.team.Team.get_lead_agent_config",
+            new=AsyncMock(return_value=None),
+        ):
+            memories = await list_account_memories("team-1", "user-1")
+
+        assert memories[0].agent_name == "Team Lead"
+
+    @pytest.mark.asyncio
+    async def test_overwrite_own_rows_verbatim(self, memory_tables):
+        team_row = await Memory.upsert("agent-1", "team", "team-1", "team doc")
+        user_row = await Memory.upsert("agent-1", "user", "user-1", "user doc")
+
+        updated = await overwrite_memory(
+            team_row.id, "edited team", team_id="team-1", user_id="user-1"
+        )
+        assert updated.content == "edited team"
+
+        updated = await overwrite_memory(
+            user_row.id, "edited user", team_id="team-1", user_id="user-1"
+        )
+        assert updated.content == "edited user"
+
+        stored = await Memory.get("agent-1", "team", "team-1")
+        assert stored is not None and stored.content == "edited team"
+
+    @pytest.mark.asyncio
+    async def test_overwrite_rejects_foreign_and_missing_rows(self, memory_tables):
+        foreign_user = await Memory.upsert("agent-1", "user", "user-2", "not yours")
+        foreign_team = await Memory.upsert("agent-1", "team", "team-2", "not yours")
+        channel_row = await Memory.upsert("agent-1", "channel", "chat-1", "internal")
+
+        for memory_id in (foreign_user.id, foreign_team.id, channel_row.id, "nope"):
+            with pytest.raises(IntentKitAPIError) as exc:
+                await overwrite_memory(
+                    memory_id, "x", team_id="team-1", user_id="user-1"
+                )
+            assert exc.value.status_code == 404
+
+        stored = await Memory.get("agent-1", "user", "user-2")
+        assert stored is not None and stored.content == "not yours"
+
+    @pytest.mark.asyncio
+    async def test_overwrite_enforces_byte_limit(self, memory_tables):
+        row = await Memory.upsert("agent-1", "user", "user-1", "doc")
+
+        with pytest.raises(IntentKitAPIError) as exc:
+            await overwrite_memory(
+                row.id,
+                "x" * (MAX_MEMORY_BYTES + 1),
+                team_id="team-1",
+                user_id="user-1",
+            )
+        assert exc.value.status_code == 422
+
+        stored = await Memory.get("agent-1", "user", "user-1")
+        assert stored is not None and stored.content == "doc"
+
+
+class _FakeRequest:
+    """Minimal stand-in for ModelRequest: runtime.context plus override()."""
+
+    def __init__(self, context: AgentContext) -> None:
+        self.runtime = SimpleNamespace(context=context)
+        self.overridden: dict[str, Any] = {}
+
+    def override(self, **kwargs: Any) -> "_FakeRequest":
+        self.overridden.update(kwargs)
+        return self
+
+
+class TestUpdateMemoryToolGating:
+    """ToolBindingMiddleware binds update_memory only when a scope resolves."""
+
+    @staticmethod
+    async def _bound_tool_names(context: AgentContext) -> set[str]:
+        from intentkit.core.middleware import ToolBindingMiddleware
+        from intentkit.core.system_tools import current_time, update_memory
+
+        llm_model = MagicMock()
+        llm_model.create_instance = AsyncMock(return_value=MagicMock())
+        middleware = ToolBindingMiddleware(llm_model, [current_time, update_memory])
+        request = _FakeRequest(context)
+        handler = AsyncMock(return_value="response")
+        await middleware.awrap_model_call(cast(Any, request), handler)
+        return {t.name for t in request.overridden["tools"]}
+
+    @staticmethod
+    def _agent_context(**overrides) -> AgentContext:
+        agent = MagicMock()
+        agent.team_id = overrides.pop("agent_team_id", "team-owner")
+        defaults: dict[str, Any] = {
+            "agent_id": "agent-1",
+            "get_agent": lambda: agent,
+            "chat_id": "chat-1",
+            "user_id": "user-1",
+            "team_id": "team-1",
+            "entrypoint": AuthorType.WEB,
+            "is_own_team": True,
+        }
+        defaults.update(overrides)
+        return AgentContext(**defaults)
+
+    @pytest.mark.asyncio
+    async def test_bound_when_scopes_resolve(self):
+        names = await self._bound_tool_names(self._agent_context())
+        assert "update_memory" in names
+
+    @pytest.mark.asyncio
+    async def test_dropped_for_subagent_runs(self):
+        names = await self._bound_tool_names(self._agent_context(call_depth=1))
+        assert "update_memory" not in names
+        assert "current_time" in names
+
+    @pytest.mark.asyncio
+    async def test_dropped_for_teamless_anonymous_guests(self):
+        context = self._agent_context(user_id=None, team_id=None, is_own_team=False)
+        names = await self._bound_tool_names(context)
+        assert "update_memory" not in names
+        assert "current_time" in names

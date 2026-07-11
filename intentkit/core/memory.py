@@ -23,26 +23,30 @@ import logging
 from typing import NamedTuple
 
 from langchain_core.messages import HumanMessage, SystemMessage
+from sqlalchemy import and_, or_, select
 
 from intentkit.abstracts.graph import AgentContext
+from intentkit.config.db import get_session
+from intentkit.core.agent.info import attach_agent_info
 from intentkit.models.agent import Agent
 from intentkit.models.chat import AUTONOMOUS_CHAT_PREFIX, AuthorType
-from intentkit.models.memory import Memory
+from intentkit.models.memory import Memory, MemoryTable
+from intentkit.utils.error import IntentKitAPIError
 
 logger = logging.getLogger(__name__)
 
-_MEMORY_SYSTEM_PROMPT = """\
+MAX_MEMORY_BYTES = 4000
+
+_MEMORY_SYSTEM_PROMPT = f"""\
 You are a memory manager. Your task is to merge existing memory with new information \
 into a single consolidated memory document.
 
 Rules:
-- Keep total output under 4000 bytes.
+- Keep total output under {MAX_MEMORY_BYTES} bytes.
 - Use markdown with h4 (####) or lower headings only.
 - Preserve important facts, remove redundant or outdated info.
 - If new info contradicts old info, keep the new info.
 - Output only the merged memory, no explanations or preamble."""
-
-MAX_MEMORY_BYTES = 4000
 
 _CHANNEL_ENTRYPOINTS = frozenset(
     {
@@ -151,3 +155,82 @@ async def update_scoped_memory(
     merged = await merge_memory_content(memory.content if memory else "", new_content)
     await Memory.upsert(agent_id, scope, scope_key, merged)
     return merged
+
+
+class MemoryWithAgent(Memory):
+    """Memory row enriched with agent display info for the management APIs."""
+
+    agent_name: str | None = None
+    agent_picture: str | None = None
+
+
+def account_scopes(team_id: str, user_id: str) -> list[tuple[str, str]]:
+    """The (scope, scope_key) rows an account page may list and edit.
+
+    User-scope rows belong to the user, not the team: they are listed and
+    editable under every team the user visits, because a row written by a
+    cross-team public agent has no other page where the user could see it.
+    """
+    return [("team", team_id), ("user", user_id)]
+
+
+async def list_account_memories(team_id: str, user_id: str) -> list[MemoryWithAgent]:
+    """Team-scope and user-scope memory documents for an account page.
+
+    Returns the team's memories of every agent it talks to (scope_key ==
+    ``team_id``, including the lead agent's synthetic ``team-{team_id}``
+    row) and the user's own memories (scope_key == ``user_id``), enriched
+    with agent display info.
+    """
+    async with get_session() as db:
+        stmt = (
+            select(MemoryTable)
+            .where(
+                or_(
+                    *(
+                        and_(MemoryTable.scope == s, MemoryTable.scope_key == k)
+                        for s, k in account_scopes(team_id, user_id)
+                    )
+                )
+            )
+            .order_by(MemoryTable.scope, MemoryTable.updated_at.desc())
+        )
+        rows = (await db.scalars(stmt)).all()
+        memories = [MemoryWithAgent.model_validate(row) for row in rows]
+    await attach_agent_info(memories)
+    # The lead agent is synthetic (no agents row), so enrichment can't
+    # resolve it; fill its display info from the team's lead config.
+    lead_id = f"team-{team_id}"
+    if any(m.agent_id == lead_id and m.agent_name is None for m in memories):
+        from intentkit.core.lead.constants import LEAD_DEFAULT_NAME
+        from intentkit.models.team import Team
+
+        lead_config = await Team.get_lead_agent_config(team_id) or {}
+        for memory in memories:
+            if memory.agent_id == lead_id and memory.agent_name is None:
+                memory.agent_name = lead_config.get("name", LEAD_DEFAULT_NAME)
+                memory.agent_picture = lead_config.get("avatar")
+    return memories
+
+
+async def overwrite_memory(
+    memory_id: str, content: str, *, team_id: str, user_id: str
+) -> Memory:
+    """Overwrite one memory document verbatim from a management UI.
+
+    No LLM merge — the caller supplies the whole document. Editable rows
+    are exactly the ones ``list_account_memories`` returns; any other row
+    reads as not found so its existence doesn't leak.
+    """
+    memory = await Memory.get_by_id(memory_id)
+    if memory is None or (memory.scope, memory.scope_key) not in account_scopes(
+        team_id, user_id
+    ):
+        raise IntentKitAPIError(404, "MemoryNotFound", "Memory not found.")
+    if len(content.encode("utf-8")) > MAX_MEMORY_BYTES:
+        raise IntentKitAPIError(
+            422,
+            "MemoryTooLong",
+            f"Memory content must be at most {MAX_MEMORY_BYTES} bytes.",
+        )
+    return await Memory.upsert(memory.agent_id, memory.scope, memory.scope_key, content)

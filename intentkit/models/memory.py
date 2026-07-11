@@ -143,6 +143,13 @@ class Memory(BaseModel):
         return memory
 
     @classmethod
+    async def get_by_id(cls, memory_id: str) -> Memory | None:
+        """Uncached lookup by primary key, for the management APIs."""
+        async with get_session() as db:
+            row = await db.get(MemoryTable, memory_id)
+            return cls.model_validate(row) if row else None
+
+    @classmethod
     async def upsert(
         cls, agent_id: str, scope: str, scope_key: str, content: str
     ) -> Memory:

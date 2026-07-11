@@ -5,6 +5,7 @@ import type {
   ChatThread,
 } from "@/types/chat";
 import type { AgentResponse } from "@/types/agent";
+import type { Memory } from "@/types/memory";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "/api";
 
@@ -1395,5 +1396,33 @@ export const walletApi = {
         errorData.msg || errorData.message || `Failed to delete wallet: ${response.statusText}`,
       );
     }
+  },
+};
+
+/**
+ * Memory API functions
+ */
+export const memoryApi = {
+  async list(): Promise<Memory[]> {
+    const response = await fetch(`${API_BASE}/memories`);
+    if (!response.ok) {
+      throw new Error(`Failed to fetch memories: ${response.statusText}`);
+    }
+    return response.json();
+  },
+
+  async update(memoryId: string, content: string): Promise<Memory> {
+    const response = await fetch(`${API_BASE}/memories/${encodeURIComponent(memoryId)}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ content }),
+    });
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(
+        errorData.msg || errorData.message || `Failed to update memory: ${response.statusText}`,
+      );
+    }
+    return response.json();
   },
 };
