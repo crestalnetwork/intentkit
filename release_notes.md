@@ -1,6 +1,10 @@
-# Release v2.16.0
+# Release v2.17.0
+
+## New Features
+
+- **All crypto tools under one roof**: the "Web3 Tools" section in the agent form now covers the entire crypto domain — market data, on-chain analytics, DeFi dashboards, and crypto news (Moralis, Dexscreener, CoinGecko, Dune, DeFiLlama, and more) join the wallet-operating tools there, instead of being scattered through the general tool list.
+- **Smarter wallet requirements**: only tools that actually operate on a team wallet still require the team to own one. Read-only crypto data and analytics tools no longer trigger wallet checks, no longer block wallet deletion, and no longer add wallet instructions to the agent's prompt.
 
 ## Improvements
 
-- **Clearer model picker**: every model in the selection list now shows its provider as a small gray label on the right, and the selected model's provider is displayed in the closed selector too. The floating provider headers that could blend into the list while scrolling are gone.
-- The collapsed web3 toolset group in the agent form is now titled "Web3 Tools", matching what it actually contains.
+- Internal cleanup of an unused agent editing flow and legacy migration scripts.
