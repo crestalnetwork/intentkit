@@ -1,13 +1,13 @@
-# Release v2.18.0
+# Release v2.19.0
 
 ## New Features
 
-- **One System Prompt**: the five separate prompt fields (Purpose, Personality, Principles, Knowledge Base, Advanced) are merged into a single "System Prompt" written in Markdown. It holds up to 200,000 characters and supports level-2+ headings, so you can structure the agent's role, personality, rules, and knowledge in one place, your way. Existing agents are migrated automatically — their old fields are stitched into the new prompt under matching section headings.
-- **Description is a first-class field**: the short public description is now edited right in the agent form instead of only through the publish flow. It appears in agent listings and search, and it is what other agents read when they delegate work to this one as a sub-agent. Agents that never set a description automatically inherit their old Purpose text.
-- **Team lead upgrades**: the lead's agent manager creates and updates agents with the new single system prompt and can set the description too, and its agent listings show the description consistently.
+- **Memory page**: a new "Memory" entry in the account area shows what your agents remember, split into Team Memory (shared with the whole team) and Your Memory (what each agent remembers about you personally). Entries are shown truncated — open one to read the full text rendered as Markdown, or edit it directly. Memories are managed automatically by your agents, so you normally don't need to read or change them. Available in both the bundled frontend and the team frontend.
+- **Memory API**: new endpoints to list and edit these memory documents (`/teams/{team_id}/memories` in the Team API, `/memories` in the local API), with size limits and per-user access control.
 
 ## Improvements
 
-- All built-in public seed agents were converted to the new single-prompt format.
-- Avatar generation now handles very large prompts gracefully.
-- Internal cleanup of prompt assembly and validation logic.
+- **Long-term memory is always on**: memory now belongs to the conversation (team, user, channel, or cron task), not the agent, so the per-agent "Long-Term Memory" switch is gone. Agents skip the memory tool automatically in the few situations where it cannot work (sub-agent runs and anonymous visitors).
+- **Super mode removed**: every agent now runs with the higher execution step limit by default, so the per-agent "Super Mode" switch and badge are gone. The limit can still be tuned server-wide.
+- The lead agent's memory page entry shows the lead's real configured name and avatar.
+- Fixed minor issues in prompt assembly and memory loading performance.
