@@ -1,10 +1,13 @@
-# Release v2.17.0
+# Release v2.18.0
 
 ## New Features
 
-- **All crypto tools under one roof**: the "Web3 Tools" section in the agent form now covers the entire crypto domain — market data, on-chain analytics, DeFi dashboards, and crypto news (Moralis, Dexscreener, CoinGecko, Dune, DeFiLlama, and more) join the wallet-operating tools there, instead of being scattered through the general tool list.
-- **Smarter wallet requirements**: only tools that actually operate on a team wallet still require the team to own one. Read-only crypto data and analytics tools no longer trigger wallet checks, no longer block wallet deletion, and no longer add wallet instructions to the agent's prompt.
+- **One System Prompt**: the five separate prompt fields (Purpose, Personality, Principles, Knowledge Base, Advanced) are merged into a single "System Prompt" written in Markdown. It holds up to 200,000 characters and supports level-2+ headings, so you can structure the agent's role, personality, rules, and knowledge in one place, your way. Existing agents are migrated automatically — their old fields are stitched into the new prompt under matching section headings.
+- **Description is a first-class field**: the short public description is now edited right in the agent form instead of only through the publish flow. It appears in agent listings and search, and it is what other agents read when they delegate work to this one as a sub-agent. Agents that never set a description automatically inherit their old Purpose text.
+- **Team lead upgrades**: the lead's agent manager creates and updates agents with the new single system prompt and can set the description too, and its agent listings show the description consistently.
 
 ## Improvements
 
-- Internal cleanup of an unused agent editing flow and legacy migration scripts.
+- All built-in public seed agents were converted to the new single-prompt format.
+- Avatar generation now handles very large prompts gracefully.
+- Internal cleanup of prompt assembly and validation logic.
