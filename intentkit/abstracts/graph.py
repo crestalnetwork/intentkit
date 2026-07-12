@@ -1,8 +1,9 @@
 from collections.abc import Callable, Sequence
 from enum import Enum
-from typing import Annotated, Any, NotRequired
+from typing import Annotated, Any, Literal, NotRequired, TypedDict
 
 from langchain.agents import AgentState as BaseAgentState
+from langchain.agents.middleware.types import OmitFromInput
 from langchain_core.messages import AnyMessage, RemoveMessage
 from langgraph.channels.delta import DeltaChannel
 
@@ -24,6 +25,16 @@ class AgentError(str, Enum):
     """The error types that can be raised by the agent."""
 
     INSUFFICIENT_CREDITS = "insufficient_credits"
+
+
+class Todo(TypedDict):
+    """A single todo item managed by the `write_todos` system tool."""
+
+    content: str
+    """The content/description of the todo item."""
+
+    status: Literal["pending", "in_progress", "completed"]
+    """The current status of the todo item."""
 
 
 def _messages_reducer(
@@ -81,6 +92,16 @@ class AgentState(BaseAgentState[Any]):
     context: dict[str, Any]
     error: NotRequired[AgentError]
     step_count: NotRequired[int]
+    todos: Annotated[NotRequired[list[Todo]], OmitFromInput]
+    """Current todo list, replaced wholesale by each `write_todos` call."""
+    todos_snapshot: Annotated[NotRequired[list[Todo]], OmitFromInput]
+    """Copy of `todos` taken when summarization compacts the conversation.
+
+    Between compactions the model sees the list through `write_todos` tool
+    results in the message history; summarization destroys those, so this
+    snapshot is re-injected into the system prompt. It is refreshed ONLY at
+    compaction time to keep the system prompt stable for prompt caching.
+    """
     __extra__: NotRequired[dict[str, Any]]
 
 

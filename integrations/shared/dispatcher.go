@@ -32,6 +32,14 @@ func DispatchMessage(ctx context.Context, msg types.ChatMessage, sender MessageS
 				// Prefer the agent-written status lines over raw tool names.
 				lines := make([]string, 0, len(msg.ToolCalls))
 				for _, tc := range msg.ToolCalls {
+					// write_todos gets a todo-aware rendering (checklist or
+					// progress line) in place of the generic status line.
+					if tc.Name == "write_todos" {
+						if todoText := renderTodoStatus(tc.Parameters); todoText != "" {
+							lines = append(lines, todoText)
+							continue
+						}
+					}
 					if status := strings.TrimSpace(tc.DisplayMessage); status != "" {
 						lines = append(lines, "🔧 "+status)
 					} else {
@@ -72,6 +80,63 @@ func DispatchMessage(ctx context.Context, msg types.ChatMessage, sender MessageS
 			dispatchAttachment(ctx, att, sender)
 		}
 	}
+}
+
+// renderTodoStatus renders a write_todos call for IM channels. A fresh plan
+// (no item completed yet) renders as a full checklist; later updates render
+// as a compact one-line progress note, so an evolving list costs no more
+// messages than the generic status line it replaces. Language-neutral by
+// design: only symbols plus the model-written item text. Returns "" when
+// the parameters don't have the expected shape (caller falls back to the
+// generic status line).
+func renderTodoStatus(params map[string]interface{}) string {
+	rawList, ok := params["todos"].([]interface{})
+	if !ok || len(rawList) == 0 {
+		return ""
+	}
+	type todoItem struct {
+		content string
+		status  string
+	}
+	todos := make([]todoItem, 0, len(rawList))
+	completed := 0
+	current := ""
+	for _, raw := range rawList {
+		m, ok := raw.(map[string]interface{})
+		if !ok {
+			return ""
+		}
+		content, _ := m["content"].(string)
+		status, _ := m["status"].(string)
+		if content == "" || status == "" {
+			return ""
+		}
+		todos = append(todos, todoItem{content: content, status: status})
+		switch status {
+		case "completed":
+			completed++
+		case "in_progress":
+			if current == "" {
+				current = content
+			}
+		}
+	}
+	if completed == 0 {
+		lines := make([]string, 0, len(todos)+1)
+		lines = append(lines, fmt.Sprintf("📋 0/%d", len(todos)))
+		for _, t := range todos {
+			marker := "⬜"
+			if t.status == "in_progress" {
+				marker = "🔄"
+			}
+			lines = append(lines, marker+" "+t.content)
+		}
+		return strings.Join(lines, "\n")
+	}
+	if current != "" {
+		return fmt.Sprintf("📋 %d/%d · 🔄 %s", completed, len(todos), current)
+	}
+	return fmt.Sprintf("📋 %d/%d", completed, len(todos))
 }
 
 // attURL and attCaption extract url/caption from an attachment, handling nil pointers.

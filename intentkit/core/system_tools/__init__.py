@@ -19,6 +19,7 @@ from intentkit.core.system_tools.store_image import StoreImageTool
 from intentkit.core.system_tools.ui_ask_user import UIAskUserTool
 from intentkit.core.system_tools.ui_show_card import UIShowCardTool
 from intentkit.core.system_tools.update_memory import UpdateMemoryTool
+from intentkit.core.system_tools.write_todos import WriteTodosTool
 
 __all__ = [
     "SystemTool",
@@ -35,6 +36,7 @@ __all__ = [
     "ui_show_card",
     "update_memory",
     "web_search",
+    "write_todos",
 ]
 
 # Cached singleton instances — import these directly where needed.
@@ -51,3 +53,4 @@ ui_ask_user = UIAskUserTool()
 ui_show_card = UIShowCardTool()
 update_memory = UpdateMemoryTool()
 web_search = WebSearchTool()
+write_todos = WriteTodosTool()

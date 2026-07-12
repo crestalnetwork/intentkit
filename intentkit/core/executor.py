@@ -85,7 +85,6 @@ async def build_executor(
         ClearToolUsesEdit,
         ContextEditingMiddleware,
         ModelRetryMiddleware,
-        TodoListMiddleware,
         ToolRetryMiddleware,
     )
     from langchain_anthropic.middleware import AnthropicPromptCachingMiddleware
@@ -97,6 +96,7 @@ async def build_executor(
         SafeLLMToolSelectorMiddleware,
         StepTrackingMiddleware,
         SummarizationMiddleware,
+        TodoMiddleware,
         ToolBindingMiddleware,
     )
 
@@ -159,6 +159,7 @@ async def build_executor(
         ui_show_card,
         update_memory,
         web_search,
+        write_todos,
     )
 
     model_provider = llm_model.info.provider
@@ -179,6 +180,13 @@ async def build_executor(
     # sub-agent runs recompute their own access context per message.
     if agent.sub_agents:
         tools.append(call_agent)
+
+    # write_todos: task planning for complex multi-step requests. The tool
+    # is main_agent_only — ToolBindingMiddleware drops it from sub-agent
+    # runs, whose plan belongs to the calling agent. TodoMiddleware below
+    # carries the matching prompt guidance and lifecycle.
+    if agent.enable_todo:
+        tools.append(write_todos)
 
     # activity tools: enabled by default (create_activity is team_only)
     if agent.is_activity_enabled:
@@ -262,13 +270,16 @@ async def build_executor(
         ModelRetryMiddleware(),
     ]
 
+    if agent.enable_todo:
+        middleware.append(TodoMiddleware())
+
     # Anthropic prompt caching: 5m ephemeral cache slashes input-token cost on
     # long system prompts + repeated history. No-op for non-Anthropic providers.
+    # Must come after TodoMiddleware in this list: the cache breakpoint tags
+    # the last system-message block, so the todo guidance/snapshot block has
+    # to be appended before the tag is placed to be covered by the cache.
     if model_provider == LLMProvider.ANTHROPIC_COMPATIBLE:
         middleware.append(AnthropicPromptCachingMiddleware())
-
-    if agent.enable_todo:
-        middleware.append(TodoListMiddleware())
 
     # Auto-enable LLM tool selector when there are many selectable tools.
     # Only BaseTool instances count toward the threshold since the upstream
@@ -298,8 +309,10 @@ async def build_executor(
     # uses before_model, so summarization always runs first regardless of list position.
     # The lower threshold (40%) ensures context editing handles moderate growth,
     # while summarization (60-80%) handles extreme cases.
-    # Interactive UI tool results carry the rendered card/choice payload, so
-    # they are never cleared.
+    # context_editing_exempt results (UI card/choice payloads, the
+    # write_todos echo) are never cleared — only summarization may destroy
+    # them, and it snapshots the todo list when it does (see
+    # SummarizationMiddleware).
     context_editing_trigger = int(llm_model.info.context_length * 0.4)
     middleware.append(
         ContextEditingMiddleware(
@@ -310,7 +323,7 @@ async def build_executor(
                         t.name
                         for t in tools
                         if isinstance(t, BaseTool)
-                        and getattr(t, "interactive_only", False)
+                        and getattr(t, "context_editing_exempt", False)
                     ],
                 )
             ]

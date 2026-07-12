@@ -3,27 +3,32 @@ from __future__ import annotations
 import logging
 import mimetypes
 from collections.abc import Awaitable, Callable
-from typing import TYPE_CHECKING, Any, override
+from typing import TYPE_CHECKING, Any, cast, override
 
 from langchain.agents.middleware import AgentMiddleware, LLMToolSelectorMiddleware
-from langchain.agents.middleware.summarization import SummarizationMiddleware
-from langchain_core.messages import AIMessage, HumanMessage
+from langchain.agents.middleware.summarization import (
+    SummarizationMiddleware as BaseSummarizationMiddleware,
+)
+from langchain_core.messages import AIMessage, HumanMessage, SystemMessage, ToolMessage
 from langchain_core.tools import BaseTool
 from langchain_core.utils.function_calling import convert_to_openai_tool
 from langgraph.runtime import Runtime
 
 if TYPE_CHECKING:
     from langchain.agents.middleware.types import (
+        AgentState as LCAgentState,
+    )
+    from langchain.agents.middleware.types import (
         ModelRequest,
         ModelResponse,
         ToolCallRequest,
     )
-    from langchain_core.messages import ToolMessage
     from langgraph.types import Command
 
-from intentkit.abstracts.graph import AgentContext, AgentState
+from intentkit.abstracts.graph import AgentContext, AgentState, Todo
 from intentkit.core.memory import resolve_memory_scopes
 from intentkit.core.prompt import build_system_prompt
+from intentkit.core.system_tools.write_todos import render_todos
 from intentkit.models.agent import Agent
 from intentkit.models.agent_data import AgentData
 from intentkit.models.chat import DISPLAY_MESSAGE_ARG, AuthorType
@@ -165,6 +170,9 @@ class ToolBindingMiddleware(AgentMiddleware[AgentState, AgentContext]):
         # the conversation resolves no memory scope — sub-agent runs and
         # teamless anonymous chats — where every call would just error.
         memory_scope_active = bool(resolve_memory_scopes(context.agent, context))
+        # Tools marked main_agent_only (write_todos) are dropped from
+        # sub-agent runs: a sub-agent is a one-shot worker whose plan
+        # belongs to the calling agent.
         # The display_message swap is deliberately unconditional: cron and
         # sub-agent runs have no live viewer, but their tool calls are shown
         # later in execution history, so the status line is still worth it.
@@ -174,6 +182,7 @@ class ToolBindingMiddleware(AgentMiddleware[AgentState, AgentContext]):
             if (context.is_own_team or not getattr(t, "team_only", False))
             and (interactive_allowed or not getattr(t, "interactive_only", False))
             and (memory_scope_active or not getattr(t, "requires_memory_scope", False))
+            and (not context.is_subagent or not getattr(t, "main_agent_only", False))
         ]
 
         model = await self.llm_model.create_instance(llm_params)
@@ -377,6 +386,166 @@ class MediaBlockSanitizerMiddleware(AgentMiddleware[AgentState, AgentContext]):
         return await handler(request)
 
 
+class SummarizationMiddleware(BaseSummarizationMiddleware):
+    """Summarization that also snapshots the todo list.
+
+    Summarization is the only mechanism that destroys `write_todos` tool
+    results (context editing exempts them via ``context_editing_exempt``),
+    so it is the single point where the model's view of its todo list must
+    be re-established. `TodoMiddleware` injects ``todos_snapshot`` into the
+    system prompt; refreshing the snapshot only here keeps that prompt block
+    stable between compactions, preserving prompt-cache hits.
+    """
+
+    @override
+    async def abefore_model(
+        self, state: LCAgentState[Any], runtime: Runtime[Any]
+    ) -> dict[str, Any] | None:
+        return self._with_todos_snapshot(
+            state, await super().abefore_model(state, runtime)
+        )
+
+    @staticmethod
+    def _with_todos_snapshot(
+        state: LCAgentState[Any], result: dict[str, Any] | None
+    ) -> dict[str, Any] | None:
+        if result is None:
+            return None
+        return {**result, "todos_snapshot": state.get("todos") or []}
+
+
+# Ported from langchain's TodoListMiddleware (MIT), which TodoMiddleware
+# replaces. Keep the guidance aligned with it when upgrading langchain.
+WRITE_TODOS_SYSTEM_PROMPT = """## `write_todos`
+
+You have access to the `write_todos` tool to help you manage and plan complex objectives.
+Use this tool for complex objectives to ensure that you are tracking each necessary step.
+This tool is very helpful for planning complex objectives, and for breaking down these larger complex objectives into smaller steps.
+
+It is critical that you mark todos as completed as soon as you are done with a step. Do not batch up multiple steps before marking them as completed.
+For simple objectives that only require a few steps, it is better to just complete the objective directly and NOT use this tool.
+Writing todos takes time and tokens, use it when it is helpful for managing complex many-step problems! But not for simple few-step requests.
+
+## Important To-Do List Usage Notes to Remember
+
+- The `write_todos` tool should never be called multiple times in parallel.
+- Don't be afraid to revise the To-Do list as you go. New information may reveal new tasks that need to be done, or old tasks that are irrelevant.
+
+## Finishing a task
+
+When you finish all work, write your final answer in the message AFTER your last `write_todos` call — not in the same turn as that call. Start the final message with the substantive content the user asked for — the data, computation, summary, or analysis. The user wants the result, not confirmation that the work is done."""
+
+
+def _todo_snapshot_block(todos: list[Todo]) -> str:
+    """System-prompt block re-establishing the todo list after compaction."""
+    return (
+        "## Current Todo List\n\n"
+        "Earlier context (including your `write_todos` results) was compacted "
+        "away; this snapshot of your todo list was taken at that moment. Any "
+        "`write_todos` results still visible in the conversation are newer "
+        "than this snapshot.\n\n" + render_todos(todos)
+    )
+
+
+class TodoMiddleware(AgentMiddleware[AgentState, AgentContext]):
+    """Todo-list guidance, snapshot re-injection, and lifecycle management.
+
+    Works with the `write_todos` system tool (which owns the ``todos`` state
+    channel). Responsibilities:
+
+    - Append the `write_todos` usage guidance to the system prompt, plus the
+      ``todos_snapshot`` block when summarization has destroyed the tool
+      results the model relies on. The snapshot is refreshed only at
+      compaction time (see `SummarizationMiddleware`), so the system prompt
+      stays byte-stable between compactions for prompt caching.
+    - Reject parallel `write_todos` calls: each call replaces the whole
+      list, so parallel calls would be ambiguous.
+    - Clear the list at the end of a turn when every item is completed, so
+      a finished task's list never leaks into the next task in long-lived
+      chats.
+
+    Skipped entirely for sub-agent runs (`write_todos` is main_agent_only).
+    """
+
+    @override
+    async def awrap_model_call(  # type: ignore[override]
+        self,
+        request: ModelRequest[AgentContext],
+        handler: Callable[[ModelRequest[AgentContext]], Awaitable[ModelResponse]],
+    ) -> ModelResponse:
+        context: AgentContext = request.runtime.context
+        if context.is_subagent:
+            return await handler(request)
+        appended = WRITE_TODOS_SYSTEM_PROMPT
+        snapshot = request.state.get("todos_snapshot") or []
+        if snapshot:
+            appended = f"{appended}\n\n{_todo_snapshot_block(snapshot)}"
+        if request.system_message is not None:
+            new_system_content = [
+                *request.system_message.content_blocks,
+                {"type": "text", "text": f"\n\n{appended}"},
+            ]
+        else:
+            new_system_content = [{"type": "text", "text": appended}]
+        new_system_message = SystemMessage(
+            content=cast("list[str | dict[str, str]]", new_system_content)
+        )
+        return await handler(request.override(system_message=new_system_message))
+
+    @override
+    async def aafter_model(
+        self, state: AgentState, runtime: Runtime[AgentContext]
+    ) -> dict[str, Any] | None:
+        """Reject a model turn that issued parallel `write_todos` calls."""
+        del runtime
+        messages = state["messages"]
+        if not messages:
+            return None
+        last_ai_msg = next(
+            (msg for msg in reversed(messages) if isinstance(msg, AIMessage)), None
+        )
+        if not last_ai_msg or not last_ai_msg.tool_calls:
+            return None
+        write_todos_calls = [
+            tc for tc in last_ai_msg.tool_calls if tc["name"] == "write_todos"
+        ]
+        if len(write_todos_calls) > 1:
+            return {
+                "messages": [
+                    ToolMessage(
+                        content=(
+                            "Error: The `write_todos` tool should never be called "
+                            "multiple times in parallel. Please call it only once "
+                            "per model invocation to update the todo list."
+                        ),
+                        tool_call_id=tc["id"],
+                        status="error",
+                    )
+                    for tc in write_todos_calls
+                ]
+            }
+        return None
+
+    @override
+    async def aafter_agent(
+        self, state: AgentState, runtime: Runtime[AgentContext]
+    ) -> dict[str, Any] | None:
+        """Clear the todo list at the task boundary.
+
+        A turn that ends with every item completed marks the end of a task;
+        starting the next task from a clean slate prevents stale-list
+        pollution in long-lived chats. A snapshot without a live list (the
+        model cleared the list itself) is likewise dropped.
+        """
+        del runtime
+        todos = state.get("todos") or []
+        if todos and all(todo["status"] == "completed" for todo in todos):
+            return {"todos": [], "todos_snapshot": []}
+        if not todos and state.get("todos_snapshot"):
+            return {"todos_snapshot": []}
+        return None
+
+
 class SafeLLMToolSelectorMiddleware(LLMToolSelectorMiddleware):
     """`LLMToolSelectorMiddleware` that silently drops `always_include` names
     missing from the current request's tool list.
@@ -414,5 +583,6 @@ __all__ = [
     "SafeLLMToolSelectorMiddleware",
     "StepTrackingMiddleware",
     "SummarizationMiddleware",
+    "TodoMiddleware",
     "ToolBindingMiddleware",
 ]

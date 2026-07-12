@@ -39,6 +39,8 @@ class UIAskUserTool(SystemTool):
     # Return a (content, artifact) tuple so the choice lands in attachments
     response_format: Literal["content", "content_and_artifact"] = "content_and_artifact"
     interactive_only: bool = True
+    # The choice payload in the result must survive context editing
+    context_editing_exempt: bool = True
     # The turn ends here: the agent must wait for the user's pick
     return_direct: bool = True
 

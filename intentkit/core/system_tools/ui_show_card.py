@@ -38,6 +38,8 @@ class UIShowCardTool(SystemTool):
     # Return a (content, artifact) tuple so the card lands in attachments
     response_format: Literal["content", "content_and_artifact"] = "content_and_artifact"
     interactive_only: bool = True
+    # The card payload in the result must survive context editing
+    context_editing_exempt: bool = True
 
     @override
     async def _arun(
