@@ -1,13 +1,11 @@
-# Release v2.19.0
+# Release v2.20.0
 
 ## New Features
 
-- **Memory page**: a new "Memory" entry in the account area shows what your agents remember, split into Team Memory (shared with the whole team) and Your Memory (what each agent remembers about you personally). Entries are shown truncated — open one to read the full text rendered as Markdown, or edit it directly. Memories are managed automatically by your agents, so you normally don't need to read or change them. Available in both the bundled frontend and the team frontend.
-- **Memory API**: new endpoints to list and edit these memory documents (`/teams/{team_id}/memories` in the Team API, `/memories` in the local API), with size limits and per-user access control.
+- **Task planning rebuilt**: agents with the todo feature enabled now reliably maintain a working plan for complex, multi-step requests. Plans stay accurate through very long conversations (the agent no longer loses sight of its list when older context is compacted away), a finished task's list is cleaned up automatically so it never leaks into the next request, and prompt-cache efficiency is preserved throughout.
+- **Visible plans everywhere**: web chat renders the plan as a live checklist with per-step states and a progress count. IM channels (Telegram, WeChat, Slack, Lark) show the checklist when a plan is created and a compact one-line progress note as steps complete.
 
 ## Improvements
 
-- **Long-term memory is always on**: memory now belongs to the conversation (team, user, channel, or cron task), not the agent, so the per-agent "Long-Term Memory" switch is gone. Agents skip the memory tool automatically in the few situations where it cannot work (sub-agent runs and anonymous visitors).
-- **Super mode removed**: every agent now runs with the higher execution step limit by default, so the per-agent "Super Mode" switch and badge are gone. The limit can still be tuned server-wide.
-- The lead agent's memory page entry shows the lead's real configured name and avatar.
-- Fixed minor issues in prompt assembly and memory loading performance.
+- Fixed bugs in the todo module that could leave the planning tool entirely unavailable to the agent.
+- Sub-agent runs no longer carry their own todo lists — planning stays with the agent you are talking to. Scheduled (cron) runs keep full planning support.
