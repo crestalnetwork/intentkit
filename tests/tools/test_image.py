@@ -9,7 +9,11 @@ import pytest
 
 from intentkit.tools.image import available, get_tools
 from intentkit.tools.image.base import ImageGenerationInput
-from intentkit.tools.image.gemini import GeminiImageFlash, GeminiImagePro
+from intentkit.tools.image.gemini import (
+    GeminiImageFlash,
+    GeminiImageFlashLite,
+    GeminiImagePro,
+)
 from intentkit.tools.image.gpt import GPTImageFlagship, GPTImageMini
 from intentkit.tools.image.grok import GrokImage
 from intentkit.tools.image.openrouter import FluxPro, Riverflow
@@ -22,6 +26,7 @@ def test_tool_metadata():
         (GPTImageMini, "image_gpt_mini", Decimal("20")),
         (GeminiImagePro, "image_gemini_pro", Decimal("130")),
         (GeminiImageFlash, "image_gemini_flash", Decimal("70")),
+        (GeminiImageFlashLite, "image_gemini_flash_lite", Decimal("35")),
         (GrokImage, "image_grok", Decimal("20")),
         (FluxPro, "image_flux_pro", Decimal("30")),
         (Riverflow, "image_riverflow", Decimal("20")),

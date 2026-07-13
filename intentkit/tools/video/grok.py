@@ -111,13 +111,13 @@ class GrokVideoBase(VideoBaseTool):
 
 
 class GrokVideo(GrokVideoBase):
-    """Generate videos using Grok Imagine Video."""
+    """Generate videos using Grok Imagine Video 1.5."""
 
     name: str = "video_grok"
-    title: str = "Grok Imagine Video"
+    title: str = "Grok Imagine Video 1.5"
     description: str = (
-        "Generate videos from text prompts or images using xAI Grok Imagine Video. "
+        "Generate videos from text prompts or images using xAI Grok Imagine Video 1.5. "
         "Supports text-to-video and image-to-video. Max 15 seconds, 720p."
     )
-    price: Decimal = Decimal("500")
-    native_model: str = "grok-imagine-video"
+    price: Decimal = Decimal("800")
+    native_model: str = "grok-imagine-video-1.5"

@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" fill="none">
+  <!-- Background: China red -->
+  <rect width="128" height="128" rx="24" fill="#DE2910"/>
+  <!-- Gold star -->
+  <polygon points="30,7 31.9,12.4 37.6,12.5 33,16 34.7,21.5 30,18.2 25.3,21.5 27,16 22.4,12.5 28.1,12.4" fill="#FFDE00"/>
+  <!-- Chart panel -->
+  <rect x="20" y="28" width="88" height="76" rx="8" fill="white" opacity="0.95"/>
+  <!-- Candlesticks: A-share convention, red = up, green = down -->
+  <line x1="40" y1="60" x2="40" y2="98" stroke="#E02020" stroke-width="3"/>
+  <rect x="34" y="68" width="12" height="24" rx="2" fill="#E02020"/>
+  <line x1="64" y1="48" x2="64" y2="86" stroke="#16A34A" stroke-width="3"/>
+  <rect x="58" y="56" width="12" height="22" rx="2" fill="#16A34A"/>
+  <line x1="88" y1="32" x2="88" y2="72" stroke="#E02020" stroke-width="3"/>
+  <rect x="82" y="40" width="12" height="24" rx="2" fill="#E02020"/>
+</svg>

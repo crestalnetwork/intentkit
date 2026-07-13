@@ -18,6 +18,7 @@ toolset = ToolsetMeta(
     title="China A-Share",
     description="Real-time and historical market data for Chinese A-shares (Shanghai/Shenzhen/Beijing) backed by the akshare library — quotes, K-lines, indices, boards, capital flow, news, announcements, financials, and trading-day calendar.",
     tags=["Analytics", "Stocks", "China"],
+    icon="/tools/cn_stock/cn_stock.svg",
 )
 
 

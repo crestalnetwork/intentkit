@@ -150,11 +150,11 @@ def _extract_openrouter_image_url(response: Any) -> str | None:
 
 
 async def generate_image_google(prompt: str) -> bytes | None:
-    """Generate image using Google Gemini gemini-3.1-flash-image-preview."""
+    """Generate image using Google Gemini gemini-3.1-flash-image."""
     try:
         client = genai.Client(api_key=config.google_api_key)
         response = await client.aio.models.generate_content(
-            model="gemini-3.1-flash-image-preview",
+            model="gemini-3.1-flash-image",
             contents=prompt,
             config=types.GenerateContentConfig(
                 response_modalities=["IMAGE", "TEXT"],

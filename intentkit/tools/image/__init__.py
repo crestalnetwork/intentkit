@@ -4,7 +4,11 @@ from collections.abc import Callable
 
 from intentkit.config.config import config as system_config
 from intentkit.tools.image.base import ImageBaseTool
-from intentkit.tools.image.gemini import GeminiImageFlash, GeminiImagePro
+from intentkit.tools.image.gemini import (
+    GeminiImageFlash,
+    GeminiImageFlashLite,
+    GeminiImagePro,
+)
 from intentkit.tools.image.gpt import GPTImageFlagship, GPTImageMini
 from intentkit.tools.image.grok import GrokImage
 from intentkit.tools.image.minimax import MiniMaxImage
@@ -27,6 +31,7 @@ _TOOL_NAME_TO_CLASS: dict[str, Callable[[], ImageBaseTool]] = {
     "image_gpt_mini": GPTImageMini,
     "image_gemini_pro": GeminiImagePro,
     "image_gemini_flash": GeminiImageFlash,
+    "image_gemini_flash_lite": GeminiImageFlashLite,
     "image_grok": GrokImage,
     "image_flux_pro": FluxPro,
     "image_riverflow": Riverflow,
