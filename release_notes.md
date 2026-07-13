@@ -1,13 +1,12 @@
-# Release v2.21.0
+# Release v2.22.0
 
 ## New Features
 
-- **Smarter conversation memory**: long conversations are now compressed with a new in-house strategy that adapts to how active the chat is. Active conversations keep as much context as possible (and stay prompt-cache friendly); a chat resumed after hours or days is compacted more aggressively, cutting input cost and speeding up the first reply.
-- **Compression that keeps what matters**: instead of blindly trimming old messages, the agent now preserves the conversation's opening exchange and the most recent round in full, and replaces everything in between with an AI-written summary — so the agent still remembers how the conversation started and what was just said.
-- **Per-model tuning**: the compression thresholds (for active, recent, and idle conversations) can now be adjusted per model in the model catalog, with sensible defaults derived from each model's context window.
+- **Nano Banana 2 Lite image model**: added Google's fastest and most affordable image generator to the image toolset — ideal for quick drafts and high-volume image workflows, at about half the price of Nano Banana 2.
 
 ## Improvements
 
-- Extremely long histories are now summarized reliably in stages, even when they exceed the summarizer model's own capacity.
-- A failed summarization no longer risks corrupting conversation history — the agent simply keeps the full history and retries later.
-- Fixed issues in the history compression module that could cause repeated re-summarization of the same conversation.
+- **Grok video upgraded to Imagine Video 1.5**: xAI's latest video model delivers steadier motion with clearer, better-synced speech and sound.
+- **Gemini image models moved to stable versions**: Nano Banana Pro, Nano Banana 2, and agent avatar generation now run on Google's production model releases instead of previews.
+- The China A-Share toolset now shows its own icon in the tool picker.
+- Fixed a performance issue where generating a Gemini image could briefly stall other conversations on the same server.
