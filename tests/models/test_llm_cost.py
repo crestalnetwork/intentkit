@@ -7,7 +7,7 @@ import intentkit.models.llm as llm_module
 from intentkit.models.llm import LLMModelInfo, _resolve_generation_cost
 
 
-def _info(input_price="0.5", cached="0.05", output="3"):
+def _info(input_price: str = "0.5", cached: str | None = "0.05", output: str = "3"):
     return LLMModelInfo.model_construct(
         input_price=Decimal(input_price),
         cached_input_price=Decimal(cached) if cached is not None else None,
