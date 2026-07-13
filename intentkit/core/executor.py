@@ -95,10 +95,10 @@ async def build_executor(
         MediaBlockSanitizerMiddleware,
         SafeLLMToolSelectorMiddleware,
         StepTrackingMiddleware,
-        SummarizationMiddleware,
         TodoMiddleware,
         ToolBindingMiddleware,
     )
+    from intentkit.core.summarization import SummarizationMiddleware
 
     # Create the LLM model instance
     llm_model = await create_llm_model(
@@ -308,7 +308,9 @@ async def build_executor(
     # Note: ContextEditingMiddleware uses wrap_model_call while SummarizationMiddleware
     # uses before_model, so summarization always runs first regardless of list position.
     # The lower threshold (40%) ensures context editing handles moderate growth,
-    # while summarization (60-80%) handles extreme cases.
+    # while summarization handles extreme cases; its per-model thresholds and
+    # idle-time tiers are defined by LLMModelInfo.compress_thresholds and
+    # intentkit/core/summarization.py.
     # context_editing_exempt results (UI card/choice payloads, the
     # write_todos echo) are never cleared — only summarization may destroy
     # them, and it snapshots the todo list when it does (see
@@ -330,15 +332,12 @@ async def build_executor(
         )
     )
 
-    summarize_model_name = pick_summarize_model()
-    summarize_llm = await create_llm_model(model_name=summarize_model_name)
-    summarize_model = await summarize_llm.create_instance()
+    summarize_llm = await create_llm_model(model_name=pick_summarize_model())
     middleware.append(
         SummarizationMiddleware(
-            model=summarize_model,
-            trigger=[
-                ("tokens", int(llm_model.info.context_length * 0.8)),
-            ],
+            model_info=llm_model.info,
+            summary_model=await summarize_llm.create_instance(),
+            summary_model_info=summarize_llm.info,
         )
     )
 

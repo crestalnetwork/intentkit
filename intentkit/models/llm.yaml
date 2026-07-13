@@ -15,6 +15,12 @@
 #                     id (and its own legacy_ids) onto the successor entry.
 #   reasoning_effort  "xhigh"/"high"/"medium"/"low"/"minimal"/"none" or null.
 #   intelligence/speed/price_level  1-5 ratings.
+#   compress_cold/compress_warm/compress_hot
+#                     Optional per-model history-compression thresholds in tokens.
+#                     Which one applies depends on how long ago the previous LLM
+#                     request happened: hot within 1 hour, warm within 1 day,
+#                     cold beyond that. Omit for the defaults: cold 20000,
+#                     warm 50% of context_length, hot 80% of context_length.
 
 
 - id: "google/gemma-4-31b-it:free"

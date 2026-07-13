@@ -118,7 +118,7 @@ async def test_build_executor(mock_agent, mock_agent_data):
         patch("langchain.agents.create_agent") as mock_create_lc_agent,
         patch("intentkit.core.executor.get_checkpointer"),
         patch("intentkit.core.executor.pick_summarize_model", return_value="gpt-4o"),
-        patch("intentkit.core.middleware.SummarizationMiddleware"),
+        patch("intentkit.core.summarization.SummarizationMiddleware"),
     ):
         mock_llm_instance = AsyncMock()
         mock_model = AsyncMock()
@@ -169,7 +169,7 @@ async def test_build_executor_openrouter_tools(mock_agent, mock_agent_data):
         patch("langchain.agents.create_agent") as mock_create_lc_agent,
         patch("intentkit.core.executor.get_checkpointer"),
         patch("intentkit.core.executor.pick_summarize_model", return_value="gpt-4o"),
-        patch("intentkit.core.middleware.SummarizationMiddleware"),
+        patch("intentkit.core.summarization.SummarizationMiddleware"),
     ):
         mock_llm_instance = AsyncMock()
         mock_model = AsyncMock()
@@ -206,7 +206,7 @@ async def test_build_executor_compatible_tools(mock_agent, mock_agent_data):
         patch("langchain.agents.create_agent") as mock_create_lc_agent,
         patch("intentkit.core.executor.get_checkpointer"),
         patch("intentkit.core.executor.pick_summarize_model", return_value="gpt-4o"),
-        patch("intentkit.core.middleware.SummarizationMiddleware"),
+        patch("intentkit.core.summarization.SummarizationMiddleware"),
     ):
         mock_llm_instance = AsyncMock()
         mock_model = AsyncMock()

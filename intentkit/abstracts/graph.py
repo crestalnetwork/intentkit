@@ -76,7 +76,7 @@ class AgentState(BaseAgentState[Any]):
     incremental writes rather than a full snapshot per step — for long chat
     threads this turns O(N^2) checkpoint growth into O(N). `_messages_reducer`
     delegates to the upstream batching-invariant `_messages_delta_reducer`
-    but adds `REMOVE_ALL_MESSAGES` handling so the bundled
+    but adds `REMOVE_ALL_MESSAGES` handling so the
     `SummarizationMiddleware` reset path still works.
 
     `snapshot_frequency=50` is tuned for chat workloads (a few-to-dozens of
@@ -101,6 +101,14 @@ class AgentState(BaseAgentState[Any]):
     results in the message history; summarization destroys those, so this
     snapshot is re-injected into the system prompt. It is refreshed ONLY at
     compaction time to keep the system prompt stable for prompt caching.
+    """
+    last_llm_at: Annotated[NotRequired[float], OmitFromInput]
+    """Unix timestamp of the most recent LLM request in this thread.
+
+    Refreshed before every model call; history compression reads the
+    previous value to pick its idle-time threshold tier (windows and
+    thresholds defined in `intentkit.core.summarization` and
+    `LLMModelInfo.compress_thresholds`).
     """
     __extra__: NotRequired[dict[str, Any]]
 

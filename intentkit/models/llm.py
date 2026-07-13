@@ -242,6 +242,33 @@ class LLMModelInfo(BaseModel):
     )  # Price level rating from 1-5
     context_length: int  # Maximum context length in tokens
     output_length: int  # Maximum output length in tokens
+    compress_cold: int | None = Field(
+        default=None,
+        ge=1,
+        description=(
+            "History token threshold that triggers compression when the "
+            "previous LLM request is more than a day old. None means the "
+            "default of 20,000 tokens."
+        ),
+    )
+    compress_warm: int | None = Field(
+        default=None,
+        ge=1,
+        description=(
+            "History token threshold that triggers compression when the "
+            "previous LLM request is within a day. None means 50% of "
+            "context_length."
+        ),
+    )
+    compress_hot: int | None = Field(
+        default=None,
+        ge=1,
+        description=(
+            "History token threshold that triggers compression when the "
+            "previous LLM request is within an hour. None means 80% of "
+            "context_length."
+        ),
+    )
     intelligence: int = Field(ge=1, le=5)  # Intelligence rating from 1-5
     speed: int = Field(ge=1, le=5)  # Speed rating from 1-5
     supports_image_input: bool = False
@@ -280,6 +307,31 @@ class LLMModelInfo(BaseModel):
     @classmethod
     def serialize_datetime(cls, v: datetime) -> str:
         return v.isoformat(timespec="milliseconds")
+
+    def compress_thresholds(self) -> tuple[int, int, int]:
+        """Effective (cold, warm, hot) history-compression thresholds in tokens.
+
+        Defaults: cold 20,000 tokens, warm 50% of context, hot 80% of context;
+        each is overridable per model via ``compress_cold/warm/hot``. The
+        values are clamped downward so that cold <= warm <= hot always holds
+        (relevant for small-context models where 50% of context is below the
+        20k cold default).
+        """
+        hot = (
+            self.compress_hot
+            if self.compress_hot is not None
+            else int(self.context_length * 0.8)
+        )
+        warm = min(
+            self.compress_warm
+            if self.compress_warm is not None
+            else int(self.context_length * 0.5),
+            hot,
+        )
+        cold = min(
+            self.compress_cold if self.compress_cold is not None else 20_000, warm
+        )
+        return cold, warm, hot
 
     @staticmethod
     async def get(model_id: str) -> "LLMModelInfo":

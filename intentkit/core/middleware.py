@@ -6,18 +6,12 @@ from collections.abc import Awaitable, Callable
 from typing import TYPE_CHECKING, Any, cast, override
 
 from langchain.agents.middleware import AgentMiddleware, LLMToolSelectorMiddleware
-from langchain.agents.middleware.summarization import (
-    SummarizationMiddleware as BaseSummarizationMiddleware,
-)
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage, ToolMessage
 from langchain_core.tools import BaseTool
 from langchain_core.utils.function_calling import convert_to_openai_tool
 from langgraph.runtime import Runtime
 
 if TYPE_CHECKING:
-    from langchain.agents.middleware.types import (
-        AgentState as LCAgentState,
-    )
     from langchain.agents.middleware.types import (
         ModelRequest,
         ModelResponse,
@@ -386,34 +380,6 @@ class MediaBlockSanitizerMiddleware(AgentMiddleware[AgentState, AgentContext]):
         return await handler(request)
 
 
-class SummarizationMiddleware(BaseSummarizationMiddleware):
-    """Summarization that also snapshots the todo list.
-
-    Summarization is the only mechanism that destroys `write_todos` tool
-    results (context editing exempts them via ``context_editing_exempt``),
-    so it is the single point where the model's view of its todo list must
-    be re-established. `TodoMiddleware` injects ``todos_snapshot`` into the
-    system prompt; refreshing the snapshot only here keeps that prompt block
-    stable between compactions, preserving prompt-cache hits.
-    """
-
-    @override
-    async def abefore_model(
-        self, state: LCAgentState[Any], runtime: Runtime[Any]
-    ) -> dict[str, Any] | None:
-        return self._with_todos_snapshot(
-            state, await super().abefore_model(state, runtime)
-        )
-
-    @staticmethod
-    def _with_todos_snapshot(
-        state: LCAgentState[Any], result: dict[str, Any] | None
-    ) -> dict[str, Any] | None:
-        if result is None:
-            return None
-        return {**result, "todos_snapshot": state.get("todos") or []}
-
-
 # Ported from langchain's TodoListMiddleware (MIT), which TodoMiddleware
 # replaces. Keep the guidance aligned with it when upgrading langchain.
 WRITE_TODOS_SYSTEM_PROMPT = """## `write_todos`
@@ -582,7 +548,6 @@ __all__ = [
     "MediaBlockSanitizerMiddleware",
     "SafeLLMToolSelectorMiddleware",
     "StepTrackingMiddleware",
-    "SummarizationMiddleware",
     "TodoMiddleware",
     "ToolBindingMiddleware",
 ]

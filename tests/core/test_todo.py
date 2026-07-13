@@ -19,7 +19,6 @@ from langchain_core.utils.function_calling import convert_to_openai_tool
 from intentkit.abstracts.graph import AgentContext, Todo
 from intentkit.core.middleware import (
     WRITE_TODOS_SYSTEM_PROMPT,
-    SummarizationMiddleware,
     TodoMiddleware,
     ToolBindingMiddleware,
 )
@@ -338,32 +337,5 @@ async def test_no_update_when_nothing_to_clear():
     assert result is None
 
 
-# ──────────────────────────────────────────────
-# SummarizationMiddleware: snapshot capture at compaction
-# ──────────────────────────────────────────────
-
-
-def test_snapshot_added_when_summarization_runs():
-    todos = [{"content": "a", "status": "in_progress"}]
-    result = SummarizationMiddleware._with_todos_snapshot(
-        cast(Any, {"todos": todos}), {"messages": ["summary"]}
-    )
-
-    assert result == {"messages": ["summary"], "todos_snapshot": todos}
-
-
-def test_snapshot_untouched_when_no_summarization():
-    assert (
-        SummarizationMiddleware._with_todos_snapshot(
-            cast(Any, {"todos": [{"content": "a", "status": "pending"}]}), None
-        )
-        is None
-    )
-
-
-def test_snapshot_empty_when_no_todos():
-    result = SummarizationMiddleware._with_todos_snapshot(
-        cast(Any, {}), {"messages": []}
-    )
-
-    assert result == {"messages": [], "todos_snapshot": []}
+# Snapshot capture at compaction time is covered in test_summarization.py
+# (SummarizationMiddleware owns the todos_snapshot write).
