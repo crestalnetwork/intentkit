@@ -99,7 +99,6 @@ def build_task_manager(team_id: str) -> Agent:
         "model": pick_default_model(),
         "system_prompt": system_prompt,
         "search_internet": False,
-        "enable_todo": False,
         "enable_activity": False,
         "enable_post": False,
         "sub_agents": None,

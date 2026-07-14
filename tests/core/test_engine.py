@@ -15,7 +15,7 @@ from intentkit.core.executor import (
     agents_updated,
     build_executor,
 )
-from intentkit.core.middleware import ToolBindingMiddleware
+from intentkit.core.middleware import TodoMiddleware, ToolBindingMiddleware
 from intentkit.models.agent import Agent, AgentData
 from intentkit.models.agent.core import AgentVisibility
 from intentkit.models.chat import (
@@ -136,6 +136,12 @@ async def test_build_executor(mock_agent, mock_agent_data):
         assert tool_retry.retry_on(ToolException("boom")) is False
         assert tool_retry.retry_on(RuntimeError("boom")) is True
         assert executor == mock_create_lc_agent.return_value
+        # The todo system is always on: write_todos bound for every agent
+        # (sub-agent runs lose it per request via main_agent_only), and
+        # TodoMiddleware registered unconditionally.
+        tools = mock_create_lc_agent.call_args.kwargs["tools"]
+        assert "write_todos" in _tool_keys(tools)
+        assert any(isinstance(m, TodoMiddleware) for m in middleware)
 
 
 def _tool_keys(tools: list) -> set[str]:

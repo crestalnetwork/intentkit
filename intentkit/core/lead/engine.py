@@ -239,7 +239,6 @@ async def _build_lead_agent(team_id: str, user_id: str | None = None) -> Agent:
         "model": pick_lead_model(),
         "system_prompt": system_prompt,
         "search_internet": True,
-        "enable_todo": False,
         "enable_activity": False,
         "enable_post": False,
         "sub_agents": None,

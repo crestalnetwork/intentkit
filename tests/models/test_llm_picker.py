@@ -142,10 +142,7 @@ def test_picker_entries_reference_live_catalog_ids():
     import yaml as pyyaml
 
     import intentkit.models.llm as llm_module
-    from intentkit.models.llm_picker import (
-        _DEFAULT_FALLBACK_MODEL,
-        pick_tool_selector_model,
-    )
+    from intentkit.models.llm_picker import _DEFAULT_FALLBACK_MODEL
 
     rows = pyyaml.safe_load(
         (Path(llm_module.__file__).with_name("llm.yaml")).read_text(encoding="utf-8")
@@ -178,9 +175,6 @@ def test_picker_entries_reference_live_catalog_ids():
                 result = None
             if result is not None:
                 assert result in live_ids
-            selector = pick_tool_selector_model()
-            if selector is not None:
-                assert selector in live_ids
 
 
 def test_pick_lead_model_on_google():

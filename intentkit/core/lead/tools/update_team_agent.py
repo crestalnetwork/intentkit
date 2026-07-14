@@ -38,7 +38,6 @@ class UpdateTeamAgentInput(BaseModel):
     search_internet: bool | None = Field(
         default=None, description="Enable internet search"
     )
-    enable_todo: bool | None = Field(default=None, description="Enable todo list")
     enable_activity: bool | None = Field(
         default=None, description="Enable activity tools"
     )
@@ -104,7 +103,6 @@ class UpdateTeamAgent(LeadTool):
         tools: list[str] | None = None,
         slug: str | None = None,
         search_internet: bool | None = None,
-        enable_todo: bool | None = None,
         enable_activity: bool | None = None,
         enable_post: bool | None = None,
         sub_agents: list[str] | None = None,
@@ -133,7 +131,6 @@ class UpdateTeamAgent(LeadTool):
             "tools": tools,
             "slug": slug,
             "search_internet": search_internet,
-            "enable_todo": enable_todo,
             "enable_activity": enable_activity,
             "enable_post": enable_post,
             "sub_agents": sub_agents,

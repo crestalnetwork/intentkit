@@ -94,13 +94,6 @@ class AgentCore(BaseModel):
             description="Enable LLM native internet search for this agent",
         ),
     ] = True
-    enable_todo: Annotated[
-        bool,
-        PydanticField(
-            default=False,
-            description="Enable todo list middleware for task planning and tracking in complex multi-step tasks",
-        ),
-    ] = False
     enable_activity: Annotated[
         bool | None,
         PydanticField(
@@ -145,11 +138,6 @@ class AgentCore(BaseModel):
     @classmethod
     def _set_search_internet_default(cls, v: bool | None) -> bool:
         return True if v is None else v
-
-    @field_validator("enable_todo", mode="before")
-    @classmethod
-    def _set_bool_false_default(cls, v: bool | None) -> bool:
-        return False if v is None else v
 
     def hash(self) -> str:
         """

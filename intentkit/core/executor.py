@@ -27,11 +27,10 @@ from intentkit.abstracts.graph import AgentContext, AgentState
 from intentkit.config.config import config
 from intentkit.config.db import get_checkpointer
 from intentkit.core.agent import get_agent
-from intentkit.core.system_tools import SystemTool
 from intentkit.models.agent import Agent
 from intentkit.models.agent_data import AgentData
 from intentkit.models.llm import LLMProvider, create_llm_model
-from intentkit.models.llm_picker import pick_summarize_model, pick_tool_selector_model
+from intentkit.models.llm_picker import pick_summarize_model
 from intentkit.tools.base import IntentKitTool
 from intentkit.utils.error import IntentKitAPIError
 
@@ -93,7 +92,6 @@ async def build_executor(
         DynamicPromptMiddleware,
         EmptyContentSafetyMiddleware,
         MediaBlockSanitizerMiddleware,
-        SafeLLMToolSelectorMiddleware,
         StepTrackingMiddleware,
         TodoMiddleware,
         ToolBindingMiddleware,
@@ -172,12 +170,11 @@ async def build_executor(
     if agent.sub_agents:
         tools.append(call_agent)
 
-    # write_todos: task planning for complex multi-step requests. The tool
-    # is main_agent_only — ToolBindingMiddleware drops it from sub-agent
-    # runs, whose plan belongs to the calling agent. TodoMiddleware below
-    # carries the matching prompt guidance and lifecycle.
-    if agent.enable_todo:
-        tools.append(write_todos)
+    # write_todos: task planning for complex multi-step requests, always on.
+    # The tool is main_agent_only — ToolBindingMiddleware drops it from
+    # sub-agent runs, whose plan belongs to the calling agent. TodoMiddleware
+    # below carries the matching prompt guidance and lifecycle.
+    tools.append(write_todos)
 
     # activity tools: enabled by default (create_activity is team_only)
     if agent.is_activity_enabled:
@@ -259,10 +256,8 @@ async def build_executor(
         StepTrackingMiddleware(),
         ToolRetryMiddleware(retry_on=_should_retry_tool_failure),
         ModelRetryMiddleware(),
+        TodoMiddleware(),
     ]
-
-    if agent.enable_todo:
-        middleware.append(TodoMiddleware())
 
     # Anthropic prompt caching: 5m ephemeral cache slashes input-token cost on
     # long system prompts + repeated history. No-op for non-Anthropic providers.
@@ -271,29 +266,6 @@ async def build_executor(
     # to be appended before the tag is placed to be covered by the cache.
     if model_provider == LLMProvider.ANTHROPIC_COMPATIBLE:
         middleware.append(AnthropicPromptCachingMiddleware())
-
-    # Auto-enable LLM tool selector when there are many selectable tools.
-    # Only BaseTool instances count toward the threshold since the upstream
-    # selector ignores dict-typed provider server tools (e.g. {"type":
-    # "web_search"}) — it never filters them, so they shouldn't push a
-    # borderline agent into the selector path.
-    #
-    # SystemTool instances are pinned via `always_include` so core
-    # capabilities (time, memory, posts, activities, sub-agent calls) stay
-    # reachable even when the selector picks a small subset.
-    selectable_tool_count = sum(1 for t in tools if isinstance(t, BaseTool))
-    if selectable_tool_count > 30:
-        selector_model_name = pick_tool_selector_model()
-        if selector_model_name:
-            selector_llm = await create_llm_model(model_name=selector_model_name)
-            selector_model = await selector_llm.create_instance()
-            always_include = [t.name for t in tools if isinstance(t, SystemTool)]
-            middleware.append(
-                SafeLLMToolSelectorMiddleware(
-                    model=selector_model,
-                    always_include=always_include,
-                )
-            )
 
     # Context editing clears old tool results at 40% context to free space.
     # Note: ContextEditingMiddleware uses wrap_model_call while SummarizationMiddleware

@@ -72,11 +72,6 @@ class TemplateTable(Base):
     search_internet: Mapped[bool | None] = mapped_column(
         Boolean, nullable=True, comment="Enable LLM native internet search"
     )
-    enable_todo: Mapped[bool | None] = mapped_column(
-        Boolean,
-        nullable=True,
-        comment="Enable todo list middleware for task planning and tracking",
-    )
     enable_activity: Mapped[bool | None] = mapped_column(
         Boolean,
         nullable=True,

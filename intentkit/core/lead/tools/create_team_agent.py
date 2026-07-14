@@ -39,7 +39,6 @@ class CreateTeamAgentInput(BaseModel):
     search_internet: bool | None = Field(
         default=None, description="Enable internet search"
     )
-    enable_todo: bool | None = Field(default=None, description="Enable todo list")
     enable_activity: bool | None = Field(
         default=None, description="Enable activity tools"
     )
@@ -80,7 +79,6 @@ class CreateTeamAgent(LeadTool):
         model: str | None = None,
         tools: list[str] | None = None,
         search_internet: bool | None = None,
-        enable_todo: bool | None = None,
         enable_activity: bool | None = None,
         enable_post: bool | None = None,
         sub_agents: list[str] | None = None,
@@ -103,8 +101,6 @@ class CreateTeamAgent(LeadTool):
             agent_data["tools"] = tools
         if search_internet is not None:
             agent_data["search_internet"] = search_internet
-        if enable_todo is not None:
-            agent_data["enable_todo"] = enable_todo
         if enable_activity is not None:
             agent_data["enable_activity"] = enable_activity
         if enable_post is not None:

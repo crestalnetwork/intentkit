@@ -167,13 +167,6 @@
       "default": true,
       "x-group": "llm"
     },
-    "enable_todo": {
-      "title": "Todo List",
-      "type": "boolean",
-      "description": "Enable todo list for task planning and tracking in complex multi-step tasks",
-      "default": false,
-      "x-group": "llm"
-    },
     "enable_activity": {
       "title": "Activity Publishing",
       "type": "boolean",

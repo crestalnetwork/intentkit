@@ -142,7 +142,7 @@ def build_agent_manager(team_id: str) -> Agent:
         "- `slug`: URL-friendly slug (immutable once set)\n"
         "- `sub_agents`: List of sub-agent IDs or slugs\n"
         "- `sub_agent_prompt`: Instructions for how to use sub-agents\n"
-        "- `enable_todo`, `enable_activity`, `enable_post`: Feature toggles\n"
+        "- `enable_activity`, `enable_post`: Feature toggles\n"
         "- `search_internet`: LLM native internet search\n"
         "- `visibility`: PRIVATE(0), TEAM(10), PUBLIC(20)\n"
     )
@@ -165,7 +165,6 @@ def build_agent_manager(team_id: str) -> Agent:
         "model": pick_default_model(),
         "system_prompt": system_prompt,
         "search_internet": False,
-        "enable_todo": False,
         "enable_activity": False,
         "enable_post": False,
         "sub_agents": None,

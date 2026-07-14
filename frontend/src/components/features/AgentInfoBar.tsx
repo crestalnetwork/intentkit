@@ -27,11 +27,6 @@ export function AgentInfoBar({ agent }: AgentInfoBarProps) {
             search
           </span>
         )}
-        {agent.enable_todo && (
-          <span className="inline-flex items-center rounded-md bg-green-500/10 text-green-700 dark:text-green-400 px-2 py-0.5 text-xs font-medium ring-1 ring-inset ring-green-500/20">
-            todo
-          </span>
-        )}
       </div>
     </div>
   );
