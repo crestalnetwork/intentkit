@@ -63,7 +63,6 @@ def build_user_manager(team_id: str) -> Agent:
         "name": "User Manager",
         "model": pick_default_model(),
         "system_prompt": system_prompt,
-        "temperature": 0.2,
         "search_internet": False,
         "enable_todo": False,
         "enable_activity": False,

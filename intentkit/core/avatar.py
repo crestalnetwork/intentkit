@@ -287,7 +287,7 @@ async def generate_image_prompt_from_profile(profile: str, system_prompt: str) -
     from intentkit.models.llm_picker import pick_summarize_model
 
     model_name = pick_summarize_model()
-    llm = await create_llm_model(model_name, temperature=0.9)
+    llm = await create_llm_model(model_name)
     model = await llm.create_instance()
 
     response = await model.ainvoke(

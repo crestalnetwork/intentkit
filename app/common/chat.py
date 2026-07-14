@@ -201,7 +201,7 @@ async def _generate_summary_title(agent_id: str, chat_id: str, prompt_text: str)
         return ""
 
     summarize_model = pick_summarize_model()
-    llm = await create_llm_model(model_name=summarize_model, temperature=0.2)
+    llm = await create_llm_model(model_name=summarize_model)
     model = await llm.create_instance()
     response = await model.ainvoke(
         [

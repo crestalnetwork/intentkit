@@ -33,7 +33,6 @@ class CreateTeamAgentInput(BaseModel):
         ),
     )
     model: str | None = Field(default=None, description="LLM model ID")
-    temperature: float | None = Field(default=None, description="Temperature (0.0~2.0)")
     tools: list[str] | None = Field(
         default=None, description="List of enabled tool names"
     )
@@ -79,7 +78,6 @@ class CreateTeamAgent(LeadTool):
         slug: str,
         description: str | None = None,
         model: str | None = None,
-        temperature: float | None = None,
         tools: list[str] | None = None,
         search_internet: bool | None = None,
         enable_todo: bool | None = None,
@@ -101,8 +99,6 @@ class CreateTeamAgent(LeadTool):
             agent_data["description"] = description
         if model is not None:
             agent_data["model"] = model
-        if temperature is not None:
-            agent_data["temperature"] = temperature
         if tools is not None:
             agent_data["tools"] = tools
         if search_internet is not None:

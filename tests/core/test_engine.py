@@ -42,7 +42,6 @@ def mock_agent():
         owner="user_1",
         tools=None,
         system_prompt="You are a helper.",
-        temperature=0.7,
         visibility=AgentVisibility.PRIVATE,
         public_info_updated_at=datetime.now(),
     )
@@ -129,12 +128,7 @@ async def test_build_executor(mock_agent, mock_agent_data):
 
         executor = await build_executor(mock_agent, mock_agent_data)
 
-        mock_create_model.assert_any_call(
-            model_name=mock_agent.model,
-            temperature=0.7,
-            frequency_penalty=0.0,
-            presence_penalty=0.0,
-        )
+        mock_create_model.assert_any_call(model_name=mock_agent.model)
         mock_create_lc_agent.assert_called_once()
         middleware = mock_create_lc_agent.call_args.kwargs["middleware"]
         tool_retry = next(m for m in middleware if isinstance(m, ToolRetryMiddleware))

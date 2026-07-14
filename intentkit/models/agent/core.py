@@ -80,33 +80,6 @@ class AgentCore(BaseModel):
             max_length=200000,
         ),
     ] = None
-    temperature: Annotated[
-        float | None,
-        PydanticField(
-            default=0.7,
-            description="The randomness of the generated results is such that the higher the number, the more creative the results will be. However, this also makes them wilder and increases the likelihood of errors. For creative tasks, you can adjust it to above 1, but for rigorous tasks, such as quantitative trading, it's advisable to set it lower, around 0.2. (0.0~2.0)",
-            ge=0.0,
-            le=2.0,
-        ),
-    ] = 0.7
-    frequency_penalty: Annotated[
-        float | None,
-        PydanticField(
-            default=0.0,
-            description="The frequency penalty is a measure of how much the AI is allowed to repeat itself. A lower value means the AI is more likely to repeat previous responses, while a higher value means the AI is more likely to generate new content. For creative tasks, you can adjust it to 1 or a bit higher. (-2.0~2.0)",
-            ge=-2.0,
-            le=2.0,
-        ),
-    ] = 0.0
-    presence_penalty: Annotated[
-        float | None,
-        PydanticField(
-            default=0.0,
-            description="The presence penalty is a measure of how much the AI is allowed to deviate from the topic. A higher value means the AI is more likely to deviate from the topic, while a lower value means the AI is more likely to follow the topic. For creative tasks, you can adjust it to 1 or a bit higher. (-2.0~2.0)",
-            ge=-2.0,
-            le=2.0,
-        ),
-    ] = 0.0
     tools: Annotated[
         list[str] | None,
         PydanticField(

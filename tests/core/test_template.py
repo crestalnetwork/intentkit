@@ -24,7 +24,7 @@ async def test_create_agent_from_template():
         "name": "Template Agent",
         "description": "A template agent",
         "model": "gpt-4o",
-        "temperature": 0.5,
+        "search_internet": False,
         "system_prompt": "You are a template.",
     }
 
@@ -92,7 +92,7 @@ async def test_create_agent_from_template():
         # Verify inherited fields
         assert added_agent.model == "gpt-4o"
         assert agent.model == "gpt-4o"
-        assert agent.temperature == 0.5
+        assert agent.search_internet is False
         assert agent.system_prompt == "You are a template."
 
         # Verify commit and refresh
@@ -114,7 +114,6 @@ async def test_create_agent_from_template_without_team():
         "name": "Template Agent",
         "description": "A template agent",
         "model": "gpt-4o",
-        "temperature": 0.5,
         "system_prompt": "You are a template.",
     }
 
@@ -182,7 +181,7 @@ async def test_create_template_from_agent():
         name="Source Agent",
         description="Agent Description",
         model="gpt-4o",
-        temperature=0.8,
+        search_internet=False,
         system_prompt="You are a source agent.",
         owner="owner_1",
         team_id="team_1",
@@ -221,7 +220,7 @@ async def test_create_template_from_agent():
         # Core fields copied
         assert added_template.name == agent.name
         assert added_template.model == agent.model
-        assert added_template.temperature == agent.temperature
+        assert added_template.search_internet == agent.search_internet
         assert added_template.system_prompt == agent.system_prompt
 
         assert mock_session.commit.called
@@ -241,7 +240,7 @@ async def test_render_agent():
         "name": "Template Name",
         "picture": "template_pic.png",
         "model": "gpt-4-template",
-        "temperature": 0.1,
+        "search_internet": False,
         "system_prompt": "Template Prompts",
     }
     mock_template_row = TemplateTable(**template_data)
@@ -251,7 +250,7 @@ async def test_render_agent():
         name=None,  # Should take from template
         picture="agent_pic.png",  # Should KEEP agent's
         model="legacy-model",
-        temperature=0.9,
+        search_internet=True,
         system_prompt="Legacy Prompt",
         created_at=datetime.now(),
         updated_at=datetime.now(),
@@ -283,7 +282,7 @@ async def test_render_agent():
 
         # Other core fields should be overwritten by template
         assert rendered_agent.model == "gpt-4-template"
-        assert rendered_agent.temperature == 0.1
+        assert rendered_agent.search_internet is False
         assert rendered_agent.system_prompt == "Template Prompts"
 
 

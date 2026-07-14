@@ -9,9 +9,6 @@ export interface Agent {
   picture: string | null;
   description: string | null;
   model: string;
-  temperature: number | null;
-  frequency_penalty: number | null;
-  presence_penalty: number | null;
   tools: string[] | null;
   version: string | null;
   statistics: Record<string, unknown> | null;

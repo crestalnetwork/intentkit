@@ -141,7 +141,7 @@ class ReadWebpageCloudflareTool(SystemTool):
         from intentkit.models.llm_picker import pick_long_context_model
 
         model_id = pick_long_context_model()
-        llm_model = await create_llm_model(model_id, temperature=0)
+        llm_model = await create_llm_model(model_id)
         llm = await llm_model.create_instance()
 
         response = await llm.ainvoke(

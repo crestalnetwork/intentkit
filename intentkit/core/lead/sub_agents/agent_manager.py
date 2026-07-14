@@ -138,7 +138,6 @@ def build_agent_manager(team_id: str) -> Agent:
         "personality, principles, and behavior. Markdown; organize sections "
         "with level 2+ headings (##, ###). Level 1 headings (#) are not "
         "allowed.\n"
-        "- `temperature`: Randomness (0.0~2.0, lower for rigorous tasks)\n"
         "- `tools`: Tool configurations dict (see format above)\n"
         "- `slug`: URL-friendly slug (immutable once set)\n"
         "- `sub_agents`: List of sub-agent IDs or slugs\n"
@@ -165,7 +164,6 @@ def build_agent_manager(team_id: str) -> Agent:
         "name": "Agent Manager",
         "model": pick_default_model(),
         "system_prompt": system_prompt,
-        "temperature": 0.2,
         "search_internet": False,
         "enable_todo": False,
         "enable_activity": False,

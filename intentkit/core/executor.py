@@ -101,16 +101,7 @@ async def build_executor(
     from intentkit.core.summarization import SummarizationMiddleware
 
     # Create the LLM model instance
-    llm_model = await create_llm_model(
-        model_name=agent.model,
-        temperature=agent.temperature if agent.temperature is not None else 0.7,
-        frequency_penalty=(
-            agent.frequency_penalty if agent.frequency_penalty is not None else 0.0
-        ),
-        presence_penalty=(
-            agent.presence_penalty if agent.presence_penalty is not None else 0.0
-        ),
-    )
+    llm_model = await create_llm_model(model_name=agent.model)
 
     # ==== Store buffered conversation history in memory.
     try:

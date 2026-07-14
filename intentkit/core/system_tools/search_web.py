@@ -248,7 +248,7 @@ class WebSearchTool(SystemTool):
         """Search via gemini-3.5-flash with Google Search grounding."""
         from intentkit.models.llm import create_llm_model
 
-        llm_model = await create_llm_model(_GEMINI_SEARCH_MODEL, temperature=0)
+        llm_model = await create_llm_model(_GEMINI_SEARCH_MODEL)
         llm = await llm_model.create_instance()
         grounded = llm.bind_tools([{"google_search": {}}])
 

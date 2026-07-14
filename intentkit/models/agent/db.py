@@ -43,25 +43,6 @@ class AgentUserInputColumns:
         nullable=True,
         comment="System prompt that defines the agent's purpose, personality, principles, and behavior",
     )
-    temperature: Mapped[float | None] = mapped_column(
-        Float,
-        nullable=True,
-        default=0.7,
-        comment="Controls response randomness (0.0~2.0). Higher values increase creativity but may reduce accuracy. For rigorous tasks, use lower values.",
-    )
-    frequency_penalty: Mapped[float | None] = mapped_column(
-        Float,
-        nullable=True,
-        default=0.0,
-        comment="Controls repetition in responses (-2.0~2.0). Higher values reduce repetition, lower values allow more repetition.",
-    )
-    presence_penalty: Mapped[float | None] = mapped_column(
-        Float,
-        nullable=True,
-        default=0.0,
-        comment="Controls topic adherence (-2.0~2.0). Higher values allow more topic deviation, lower values enforce stricter topic adherence.",
-    )
-
     # Tools configuration from AgentCore
     tools: Mapped[list[str] | None] = mapped_column(
         JSONB(),

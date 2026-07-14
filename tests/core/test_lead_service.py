@@ -33,7 +33,6 @@ def _mock_agent_row(
     row.model = "gpt-4o"
     row.system_prompt = "You are helpful."
     row.tools = {}
-    row.temperature = 0.7
     row.owner = "owner-1"
     row.visibility = "private"
     now = datetime.now()

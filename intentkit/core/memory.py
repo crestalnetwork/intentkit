@@ -124,7 +124,7 @@ async def merge_memory_content(existing: str, new_content: str) -> str:
 
     try:
         model_name = pick_summarize_model()
-        llm = await create_llm_model(model_name, temperature=0.3)
+        llm = await create_llm_model(model_name)
         model = await llm.create_instance()
 
         response = await model.ainvoke(

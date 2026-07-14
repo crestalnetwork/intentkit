@@ -28,8 +28,6 @@ class AgentResponse(Agent):
 
     # Override privacy fields to exclude them from JSON schema
     system_prompt: SkipJsonSchema[str | None] = None
-    temperature: SkipJsonSchema[float | None] = None
-    frequency_penalty: SkipJsonSchema[float | None] = None
     telegram_entrypoint_prompt: SkipJsonSchema[str | None] = None
     telegram_config: SkipJsonSchema[dict[str, Any] | None] = None
     discord_config: SkipJsonSchema[dict[str, Any] | None] = None
@@ -158,8 +156,6 @@ class AgentResponse(Agent):
         # Remove privacy fields that might still be present
         privacy_fields = {
             "system_prompt",
-            "temperature",
-            "frequency_penalty",
             "telegram_entrypoint_prompt",
             "telegram_config",
             "discord_config",

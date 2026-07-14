@@ -35,7 +35,6 @@ def _agent() -> Agent:
         owner="user_1",
         tools=None,
         system_prompt="You are a helper.",
-        temperature=0.7,
         visibility=AgentVisibility.PRIVATE,
         public_info_updated_at=now,
     )

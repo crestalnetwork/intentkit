@@ -31,7 +31,6 @@ class UpdateTeamAgentInput(BaseModel):
         ),
     )
     model: str | None = Field(default=None, description="LLM model ID")
-    temperature: float | None = Field(default=None, description="Temperature (0.0~2.0)")
     tools: list[str] | None = Field(
         default=None, description="List of enabled tool names"
     )
@@ -102,7 +101,6 @@ class UpdateTeamAgent(LeadTool):
         system_prompt: str | None = None,
         description: str | None = None,
         model: str | None = None,
-        temperature: float | None = None,
         tools: list[str] | None = None,
         slug: str | None = None,
         search_internet: bool | None = None,
@@ -132,7 +130,6 @@ class UpdateTeamAgent(LeadTool):
             "system_prompt": system_prompt,
             "description": description,
             "model": model,
-            "temperature": temperature,
             "tools": tools,
             "slug": slug,
             "search_internet": search_internet,

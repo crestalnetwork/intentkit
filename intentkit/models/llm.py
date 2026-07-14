@@ -4,7 +4,7 @@ from datetime import UTC, datetime
 from decimal import ROUND_HALF_UP, Decimal
 from enum import Enum
 from pathlib import Path
-from typing import Annotated, Any, Callable, ClassVar
+from typing import Annotated, Any, Callable, ClassVar, Literal
 
 import yaml
 from langchain_core.language_models import LanguageModelInput
@@ -78,9 +78,6 @@ def load_default_llm_models() -> dict[str, "LLMModelInfo"]:
             "context_length": 200000,
             "output_length": 64000,
             "supports_image_input": False,
-            "supports_temperature": True,
-            "supports_frequency_penalty": True,
-            "supports_presence_penalty": True,
             "timeout": 300,
             "created_at": timestamp,
             "updated_at": timestamp,
@@ -125,9 +122,6 @@ def load_default_llm_models() -> dict[str, "LLMModelInfo"]:
             "context_length": 200000,
             "output_length": 64000,
             "supports_image_input": False,
-            "supports_temperature": True,
-            "supports_frequency_penalty": False,
-            "supports_presence_penalty": False,
             "timeout": 300,
             "created_at": timestamp,
             "updated_at": timestamp,
@@ -275,18 +269,8 @@ class LLMModelInfo(BaseModel):
     supports_audio_input: bool = False
     supports_video_input: bool = False
     supports_file_input: bool = False
-    reasoning_effort: str | None = (
-        None  # Reasoning effort level: "xhigh", "high", "medium", "low", "minimal", "none", or None
-    )
-    supports_temperature: bool = (
-        True  # Whether the model supports temperature parameter
-    )
-    supports_frequency_penalty: bool = (
-        True  # Whether the model supports frequency_penalty parameter
-    )
-    supports_presence_penalty: bool = (
-        True  # Whether the model supports presence_penalty parameter
-    )
+    # "none" means the model runs without reasoning; None means not applicable.
+    reasoning_effort: Literal["xhigh", "high", "medium", "low", "none"] | None = None
     timeout: int = 180  # Default timeout in seconds
     created_at: Annotated[
         datetime,
@@ -307,6 +291,11 @@ class LLMModelInfo(BaseModel):
     @classmethod
     def serialize_datetime(cls, v: datetime) -> str:
         return v.isoformat(timespec="milliseconds")
+
+    @property
+    def reasoning_enabled(self) -> bool:
+        """Whether this model runs with reasoning/thinking enabled."""
+        return self.reasoning_effort is not None and self.reasoning_effort != "none"
 
     def compress_thresholds(self) -> tuple[int, int, int]:
         """Effective (cold, warm, hot) history-compression thresholds in tokens.
@@ -554,9 +543,6 @@ class LLMModel(BaseModel):
     model_config: ClassVar[ConfigDict] = ConfigDict(from_attributes=True)
 
     model_name: str
-    temperature: float = 0.7
-    frequency_penalty: float = 0.0
-    presence_penalty: float = 0.0
     info: LLMModelInfo
 
     async def model_info(self) -> LLMModelInfo:
@@ -606,17 +592,7 @@ class OpenAILLM(LLMModel):
             "use_responses_api": True,
         }
 
-        # Add optional parameters based on model support
-        if info.supports_temperature:
-            kwargs["temperature"] = self.temperature
-
-        if info.supports_frequency_penalty:
-            kwargs["frequency_penalty"] = self.frequency_penalty
-
-        if info.supports_presence_penalty:
-            kwargs["presence_penalty"] = self.presence_penalty
-
-        if info.reasoning_effort and info.reasoning_effort != "none":
+        if info.reasoning_enabled:
             kwargs["reasoning_effort"] = info.reasoning_effort
 
         # Update kwargs with params to allow overriding
@@ -645,15 +621,17 @@ class DeepseekLLM(LLMModel):
             "max_retries": 3,
         }
 
-        # Add optional parameters based on model support
-        if info.supports_temperature:
-            kwargs["temperature"] = self.temperature
-
-        if info.supports_frequency_penalty:
-            kwargs["frequency_penalty"] = self.frequency_penalty
-
-        if info.supports_presence_penalty:
-            kwargs["presence_penalty"] = self.presence_penalty
+        # DeepSeek V4 defaults to thinking mode server-side; pass the toggle
+        # explicitly so non-reasoning catalog entries actually run without it.
+        if info.reasoning_enabled:
+            kwargs["extra_body"] = {
+                "thinking": {"type": "enabled"},
+                # DeepSeek accepts high|max and maps low/medium -> high,
+                # xhigh -> max server-side.
+                "reasoning_effort": info.reasoning_effort,
+            }
+        else:
+            kwargs["extra_body"] = {"thinking": {"type": "disabled"}}
 
         # Update kwargs with params to allow overriding
         kwargs.update(params)
@@ -679,16 +657,6 @@ class XAILLM(LLMModel):
             "max_retries": 3,
             "use_responses_api": True,
         }
-
-        # Add optional parameters based on model support
-        if info.supports_temperature:
-            kwargs["temperature"] = self.temperature
-
-        if info.supports_frequency_penalty:
-            kwargs["frequency_penalty"] = self.frequency_penalty
-
-        if info.supports_presence_penalty:
-            kwargs["presence_penalty"] = self.presence_penalty
 
         # Update kwargs with params to allow overriding
         kwargs.update(params)
@@ -807,17 +775,9 @@ class OpenRouterLLM(LLMModel):
             "app_categories": ["cloud-agent"],
         }
 
-        # Add optional parameters based on model support
-        if info.supports_temperature:
-            kwargs["temperature"] = self.temperature
-
-        if info.supports_frequency_penalty:
-            kwargs["frequency_penalty"] = self.frequency_penalty
-
-        if info.supports_presence_penalty:
-            kwargs["presence_penalty"] = self.presence_penalty
-
-        if info.reasoning_effort:
+        # "none" is deliberately forwarded (unlike reasoning_enabled gating):
+        # OpenRouter uses it to disable reasoning on hybrid upstream models.
+        if info.reasoning_effort is not None:
             kwargs["reasoning"] = {"effort": info.reasoning_effort}
 
         # Pin the upstream provider on OpenRouter when configured; otherwise leave
@@ -904,17 +864,12 @@ class GoogleLLM(LLMModel):
             if config.google_cloud_project:
                 kwargs["project"] = config.google_cloud_project
 
-        # Add optional parameters based on model support
-        if info.supports_temperature:
-            kwargs["temperature"] = self.temperature
-
         # Update kwargs with params to allow overriding
         kwargs.update(params)
 
         return ChatGoogleGenerativeAI(**kwargs)
 
 
-# Factory function to create the appropriate LLM model based on the model name
 class OllamaLLM(LLMModel):
     """Ollama LLM configuration."""
 
@@ -928,16 +883,9 @@ class OllamaLLM(LLMModel):
         kwargs: dict[str, Any] = {
             "model": info.id,
             "base_url": "http://localhost:11434",
-            "temperature": self.temperature,
             # Ollama specific parameters
             "keep_alive": -1,  # Keep the model loaded indefinitely
         }
-
-        if info.supports_frequency_penalty:
-            kwargs["frequency_penalty"] = self.frequency_penalty
-
-        if info.supports_presence_penalty:
-            kwargs["presence_penalty"] = self.presence_penalty
 
         # Update kwargs with params to allow overriding
         kwargs.update(params)
@@ -963,10 +911,6 @@ class MiniMaxLLM(LLMModel):
             "max_retries": 3,
         }
 
-        # Add optional parameters based on model support
-        if info.supports_temperature:
-            kwargs["temperature"] = self.temperature
-
         # Update kwargs with params to allow overriding
         kwargs.update(params)
 
@@ -991,15 +935,6 @@ class MimoPlanLLM(LLMModel):
             "max_retries": 3,
         }
 
-        if info.supports_temperature:
-            kwargs["temperature"] = self.temperature
-
-        if info.supports_frequency_penalty:
-            kwargs["frequency_penalty"] = self.frequency_penalty
-
-        if info.supports_presence_penalty:
-            kwargs["presence_penalty"] = self.presence_penalty
-
         kwargs.update(params)
 
         return ChatOpenAI(**kwargs)
@@ -1022,10 +957,6 @@ class AnthropicCompatibleLLM(LLMModel):
             "timeout": info.timeout,
             "max_retries": 3,
         }
-
-        # Add optional parameters based on model support
-        if info.supports_temperature:
-            kwargs["temperature"] = self.temperature
 
         # Update kwargs with params to allow overriding
         kwargs.update(params)
@@ -1052,16 +983,7 @@ class OpenAICompatibleLLM(LLMModel):
 
         kwargs["openai_api_key"] = config.openai_compatible_api_key
 
-        if info.supports_temperature:
-            kwargs["temperature"] = self.temperature
-
-        if info.supports_frequency_penalty:
-            kwargs["frequency_penalty"] = self.frequency_penalty
-
-        if info.supports_presence_penalty:
-            kwargs["presence_penalty"] = self.presence_penalty
-
-        if info.reasoning_effort and info.reasoning_effort != "none":
+        if info.reasoning_enabled:
             kwargs["extra_body"] = {"thinking": {"type": "enabled"}}
 
         kwargs.update(params)
@@ -1070,20 +992,12 @@ class OpenAICompatibleLLM(LLMModel):
 
 
 # Factory function to create the appropriate LLM model based on the model name
-async def create_llm_model(
-    model_name: str,
-    temperature: float = 0.7,
-    frequency_penalty: float = 0.0,
-    presence_penalty: float = 0.0,
-) -> LLMModel:
+async def create_llm_model(model_name: str) -> LLMModel:
     """
     Create an LLM model instance based on the model name.
 
     Args:
         model_name: The name of the model to use
-        temperature: The temperature parameter for the model
-        frequency_penalty: The frequency penalty parameter for the model
-        presence_penalty: The presence penalty parameter for the model
 
     Returns:
         An instance of a subclass of LLMModel
@@ -1107,9 +1021,6 @@ async def create_llm_model(
 
     return model_class(
         model_name=model_name,
-        temperature=temperature,
-        frequency_penalty=frequency_penalty,
-        presence_penalty=presence_penalty,
         info=info,
     )
 

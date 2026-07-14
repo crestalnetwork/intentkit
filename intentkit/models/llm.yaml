@@ -13,7 +13,7 @@
 #                     of these are routed here at resolve time; never reuse a
 #                     legacy id for a live model. When retiring a model, move its
 #                     id (and its own legacy_ids) onto the successor entry.
-#   reasoning_effort  "xhigh"/"high"/"medium"/"low"/"minimal"/"none" or null.
+#   reasoning_effort  "xhigh"/"high"/"medium"/"low"/"none" or null.
 #   intelligence/speed/price_level  1-5 ratings.
 #   compress_cold/compress_warm/compress_hot
 #                     Optional per-model history-compression thresholds in tokens.
@@ -41,9 +41,6 @@
   supports_video_input: true
   supports_file_input: false
   reasoning_effort: "high"
-  supports_temperature: true
-  supports_frequency_penalty: true
-  supports_presence_penalty: true
   timeout: 300
 
 - id: "openrouter/free"
@@ -63,9 +60,6 @@
   supports_video_input: false
   supports_file_input: false
   reasoning_effort: "high"
-  supports_temperature: true
-  supports_frequency_penalty: true
-  supports_presence_penalty: true
   timeout: 300
 
 - id: "qwen/qwen3.7-max"
@@ -86,9 +80,6 @@
   supports_video_input: false
   supports_file_input: false
   reasoning_effort: "high"
-  supports_temperature: true
-  supports_frequency_penalty: true
-  supports_presence_penalty: true
   timeout: 300
 
 - id: "qwen/qwen3.7-plus"
@@ -110,9 +101,6 @@
   supports_video_input: false
   supports_file_input: false
   reasoning_effort: "high"
-  supports_temperature: true
-  supports_frequency_penalty: true
-  supports_presence_penalty: true
   timeout: 300
 
 - id: "minimax/minimax-m3"
@@ -133,9 +121,6 @@
   supports_video_input: true
   supports_file_input: false
   reasoning_effort: "high"
-  supports_temperature: true
-  supports_frequency_penalty: true
-  supports_presence_penalty: true
   timeout: 300
 
 - id: "minimax/minimax-m2-her"
@@ -156,9 +141,6 @@
   supports_video_input: false
   supports_file_input: false
   reasoning_effort: "none"
-  supports_temperature: true
-  supports_frequency_penalty: true
-  supports_presence_penalty: true
   timeout: 300
 
 - id: "xiaomi/mimo-v2.5-pro"
@@ -179,9 +161,6 @@
   supports_video_input: false
   supports_file_input: false
   reasoning_effort: "high"
-  supports_temperature: true
-  supports_frequency_penalty: true
-  supports_presence_penalty: true
   timeout: 300
 
 - id: "xiaomi/mimo-v2.5"
@@ -202,9 +181,6 @@
   supports_video_input: true
   supports_file_input: false
   reasoning_effort: "high"
-  supports_temperature: true
-  supports_frequency_penalty: true
-  supports_presence_penalty: true
   timeout: 300
 
 - id: "mimo-v2.5-pro"
@@ -224,9 +200,6 @@
   supports_video_input: false
   supports_file_input: false
   reasoning_effort: "high"
-  supports_temperature: true
-  supports_frequency_penalty: true
-  supports_presence_penalty: true
   timeout: 300
 
 - id: "mimo-v2.5"
@@ -246,9 +219,6 @@
   supports_video_input: true
   supports_file_input: false
   reasoning_effort: "high"
-  supports_temperature: true
-  supports_frequency_penalty: true
-  supports_presence_penalty: true
   timeout: 300
 
 - id: "moonshotai/kimi-k2.6"
@@ -269,9 +239,6 @@
   supports_video_input: false
   supports_file_input: false
   reasoning_effort: "high"
-  supports_temperature: true
-  supports_frequency_penalty: true
-  supports_presence_penalty: true
   timeout: 300
 
 - id: "moonshotai/kimi-k2.7-code"
@@ -292,9 +259,6 @@
   supports_video_input: false
   supports_file_input: false
   reasoning_effort: "high"
-  supports_temperature: true
-  supports_frequency_penalty: true
-  supports_presence_penalty: true
   timeout: 300
 
 - id: "qwen/qwen3.6-flash"
@@ -315,9 +279,6 @@
   supports_video_input: true
   supports_file_input: false
   reasoning_effort: "none"
-  supports_temperature: true
-  supports_frequency_penalty: true
-  supports_presence_penalty: true
   timeout: 300
 
 # No first-party z-ai endpoint on OpenRouter for glm-4.7-flash (as of
@@ -339,9 +300,6 @@
   supports_video_input: false
   supports_file_input: false
   reasoning_effort: "none"
-  supports_temperature: true
-  supports_frequency_penalty: true
-  supports_presence_penalty: true
   timeout: 300
 
 - id: "z-ai/glm-5.2"
@@ -363,9 +321,6 @@
   supports_video_input: false
   supports_file_input: false
   reasoning_effort: "high"
-  supports_temperature: true
-  supports_frequency_penalty: true
-  supports_presence_penalty: true
   timeout: 300
 
 - id: "anthropic/claude-sonnet-5"
@@ -387,9 +342,6 @@
   supports_video_input: false
   supports_file_input: true
   reasoning_effort: "high"
-  supports_temperature: true
-  supports_frequency_penalty: true
-  supports_presence_penalty: true
   timeout: 300
 
 - id: "anthropic/claude-opus-4.8"
@@ -410,9 +362,6 @@
   supports_video_input: false
   supports_file_input: false
   reasoning_effort: "high"
-  supports_temperature: true
-  supports_frequency_penalty: true
-  supports_presence_penalty: true
   timeout: 300
 
 # GA id "gemini-3.1-pro" 404s on Vertex express mode (as of 2026-07);
@@ -434,9 +383,6 @@
   supports_video_input: true
   supports_file_input: true
   reasoning_effort: "high"
-  supports_temperature: true
-  supports_frequency_penalty: false
-  supports_presence_penalty: false
   timeout: 300
 
 - id: "google/gemini-3.1-pro-preview-customtools"
@@ -457,9 +403,6 @@
   supports_video_input: true
   supports_file_input: true
   reasoning_effort: "high"
-  supports_temperature: true
-  supports_frequency_penalty: true
-  supports_presence_penalty: true
   timeout: 300
 
 - id: "gemini-3.1-flash-lite"
@@ -480,9 +423,6 @@
   supports_video_input: true
   supports_file_input: true
   reasoning_effort: "high"
-  supports_temperature: true
-  supports_frequency_penalty: false
-  supports_presence_penalty: false
   timeout: 300
 
 - id: "google/gemini-3.1-flash-lite"
@@ -504,9 +444,6 @@
   supports_video_input: true
   supports_file_input: true
   reasoning_effort: "high"
-  supports_temperature: true
-  supports_frequency_penalty: true
-  supports_presence_penalty: true
   timeout: 300
 
 - id: "gemini-3.5-flash"
@@ -527,9 +464,6 @@
   supports_video_input: true
   supports_file_input: true
   reasoning_effort: "high"
-  supports_temperature: true
-  supports_frequency_penalty: false
-  supports_presence_penalty: false
   timeout: 300
 
 - id: "google/gemini-3.5-flash"
@@ -551,9 +485,6 @@
   supports_video_input: true
   supports_file_input: true
   reasoning_effort: "high"
-  supports_temperature: true
-  supports_frequency_penalty: true
-  supports_presence_penalty: true
   timeout: 300
 
 - id: "gpt-5.6-sol"
@@ -573,9 +504,6 @@
   supports_video_input: false
   supports_file_input: true
   reasoning_effort: "high"
-  supports_temperature: false
-  supports_frequency_penalty: false
-  supports_presence_penalty: false
   timeout: 180
 
 - id: "openai/gpt-5.6-sol"
@@ -596,9 +524,6 @@
   supports_video_input: false
   supports_file_input: true
   reasoning_effort: "high"
-  supports_temperature: false
-  supports_frequency_penalty: true
-  supports_presence_penalty: true
   timeout: 180
 
 - id: "gpt-5.6-terra"
@@ -619,9 +544,6 @@
   supports_video_input: false
   supports_file_input: true
   reasoning_effort: "high"
-  supports_temperature: false
-  supports_frequency_penalty: false
-  supports_presence_penalty: false
   timeout: 180
 
 - id: "openai/gpt-5.6-terra"
@@ -643,9 +565,6 @@
   supports_video_input: false
   supports_file_input: true
   reasoning_effort: "high"
-  supports_temperature: false
-  supports_frequency_penalty: true
-  supports_presence_penalty: true
   timeout: 180
 
 - id: "gpt-5.6-luna"
@@ -665,10 +584,7 @@
   supports_audio_input: false
   supports_video_input: false
   supports_file_input: true
-  reasoning_effort: "minimal"
-  supports_temperature: false
-  supports_frequency_penalty: false
-  supports_presence_penalty: false
+  reasoning_effort: "low"
   timeout: 180
 
 - id: "openai/gpt-5.6-luna"
@@ -689,10 +605,7 @@
   supports_audio_input: false
   supports_video_input: false
   supports_file_input: true
-  reasoning_effort: "minimal"
-  supports_temperature: false
-  supports_frequency_penalty: true
-  supports_presence_penalty: true
+  reasoning_effort: "low"
   timeout: 180
 
 - id: "deepseek-v4-flash"
@@ -712,9 +625,6 @@
   supports_video_input: false
   supports_file_input: false
   reasoning_effort: "none"
-  supports_temperature: true
-  supports_frequency_penalty: true
-  supports_presence_penalty: true
   timeout: 300
 
 - id: "deepseek/deepseek-v4-flash"
@@ -735,9 +645,6 @@
   supports_video_input: false
   supports_file_input: false
   reasoning_effort: "none"
-  supports_temperature: true
-  supports_frequency_penalty: true
-  supports_presence_penalty: true
   timeout: 300
 
 - id: "deepseek-v4-pro"
@@ -757,9 +664,6 @@
   supports_video_input: false
   supports_file_input: false
   reasoning_effort: "high"
-  supports_temperature: true
-  supports_frequency_penalty: true
-  supports_presence_penalty: true
   timeout: 300
 
 - id: "deepseek/deepseek-v4-pro"
@@ -780,9 +684,6 @@
   supports_video_input: false
   supports_file_input: false
   reasoning_effort: "high"
-  supports_temperature: true
-  supports_frequency_penalty: true
-  supports_presence_penalty: true
   timeout: 300
 
 - id: "grok-4.5"
@@ -803,9 +704,6 @@
   supports_video_input: false
   supports_file_input: true
   reasoning_effort: "high"
-  supports_temperature: true
-  supports_frequency_penalty: false
-  supports_presence_penalty: false
   timeout: 180
 
 - id: "x-ai/grok-4.5"
@@ -827,9 +725,6 @@
   supports_video_input: false
   supports_file_input: true
   reasoning_effort: "high"
-  supports_temperature: true
-  supports_frequency_penalty: true
-  supports_presence_penalty: true
   timeout: 180
 
 - id: "grok-4.20-non-reasoning"
@@ -849,9 +744,6 @@
   supports_video_input: false
   supports_file_input: true
   reasoning_effort: "none"
-  supports_temperature: true
-  supports_frequency_penalty: false
-  supports_presence_penalty: false
   timeout: 180
 
 - id: "x-ai/grok-4.20"
@@ -872,9 +764,6 @@
   supports_video_input: false
   supports_file_input: true
   reasoning_effort: "none"
-  supports_temperature: true
-  supports_frequency_penalty: true
-  supports_presence_penalty: true
   timeout: 180
 
 - id: "MiniMax-M3"
@@ -894,7 +783,4 @@
   supports_video_input: true
   supports_file_input: false
   reasoning_effort: "high"
-  supports_temperature: true
-  supports_frequency_penalty: true
-  supports_presence_penalty: true
   timeout: 300

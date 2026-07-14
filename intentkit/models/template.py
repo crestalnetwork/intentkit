@@ -64,21 +64,6 @@ class TemplateTable(Base):
         nullable=True,
         comment="System prompt that defines the template's purpose, personality, principles, and behavior",
     )
-    temperature: Mapped[float | None] = mapped_column(
-        nullable=True,
-        default=0.7,
-        comment="The randomness of the generated results (0.0~2.0)",
-    )
-    frequency_penalty: Mapped[float | None] = mapped_column(
-        nullable=True,
-        default=0.0,
-        comment="The frequency penalty (-2.0~2.0)",
-    )
-    presence_penalty: Mapped[float | None] = mapped_column(
-        nullable=True,
-        default=0.0,
-        comment="The presence penalty (-2.0~2.0)",
-    )
     tools: Mapped[list[str] | None] = mapped_column(
         JSONB(),
         nullable=True,

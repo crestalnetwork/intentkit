@@ -57,7 +57,6 @@ def build_self_updater(team_id: str) -> Agent:
         "name": "Self Updater",
         "model": pick_default_model(),
         "system_prompt": system_prompt,
-        "temperature": 0.2,
         "search_internet": False,
         "enable_todo": False,
         "enable_activity": False,

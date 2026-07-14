@@ -41,7 +41,6 @@ def _build_agent(
         team_id=team_id,
         tools=tools,
         system_prompt="You are a helper.",
-        temperature=0.7,
         visibility=AgentVisibility.PRIVATE,
         public_info_updated_at=now,
     )
