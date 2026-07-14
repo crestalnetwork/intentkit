@@ -1,7 +1,10 @@
-# Release v2.23.0
+# Release v2.24.0
 
 ## Improvements
 
-- **Models now run on provider-recommended settings**: manual tuning knobs (temperature and repetition penalties) are retired across agents and templates. Current-generation models are optimized for their providers' defaults — several reject or silently ignore manual values — so every model now runs the way its maker intended, with no configuration needed.
-- **Smarter reasoning control for DeepSeek**: DeepSeek models now switch thinking mode on or off exactly as configured, so the fast variant responds quicker and no longer spends hidden reasoning effort.
-- Fixed an invalid reasoning setting on the GPT-5.6 Luna model.
+- **Task planning is now built in for every agent**: the per-agent "todo" toggle is gone. All agents — including the team lead — plan complex multi-step requests automatically, while delegated sub-agent runs still skip planning (the plan belongs to the agent you are talking to).
+- Removed the automatic tool picker that kicked in for agents with a very large tool list; agents now always work with their full set of tools directly.
+
+## Notes for operators
+
+- Predefined public agents will report a one-time "updated" during the next sync — their content fingerprint changed with the removed setting. No action needed.
