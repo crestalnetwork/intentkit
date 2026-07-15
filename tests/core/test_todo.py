@@ -75,7 +75,6 @@ def test_write_todos_markers():
     """Gating flags and the model-facing schema."""
     assert write_todos.name == "write_todos"
     assert write_todos.interactive_only is True
-    assert write_todos.context_editing_exempt is True
     # The injected tool_call_id must be hidden from the model.
     schema = convert_to_openai_tool(write_todos)["function"]["parameters"]
     assert list(schema["properties"].keys()) == ["todos"]

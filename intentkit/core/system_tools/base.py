@@ -56,12 +56,6 @@ class SystemTool(BaseTool, metaclass=ABCMeta):
     design) and teamless anonymous conversations, where every call would
     fail."""
 
-    context_editing_exempt: bool = False
-    """Tool results that must survive context editing: ClearToolUsesEdit
-    skips them. The ``write_todos`` echo is the model's only view of the
-    current todo list between compactions; UI card/choice results carry
-    the rendered payload the conversation refers back to."""
-
     def ensure_own_team(self) -> None:
         """Refuse execution unless the owning team is running the agent."""
         context = self.get_context()

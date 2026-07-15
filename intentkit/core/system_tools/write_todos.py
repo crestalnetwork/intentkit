@@ -107,8 +107,8 @@ class WriteTodosTool(SystemTool):
 
     The list lives in the graph state's ``todos`` channel (whole-list
     replacement). The ToolMessage echoes the rendered checklist — between
-    compactions this echo is the model's only view of the list, which is why
-    the tool is ``context_editing_exempt``.
+    compactions this echo is the model's only view of the list, so any
+    context-trimming pass must leave these results intact.
 
     ``interactive_only``: planning is for a live user watching the checklist.
     Sub-agent runs plan in the calling agent, and cron runs are single-shot
@@ -119,7 +119,6 @@ class WriteTodosTool(SystemTool):
     description: str = WRITE_TODOS_TOOL_DESCRIPTION
     args_schema: ArgsSchema | None = WriteTodosInput
     interactive_only: bool = True
-    context_editing_exempt: bool = True
 
     @override
     async def _arun(self, todos: list[Todo], tool_call_id: str) -> Command[Any]:

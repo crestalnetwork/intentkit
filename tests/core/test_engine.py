@@ -2,7 +2,11 @@ from datetime import UTC, datetime
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-from langchain.agents.middleware import ToolRetryMiddleware
+from langchain.agents.middleware import (
+    ContextEditingMiddleware,
+    ModelRetryMiddleware,
+    ToolRetryMiddleware,
+)
 from langchain_core.messages import AIMessage
 from langchain_core.tools import BaseTool
 from langchain_core.tools.base import ToolException
@@ -10,6 +14,7 @@ from langchain_core.tools.base import ToolException
 from intentkit.core.engine import stream_agent
 from intentkit.core.engine.stream import _resolve_payer
 from intentkit.core.executor import (
+    _should_retry_model_failure,
     agent_executor,
     agents,
     agents_updated,
@@ -135,6 +140,14 @@ async def test_build_executor(mock_agent, mock_agent_data):
         assert callable(tool_retry.retry_on)
         assert tool_retry.retry_on(ToolException("boom")) is False
         assert tool_retry.retry_on(RuntimeError("boom")) is True
+        # Model retries must stay transient-only, and terminal failures must
+        # propagate to the engine's error handling ("error"), never be
+        # recorded as a fake assistant message (the upstream "continue"
+        # default).
+        model_retry = next(m for m in middleware if isinstance(m, ModelRetryMiddleware))
+        assert model_retry.on_failure == "error"
+        assert model_retry.retry_on is _should_retry_model_failure
+        assert not any(isinstance(m, ContextEditingMiddleware) for m in middleware)
         assert executor == mock_create_lc_agent.return_value
         # The todo system is always on: write_todos bound for every agent
         # (cron and sub-agent runs lose it per request via interactive_only),

@@ -16,6 +16,8 @@ from collections.abc import Sequence
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
+import httpcore
+import httpx
 from langchain_core.tools import BaseTool
 from langchain_core.tools.base import ToolException
 from langgraph.checkpoint.memory import InMemorySaver
@@ -57,6 +59,55 @@ def _should_retry_tool_failure(exc: Exception) -> bool:
     return not isinstance(exc, (ToolException, ValidationError, ValidationErrorV1))
 
 
+def _should_retry_model_failure(exc: Exception) -> bool:
+    """Retry only transient model API failures.
+
+    Connection drops, timeouts, rate limits, and provider 5xx are worth
+    retrying; permanent errors (auth, invalid request, context overflow,
+    content policy) are not — they propagate to the engine's error handling.
+
+    The exception chain is walked (explicit ``__cause__``, falling back to
+    implicit ``__context__``) because SDKs wrap the telling error: openai/
+    anthropic ``APIConnectionError`` carries the httpx error as ``__cause__``,
+    and langchain-google-genai wraps 4xx ``ClientError`` (429 included) into a
+    ``ChatGoogleGenerativeAIError`` whose status code only survives on the
+    cause. ``status_code``/``code``/``response.status_code`` are duck-typed
+    for the same reason — one filter must cover the openai, anthropic, and
+    google exception families.
+    """
+    cause: BaseException | None = exc
+    seen: set[int] = set()
+    while cause is not None and id(cause) not in seen:
+        seen.add(id(cause))
+        if isinstance(
+            cause,
+            (
+                ConnectionError,
+                TimeoutError,
+                httpx.TransportError,
+                httpcore.TimeoutException,
+                httpcore.NetworkError,
+                httpcore.ProtocolError,
+            ),
+        ):
+            return True
+        candidates = (
+            getattr(cause, "status_code", None),
+            getattr(cause, "code", None),
+            getattr(getattr(cause, "response", None), "status_code", None),
+        )
+        for status in candidates:
+            if isinstance(status, str) and status.isdigit():
+                status = int(status)
+            if isinstance(status, int) and (status in (408, 429) or status >= 500):
+                return True
+        nxt = cause.__cause__
+        if nxt is None and not cause.__suppress_context__:
+            nxt = cause.__context__
+        cause = nxt
+    return False
+
+
 async def build_executor(
     agent: Agent,
     agent_data: AgentData,
@@ -81,8 +132,6 @@ async def build_executor(
     """
     from langchain.agents import create_agent as create_langchain_agent
     from langchain.agents.middleware import (
-        ClearToolUsesEdit,
-        ContextEditingMiddleware,
         ModelRetryMiddleware,
         ToolRetryMiddleware,
     )
@@ -260,7 +309,16 @@ async def build_executor(
         MediaBlockSanitizerMiddleware(),
         StepTrackingMiddleware(),
         ToolRetryMiddleware(retry_on=_should_retry_tool_failure),
-        ModelRetryMiddleware(),
+        # The SDK clients already retry pre-stream failures (max_retries=3 in
+        # llm.py); this layer exists for what they won't retry — errors after
+        # streaming began. retry_on keeps it to transient failures, and
+        # on_failure="error" propagates terminal ones to the engine's error
+        # handling instead of recording them as a fake assistant message.
+        ModelRetryMiddleware(
+            max_retries=2,
+            retry_on=_should_retry_model_failure,
+            on_failure="error",
+        ),
         TodoMiddleware(),
     ]
 
@@ -272,34 +330,14 @@ async def build_executor(
     if model_provider == LLMProvider.ANTHROPIC_COMPATIBLE:
         middleware.append(AnthropicPromptCachingMiddleware())
 
-    # Context editing clears old tool results at 40% context to free space.
-    # Note: ContextEditingMiddleware uses wrap_model_call while SummarizationMiddleware
-    # uses before_model, so summarization always runs first regardless of list position.
-    # The lower threshold (40%) ensures context editing handles moderate growth,
-    # while summarization handles extreme cases; its per-model thresholds and
-    # idle-time tiers are defined by LLMModelInfo.compress_thresholds and
-    # intentkit/core/summarization.py.
-    # context_editing_exempt results (UI card/choice payloads, the
-    # write_todos echo) are never cleared — only summarization may destroy
-    # them, and it snapshots the todo list when it does (see
-    # SummarizationMiddleware).
-    context_editing_trigger = int(llm_model.info.context_length * 0.4)
-    middleware.append(
-        ContextEditingMiddleware(
-            edits=[
-                ClearToolUsesEdit(
-                    trigger=context_editing_trigger,
-                    exclude_tools=[
-                        t.name
-                        for t in tools
-                        if isinstance(t, BaseTool)
-                        and getattr(t, "context_editing_exempt", False)
-                    ],
-                )
-            ]
-        )
-    )
-
+    # History growth is handled solely by SummarizationMiddleware (per-model
+    # thresholds and idle-time tiers: LLMModelInfo.compress_thresholds and
+    # intentkit/core/summarization.py). Upstream ContextEditingMiddleware was
+    # removed: its approximate token counting (4 chars/token, tuned for
+    # English) put the nominal 40%-of-context trigger above the compression
+    # thresholds for CJK conversations, and its per-request ephemeral edits
+    # deep-copied the whole history every model call while the sliding
+    # keep-window broke the Anthropic prompt cache each turn.
     summarize_llm = await create_llm_model(model_name=pick_summarize_model())
     middleware.append(
         SummarizationMiddleware(
