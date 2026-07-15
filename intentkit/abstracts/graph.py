@@ -144,5 +144,12 @@ class AgentContext(BaseModel):
         return self.call_depth > 0
 
     @property
+    def is_interactive(self) -> bool:
+        """True when a live user is watching the conversation — not a cron
+        TRIGGER run and not a sub-agent run. Gates interactive_only tools
+        and the todo prompt guidance."""
+        return self.entrypoint != AuthorType.TRIGGER and not self.is_subagent
+
+    @property
     def thread_id(self) -> str:
         return f"{self.agent_id}-{self.chat_id}"

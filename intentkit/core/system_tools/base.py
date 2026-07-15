@@ -44,10 +44,10 @@ class SystemTool(BaseTool, metaclass=ABCMeta):
     ``ensure_own_team()`` as a second line of defense."""
 
     interactive_only: bool = False
-    """Tools that render interactive UI components (cards, choice buttons)
-    need a live user watching the conversation. ToolBindingMiddleware drops
-    them for cron-triggered runs (entrypoint TRIGGER) and sub-agent calls,
-    where nobody can see or click the component."""
+    """Tools whose output only makes sense with a live user watching the
+    conversation (UI cards, choice buttons, the todo checklist).
+    ToolBindingMiddleware drops them for cron-triggered runs (entrypoint
+    TRIGGER) and sub-agent calls, where nobody is watching."""
 
     requires_memory_scope: bool = False
     """Tools that read/write the conversation's scoped memories only work
@@ -55,12 +55,6 @@ class SystemTool(BaseTool, metaclass=ABCMeta):
     ToolBindingMiddleware drops them from sub-agent runs (stateless by
     design) and teamless anonymous conversations, where every call would
     fail."""
-
-    main_agent_only: bool = False
-    """Tools that manage the entry conversation's own working state (the
-    todo list) make no sense inside a sub-agent run — a sub-agent is a
-    one-shot worker whose plan belongs to the calling agent.
-    ToolBindingMiddleware drops them when ``context.is_subagent``."""
 
     context_editing_exempt: bool = False
     """Tool results that must survive context editing: ClearToolUsesEdit

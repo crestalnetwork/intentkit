@@ -20,9 +20,8 @@ from intentkit.abstracts.graph import AgentContext, Todo
 from intentkit.core.middleware import (
     WRITE_TODOS_SYSTEM_PROMPT,
     TodoMiddleware,
-    ToolBindingMiddleware,
 )
-from intentkit.core.system_tools import current_time, write_todos
+from intentkit.core.system_tools import write_todos
 from intentkit.core.system_tools.write_todos import WriteTodosTool, render_todos
 from intentkit.models.chat import AuthorType
 
@@ -75,9 +74,8 @@ async def test_write_todos_empty_list_clears():
 def test_write_todos_markers():
     """Gating flags and the model-facing schema."""
     assert write_todos.name == "write_todos"
-    assert write_todos.main_agent_only is True
+    assert write_todos.interactive_only is True
     assert write_todos.context_editing_exempt is True
-    assert write_todos.interactive_only is False
     # The injected tool_call_id must be hidden from the model.
     schema = convert_to_openai_tool(write_todos)["function"]["parameters"]
     assert list(schema["properties"].keys()) == ["todos"]
@@ -93,8 +91,11 @@ def test_render_todos():
 
 
 # ──────────────────────────────────────────────
-# ToolBindingMiddleware gating (main_agent_only)
+# Test helpers
 # ──────────────────────────────────────────────
+# ToolBindingMiddleware gating of write_todos (interactive_only) is covered
+# in test_system_tools_ui.py together with the UI tools; the marker test
+# above pins the flag itself.
 
 
 def _make_context(entrypoint: AuthorType, call_depth: int = 0) -> AgentContext:
@@ -107,6 +108,12 @@ def _make_context(entrypoint: AuthorType, call_depth: int = 0) -> AgentContext:
         is_own_team=True,
         call_depth=call_depth,
     )
+
+
+def _runtime(context_kwargs: dict[str, Any] | None = None) -> Any:
+    """Runtime stand-in for after-hooks: only ``.context`` is read."""
+    kwargs: dict[str, Any] = {"entrypoint": AuthorType.WEB, **(context_kwargs or {})}
+    return SimpleNamespace(context=_make_context(**kwargs))
 
 
 class _FakeRequest:
@@ -127,37 +134,6 @@ class _FakeRequest:
     def override(self, **kwargs: Any) -> "_FakeRequest":
         self.overridden.update(kwargs)
         return self
-
-
-async def _bound_tool_names(context: AgentContext) -> set[str]:
-    llm_model = MagicMock()
-    llm_model.create_instance = AsyncMock(return_value=MagicMock())
-    middleware = ToolBindingMiddleware(llm_model, [current_time, write_todos])
-    request = _FakeRequest(context)
-    handler = AsyncMock(return_value="response")
-    await middleware.awrap_model_call(cast(Any, request), handler)
-    handler.assert_awaited_once()
-    return {t.name for t in request.overridden["tools"]}
-
-
-@pytest.mark.asyncio
-async def test_write_todos_bound_for_live_channels():
-    names = await _bound_tool_names(_make_context(AuthorType.WEB))
-    assert "write_todos" in names
-
-
-@pytest.mark.asyncio
-async def test_write_todos_kept_for_cron_trigger():
-    """Unlike interactive_only tools, todo planning stays on for cron runs."""
-    names = await _bound_tool_names(_make_context(AuthorType.TRIGGER))
-    assert "write_todos" in names
-
-
-@pytest.mark.asyncio
-async def test_write_todos_dropped_for_subagent():
-    names = await _bound_tool_names(_make_context(AuthorType.TELEGRAM, call_depth=1))
-    assert "write_todos" not in names
-    assert "current_time" in names
 
 
 # ──────────────────────────────────────────────
@@ -230,10 +206,17 @@ async def test_todo_prompt_ignores_live_todos_between_compactions():
 
 
 @pytest.mark.asyncio
-async def test_todo_prompt_skipped_for_subagent():
+@pytest.mark.parametrize(
+    "context_kwargs",
+    [
+        {"entrypoint": AuthorType.WEB, "call_depth": 1},  # sub-agent run
+        {"entrypoint": AuthorType.TRIGGER},  # cron run
+    ],
+)
+async def test_todo_prompt_skipped_without_live_viewer(context_kwargs):
     middleware = TodoMiddleware()
     request = _FakeRequest(
-        _make_context(AuthorType.WEB, call_depth=1),
+        _make_context(**context_kwargs),
         system_message=SystemMessage("base prompt"),
     )
     handler = AsyncMock(return_value="response")
@@ -262,7 +245,7 @@ async def test_parallel_write_todos_rejected():
         ]
     }
 
-    result = await middleware.aafter_model(cast(Any, state), cast(Any, None))
+    result = await middleware.aafter_model(cast(Any, state), _runtime())
 
     assert result is not None
     errors = result["messages"]
@@ -276,7 +259,7 @@ async def test_single_write_todos_allowed():
     middleware = TodoMiddleware()
     state = {"messages": [AIMessage(content="", tool_calls=[_tool_call("a")])]}
 
-    result = await middleware.aafter_model(cast(Any, state), cast(Any, None))
+    result = await middleware.aafter_model(cast(Any, state), _runtime())
 
     assert result is None
 
@@ -297,7 +280,7 @@ async def test_auto_clear_when_all_completed():
         "todos_snapshot": [{"content": "a", "status": "in_progress"}],
     }
 
-    result = await middleware.aafter_agent(cast(Any, state), cast(Any, None))
+    result = await middleware.aafter_agent(cast(Any, state), _runtime())
 
     assert result == {"todos": [], "todos_snapshot": []}
 
@@ -312,7 +295,7 @@ async def test_no_clear_while_work_remains():
         ]
     }
 
-    result = await middleware.aafter_agent(cast(Any, state), cast(Any, None))
+    result = await middleware.aafter_agent(cast(Any, state), _runtime())
 
     assert result is None
 
@@ -323,16 +306,43 @@ async def test_orphan_snapshot_dropped():
     middleware = TodoMiddleware()
     state = {"todos": [], "todos_snapshot": [{"content": "a", "status": "pending"}]}
 
-    result = await middleware.aafter_agent(cast(Any, state), cast(Any, None))
+    result = await middleware.aafter_agent(cast(Any, state), _runtime())
 
     assert result == {"todos_snapshot": []}
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "context_kwargs",
+    [
+        {"entrypoint": AuthorType.WEB, "call_depth": 1},  # sub-agent run
+        {"entrypoint": AuthorType.TRIGGER},  # cron run
+    ],
+)
+async def test_after_hooks_skipped_without_live_viewer(context_kwargs):
+    """The after-hooks mirror the interactive gate: no state writes for
+    sub-agent or cron runs, even if stale todos linger there."""
+    middleware = TodoMiddleware()
+    state = {
+        "todos": [{"content": "a", "status": "completed"}],
+        "messages": [],
+    }
+
+    assert (
+        await middleware.aafter_agent(cast(Any, state), _runtime(context_kwargs))
+        is None
+    )
+    assert (
+        await middleware.aafter_model(cast(Any, state), _runtime(context_kwargs))
+        is None
+    )
 
 
 @pytest.mark.asyncio
 async def test_no_update_when_nothing_to_clear():
     middleware = TodoMiddleware()
 
-    result = await middleware.aafter_agent(cast(Any, {}), cast(Any, None))
+    result = await middleware.aafter_agent(cast(Any, {}), _runtime())
 
     assert result is None
 

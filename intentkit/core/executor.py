@@ -173,10 +173,12 @@ async def build_executor(
     if agent.sub_agents:
         tools.append(call_agent)
 
-    # write_todos: task planning for complex multi-step requests, always on.
-    # The tool is main_agent_only — ToolBindingMiddleware drops it from
-    # sub-agent runs, whose plan belongs to the calling agent. TodoMiddleware
-    # below carries the matching prompt guidance and lifecycle.
+    # write_todos: task planning for complex multi-step requests, always on
+    # for live conversations. Like the UI tools it is interactive_only —
+    # ToolBindingMiddleware drops it for cron-triggered runs (single-shot,
+    # facts carry via task memory) and sub-agent runs (the plan belongs to
+    # the calling agent). TodoMiddleware carries the matching prompt
+    # guidance and lifecycle, gated the same way.
     tools.append(write_todos)
 
     # activity tools: enabled by default (create_activity is team_only)

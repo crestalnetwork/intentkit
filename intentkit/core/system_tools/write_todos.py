@@ -109,12 +109,16 @@ class WriteTodosTool(SystemTool):
     replacement). The ToolMessage echoes the rendered checklist — between
     compactions this echo is the model's only view of the list, which is why
     the tool is ``context_editing_exempt``.
+
+    ``interactive_only``: planning is for a live user watching the checklist.
+    Sub-agent runs plan in the calling agent, and cron runs are single-shot
+    with no shared chat (they carry facts via task memory instead).
     """
 
     name: str = "write_todos"
     description: str = WRITE_TODOS_TOOL_DESCRIPTION
     args_schema: ArgsSchema | None = WriteTodosInput
-    main_agent_only: bool = True
+    interactive_only: bool = True
     context_editing_exempt: bool = True
 
     @override

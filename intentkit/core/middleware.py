@@ -25,7 +25,7 @@ from intentkit.core.prompt import build_system_prompt
 from intentkit.core.system_tools.write_todos import render_todos
 from intentkit.models.agent import Agent
 from intentkit.models.agent_data import AgentData
-from intentkit.models.chat import DISPLAY_MESSAGE_ARG, AuthorType
+from intentkit.models.chat import DISPLAY_MESSAGE_ARG
 from intentkit.models.llm import LLMModel
 
 logger = logging.getLogger(__name__)
@@ -153,20 +153,15 @@ class ToolBindingMiddleware(AgentMiddleware[AgentState, AgentContext]):
         # Tools are deduplicated at build time in executor.py. Tools marked
         # team_only (publishing, signing, spending) are hidden from guests of
         # a published agent; each such tool re-checks at execution time too.
-        # Tools marked interactive_only (UI cards, choice buttons) need a live
-        # user watching the conversation, so they are hidden from cron-
-        # triggered runs and sub-agent calls.
+        # Tools marked interactive_only (UI cards, choice buttons, the todo
+        # checklist) need a live user watching the conversation, so they are
+        # hidden from cron-triggered runs and sub-agent calls.
         # getattr covers dict-typed provider server tools too (no flag).
-        interactive_allowed = (
-            context.entrypoint != AuthorType.TRIGGER and not context.is_subagent
-        )
+        interactive_allowed = context.is_interactive
         # Tools marked requires_memory_scope (update_memory) are dropped when
         # the conversation resolves no memory scope — sub-agent runs and
         # teamless anonymous chats — where every call would just error.
         memory_scope_active = bool(resolve_memory_scopes(context.agent, context))
-        # Tools marked main_agent_only (write_todos) are dropped from
-        # sub-agent runs: a sub-agent is a one-shot worker whose plan
-        # belongs to the calling agent.
         # The display_message swap is deliberately unconditional: cron and
         # sub-agent runs have no live viewer, but their tool calls are shown
         # later in execution history, so the status line is still worth it.
@@ -176,7 +171,6 @@ class ToolBindingMiddleware(AgentMiddleware[AgentState, AgentContext]):
             if (context.is_own_team or not getattr(t, "team_only", False))
             and (interactive_allowed or not getattr(t, "interactive_only", False))
             and (memory_scope_active or not getattr(t, "requires_memory_scope", False))
-            and (not context.is_subagent or not getattr(t, "main_agent_only", False))
         ]
 
         model = await self.llm_model.create_instance(llm_params)
@@ -430,7 +424,8 @@ class TodoMiddleware(AgentMiddleware[AgentState, AgentContext]):
       a finished task's list never leaks into the next task in long-lived
       chats.
 
-    Skipped entirely for sub-agent runs (`write_todos` is main_agent_only).
+    Skipped for sub-agent and cron-triggered runs, mirroring the
+    interactive_only gate that drops the `write_todos` tool there.
     """
 
     @override
@@ -440,7 +435,7 @@ class TodoMiddleware(AgentMiddleware[AgentState, AgentContext]):
         handler: Callable[[ModelRequest[AgentContext]], Awaitable[ModelResponse]],
     ) -> ModelResponse:
         context: AgentContext = request.runtime.context
-        if context.is_subagent:
+        if not context.is_interactive:
             return await handler(request)
         appended = WRITE_TODOS_SYSTEM_PROMPT
         snapshot = request.state.get("todos_snapshot") or []
@@ -463,7 +458,8 @@ class TodoMiddleware(AgentMiddleware[AgentState, AgentContext]):
         self, state: AgentState, runtime: Runtime[AgentContext]
     ) -> dict[str, Any] | None:
         """Reject a model turn that issued parallel `write_todos` calls."""
-        del runtime
+        if not runtime.context.is_interactive:
+            return None
         messages = state["messages"]
         if not messages:
             return None
@@ -503,7 +499,8 @@ class TodoMiddleware(AgentMiddleware[AgentState, AgentContext]):
         pollution in long-lived chats. A snapshot without a live list (the
         model cleared the list itself) is likewise dropped.
         """
-        del runtime
+        if not runtime.context.is_interactive:
+            return None
         todos = state.get("todos") or []
         if todos and all(todo["status"] == "completed" for todo in todos):
             return {"todos": [], "todos_snapshot": []}

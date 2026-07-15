@@ -1,9 +1,9 @@
 """Tests for the interactive UI system tools and their per-request gating.
 
-``ui_show_card`` / ``ui_ask_user`` are system tools bound to every agent.
-They are ``interactive_only``: ``ToolBindingMiddleware`` drops them for
-cron-triggered runs (entrypoint TRIGGER) and sub-agent calls, and keeps
-them for every live channel (web, telegram, api, ...).
+``ui_show_card`` / ``ui_ask_user`` / ``write_todos`` are system tools bound
+to every agent. They are ``interactive_only``: ``ToolBindingMiddleware``
+drops them for cron-triggered runs (entrypoint TRIGGER) and sub-agent
+calls, and keeps them for every live channel (web, telegram, api, ...).
 """
 
 from types import SimpleNamespace
@@ -14,7 +14,12 @@ import pytest
 
 from intentkit.abstracts.graph import AgentContext
 from intentkit.core.middleware import ToolBindingMiddleware
-from intentkit.core.system_tools import current_time, ui_ask_user, ui_show_card
+from intentkit.core.system_tools import (
+    current_time,
+    ui_ask_user,
+    ui_show_card,
+    write_todos,
+)
 from intentkit.core.system_tools.ui_ask_user import UIAskUserTool
 from intentkit.core.system_tools.ui_show_card import UIShowCardTool
 from intentkit.models.chat import AuthorType, ChatMessageAttachmentType
@@ -165,7 +170,7 @@ async def _bound_tool_names(context: AgentContext) -> set[str]:
     llm_model = MagicMock()
     llm_model.create_instance = AsyncMock(return_value=MagicMock())
     middleware = ToolBindingMiddleware(
-        llm_model, [current_time, ui_show_card, ui_ask_user]
+        llm_model, [current_time, ui_show_card, ui_ask_user, write_todos]
     )
     request = _FakeRequest(context)
     handler = AsyncMock(return_value="response")
@@ -190,26 +195,29 @@ async def _bound_tool_names(context: AgentContext) -> set[str]:
         AuthorType.X402,
     ],
 )
-async def test_ui_tools_bound_for_live_channels(entrypoint: AuthorType):
-    """Every live entry channel gets the UI tools."""
+async def test_interactive_tools_bound_for_live_channels(entrypoint: AuthorType):
+    """Every live entry channel gets the interactive tools."""
     names = await _bound_tool_names(_make_context(entrypoint))
     assert "ui_show_card" in names
     assert "ui_ask_user" in names
+    assert "write_todos" in names
 
 
 @pytest.mark.asyncio
-async def test_ui_tools_dropped_for_cron_trigger():
-    """Cron/autonomous runs (entrypoint TRIGGER) never see the UI tools."""
+async def test_interactive_tools_dropped_for_cron_trigger():
+    """Cron/autonomous runs (entrypoint TRIGGER) never see interactive tools."""
     names = await _bound_tool_names(_make_context(AuthorType.TRIGGER))
     assert "ui_show_card" not in names
     assert "ui_ask_user" not in names
+    assert "write_todos" not in names
     assert "current_time" in names
 
 
 @pytest.mark.asyncio
-async def test_ui_tools_dropped_for_subagent():
-    """Sub-agent runs keep the inherited entrypoint but still lose UI tools."""
+async def test_interactive_tools_dropped_for_subagent():
+    """Sub-agent runs keep the inherited entrypoint but lose interactive tools."""
     names = await _bound_tool_names(_make_context(AuthorType.TELEGRAM, call_depth=1))
     assert "ui_show_card" not in names
     assert "ui_ask_user" not in names
+    assert "write_todos" not in names
     assert "current_time" in names

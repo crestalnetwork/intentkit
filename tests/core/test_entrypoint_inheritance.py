@@ -90,6 +90,14 @@ def test_is_subagent_derived_from_call_depth():
     assert _context(call_depth=1).is_subagent is True
 
 
+def test_is_interactive_requires_live_viewer():
+    """Interactive = not a cron TRIGGER run and not a sub-agent run."""
+    assert _context(entrypoint=AuthorType.WEB).is_interactive is True
+    assert _context(entrypoint=AuthorType.TRIGGER).is_interactive is False
+    assert _context(entrypoint=AuthorType.WEB, call_depth=1).is_interactive is False
+    assert _context(entrypoint=AuthorType.TRIGGER, call_depth=1).is_interactive is False
+
+
 def test_lead_call_agent_message_inherits_entrypoint():
     """thread_type must carry the original entrypoint at any call depth."""
     context = _context(entrypoint=AuthorType.TELEGRAM, call_depth=1)
