@@ -1,10 +1,5 @@
-# Release v2.25.0
-
-## New Features
-
-- **Reasoning effort per agent**: agents can now set how much thinking their model does before answering — from none up to max — right next to the model choice. Leave it unset to use the model's recommended default. The setting automatically adapts to each model's real capabilities: models that can't turn thinking off run at their lightest level, and models with a simple on/off switch map your choice sensibly. The team lead can also configure this when creating or updating agents.
+# Release v2.26.0
 
 ## Improvements
 
-- **Model lineup cleanup**: retired the MiniMax M2 Her and Grok 4.20 models. Agents still using them switch automatically to MiniMax M3 and Grok 4.5 (Grok 4.5 is the newer model despite the smaller version number).
-- Fixed an issue where MiniMax M3 connected directly was not using its thinking mode.
+- Task planning now runs only in live conversations, matching the interactive UI tools. Scheduled (cron) runs no longer build todo lists — they are single-shot and carry facts between runs via task memory — and delegated sub-agent runs keep leaving planning to the agent you are talking to. Chats with a real user watching keep the live checklist exactly as before.
