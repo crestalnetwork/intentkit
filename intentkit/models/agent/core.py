@@ -8,6 +8,7 @@ from typing import Annotated, ClassVar
 from pydantic import BaseModel, ConfigDict, field_validator
 from pydantic import Field as PydanticField
 
+from intentkit.models.llm import ReasoningEffort
 from intentkit.models.llm_picker import pick_default_model
 
 
@@ -72,6 +73,17 @@ class AgentCore(BaseModel):
             return pick_default_model()
         return v
 
+    reasoning_effort: Annotated[
+        ReasoningEffort | None,
+        PydanticField(
+            default=None,
+            description=(
+                "Reasoning/thinking effort for the model. Leave unset to use "
+                "the model's recommended default. Values are automatically "
+                "adapted to the levels the selected model supports."
+            ),
+        ),
+    ] = None
     system_prompt: Annotated[
         str | None,
         PydanticField(

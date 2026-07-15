@@ -4,7 +4,7 @@ from datetime import UTC, datetime
 from decimal import ROUND_HALF_UP, Decimal
 from enum import Enum
 from pathlib import Path
-from typing import Annotated, Any, Callable, ClassVar, Literal
+from typing import Annotated, Any, Callable, ClassVar, Literal, get_args
 
 import yaml
 from langchain_core.language_models import LanguageModelInput
@@ -207,6 +207,13 @@ class LLMProvider(str, Enum):
         return display_names.get(self, self.value)
 
 
+# Unified reasoning/thinking effort scale (OpenRouter's enum), ordered weakest
+# to strongest. Agent-facing values; providers map or clamp them as needed.
+ReasoningEffort = Literal["none", "minimal", "low", "medium", "high", "xhigh", "max"]
+
+REASONING_EFFORT_SCALE: tuple[str, ...] = get_args(ReasoningEffort)
+
+
 class LLMModelInfo(BaseModel):
     """Information about an LLM model."""
 
@@ -269,8 +276,12 @@ class LLMModelInfo(BaseModel):
     supports_audio_input: bool = False
     supports_video_input: bool = False
     supports_file_input: bool = False
-    # "none" means the model runs without reasoning; None means not applicable.
-    reasoning_effort: Literal["xhigh", "high", "medium", "low", "none"] | None = None
+    # Default effort when the agent doesn't set one. "none" means the model
+    # runs without reasoning; None means not applicable.
+    reasoning_effort: ReasoningEffort | None = None
+    # Efforts this model actually supports (per the provider's official docs).
+    # Requests are clamped to the nearest member; None passes them through.
+    reasoning_levels: list[ReasoningEffort] | None = None
     timeout: int = 180  # Default timeout in seconds
     created_at: Annotated[
         datetime,
@@ -292,10 +303,36 @@ class LLMModelInfo(BaseModel):
     def serialize_datetime(cls, v: datetime) -> str:
         return v.isoformat(timespec="milliseconds")
 
-    @property
-    def reasoning_enabled(self) -> bool:
-        """Whether this model runs with reasoning/thinking enabled."""
-        return self.reasoning_effort is not None and self.reasoning_effort != "none"
+    def resolve_reasoning_effort(
+        self, requested: ReasoningEffort | None
+    ) -> ReasoningEffort | None:
+        """Effective effort for a request: the agent's choice clamped to what
+        this model supports, falling back to the catalog default when unset.
+
+        A "none" request against a model that cannot disable reasoning clamps
+        to the weakest supported level. Other unsupported values go to the
+        nearest supported level, preferring non-"none" members (ties round
+        up), so a positive request only lands on "none" when the model
+        supports nothing else.
+        """
+        effort = requested or self.reasoning_effort
+        if effort is None or not self.reasoning_levels:
+            return effort
+        if effort in self.reasoning_levels:
+            return effort
+        candidates: list[ReasoningEffort] = [
+            lv for lv in self.reasoning_levels if lv != "none"
+        ]
+        if effort == "none" or not candidates:
+            return min(self.reasoning_levels, key=REASONING_EFFORT_SCALE.index)
+        idx = REASONING_EFFORT_SCALE.index(effort)
+        return min(
+            candidates,
+            key=lambda lv: (
+                abs(REASONING_EFFORT_SCALE.index(lv) - idx),
+                -REASONING_EFFORT_SCALE.index(lv),
+            ),
+        )
 
     def compress_thresholds(self) -> tuple[int, int, int]:
         """Effective (cold, warm, hot) history-compression thresholds in tokens.
@@ -543,6 +580,10 @@ class LLMModel(BaseModel):
     model_config: ClassVar[ConfigDict] = ConfigDict(from_attributes=True)
 
     model_name: str
+    # Agent-requested reasoning effort (unified scale); None follows the
+    # model's catalog default. Resolved per request via
+    # ``info.resolve_reasoning_effort``.
+    reasoning_effort: ReasoningEffort | None = None
     info: LLMModelInfo
 
     async def model_info(self) -> LLMModelInfo:
@@ -592,8 +633,10 @@ class OpenAILLM(LLMModel):
             "use_responses_api": True,
         }
 
-        if info.reasoning_enabled:
-            kwargs["reasoning_effort"] = info.reasoning_effort
+        # GPT-5.6 accepts the full scale including an explicit "none".
+        effort = info.resolve_reasoning_effort(self.reasoning_effort)
+        if effort is not None:
+            kwargs["reasoning_effort"] = effort
 
         # Update kwargs with params to allow overriding
         kwargs.update(params)
@@ -622,13 +665,13 @@ class DeepseekLLM(LLMModel):
         }
 
         # DeepSeek V4 defaults to thinking mode server-side; pass the toggle
-        # explicitly so non-reasoning catalog entries actually run without it.
-        if info.reasoning_enabled:
+        # explicitly so non-reasoning requests actually run without it.
+        effort = info.resolve_reasoning_effort(self.reasoning_effort)
+        if effort and effort != "none":
             kwargs["extra_body"] = {
                 "thinking": {"type": "enabled"},
-                # DeepSeek accepts high|max and maps low/medium -> high,
-                # xhigh -> max server-side.
-                "reasoning_effort": info.reasoning_effort,
+                # DeepSeek accepts high|max; the clamp keeps values in range.
+                "reasoning_effort": effort,
             }
         else:
             kwargs["extra_body"] = {"thinking": {"type": "disabled"}}
@@ -657,6 +700,12 @@ class XAILLM(LLMModel):
             "max_retries": 3,
             "use_responses_api": True,
         }
+
+        # Grok reasoning cannot be disabled and rejects "none"; the clamp
+        # (levels low/medium/high) guarantees a value xAI accepts.
+        effort = info.resolve_reasoning_effort(self.reasoning_effort)
+        if effort and effort != "none":
+            kwargs["reasoning_effort"] = effort
 
         # Update kwargs with params to allow overriding
         kwargs.update(params)
@@ -775,10 +824,12 @@ class OpenRouterLLM(LLMModel):
             "app_categories": ["cloud-agent"],
         }
 
-        # "none" is deliberately forwarded (unlike reasoning_enabled gating):
-        # OpenRouter uses it to disable reasoning on hybrid upstream models.
-        if info.reasoning_effort is not None:
-            kwargs["reasoning"] = {"effort": info.reasoning_effort}
+        # Agent efforts use OpenRouter's own enum, so the clamped value goes on
+        # the wire as-is. "none" is deliberately forwarded: OpenRouter uses it
+        # to disable reasoning on hybrid upstream models.
+        effort = info.resolve_reasoning_effort(self.reasoning_effort)
+        if effort is not None:
+            kwargs["reasoning"] = {"effort": effort}
 
         # Pin the upstream provider on OpenRouter when configured; otherwise leave
         # routing to OpenRouter. allow_fallbacks=False makes it a hard lock so the
@@ -864,6 +915,12 @@ class GoogleLLM(LLMModel):
             if config.google_cloud_project:
                 kwargs["project"] = config.google_cloud_project
 
+        # Gemini takes thinking_level minimal..high; the clamp (catalog
+        # reasoning_levels) keeps values inside each model's supported range.
+        effort = info.resolve_reasoning_effort(self.reasoning_effort)
+        if effort and effort != "none":
+            kwargs["thinking_level"] = effort
+
         # Update kwargs with params to allow overriding
         kwargs.update(params)
 
@@ -911,6 +968,16 @@ class MiniMaxLLM(LLMModel):
             "max_retries": 3,
         }
 
+        # MiniMax's Anthropic-compatible endpoint defaults to thinking
+        # DISABLED (unlike its OpenAI-compatible one), so always send the
+        # toggle. It only understands "adaptive" and "disabled". Note the
+        # generic AnthropicCompatibleLLM below deliberately sends no thinking
+        # config: arbitrary endpoints disagree on the accepted shape.
+        effort = info.resolve_reasoning_effort(self.reasoning_effort)
+        kwargs["thinking"] = {
+            "type": "adaptive" if effort and effort != "none" else "disabled"
+        }
+
         # Update kwargs with params to allow overriding
         kwargs.update(params)
 
@@ -933,6 +1000,15 @@ class MimoPlanLLM(LLMModel):
             "openai_api_base": "https://api.xiaomimimo.com/v1",
             "timeout": info.timeout,
             "max_retries": 3,
+        }
+
+        # MiMo V2.5 defaults to thinking mode server-side; pass the toggle
+        # explicitly so "none" requests actually run without it.
+        effort = info.resolve_reasoning_effort(self.reasoning_effort)
+        kwargs["extra_body"] = {
+            "thinking": {
+                "type": "enabled" if effort and effort != "none" else "disabled"
+            }
         }
 
         kwargs.update(params)
@@ -983,7 +1059,8 @@ class OpenAICompatibleLLM(LLMModel):
 
         kwargs["openai_api_key"] = config.openai_compatible_api_key
 
-        if info.reasoning_enabled:
+        effort = info.resolve_reasoning_effort(self.reasoning_effort)
+        if effort and effort != "none":
             kwargs["extra_body"] = {"thinking": {"type": "enabled"}}
 
         kwargs.update(params)
@@ -992,12 +1069,17 @@ class OpenAICompatibleLLM(LLMModel):
 
 
 # Factory function to create the appropriate LLM model based on the model name
-async def create_llm_model(model_name: str) -> LLMModel:
+async def create_llm_model(
+    model_name: str,
+    reasoning_effort: ReasoningEffort | None = None,
+) -> LLMModel:
     """
     Create an LLM model instance based on the model name.
 
     Args:
         model_name: The name of the model to use
+        reasoning_effort: Requested reasoning effort (unified scale); None
+            follows the model's catalog default
 
     Returns:
         An instance of a subclass of LLMModel
@@ -1021,6 +1103,7 @@ async def create_llm_model(model_name: str) -> LLMModel:
 
     return model_class(
         model_name=model_name,
+        reasoning_effort=reasoning_effort,
         info=info,
     )
 

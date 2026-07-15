@@ -91,6 +91,13 @@
       "x-component": "category-select",
       "x-group": "llm"
     },
+    "reasoning_effort": {
+      "title": "Reasoning Effort",
+      "type": "string",
+      "enum": ["none", "minimal", "low", "medium", "high", "xhigh", "max"],
+      "description": "How much thinking the model does before answering. Leave unset to use the model's recommended default; the value is automatically adapted to the levels the selected model supports. Higher effort improves hard-task quality but costs more and responds slower.",
+      "x-group": "llm"
+    },
     "system_prompt": {
       "title": "System Prompt",
       "type": "string",

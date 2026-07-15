@@ -13,7 +13,13 @@
 #                     of these are routed here at resolve time; never reuse a
 #                     legacy id for a live model. When retiring a model, move its
 #                     id (and its own legacy_ids) onto the successor entry.
-#   reasoning_effort  "xhigh"/"high"/"medium"/"low"/"none" or null.
+#   reasoning_effort  Default reasoning/thinking effort when the agent doesn't
+#                     set one. Uses OpenRouter's unified scale:
+#                     "max"/"xhigh"/"high"/"medium"/"low"/"minimal"/"none" or null.
+#   reasoning_levels  Efforts this model actually supports (same scale, per the
+#                     provider's official docs). Agent requests are clamped to
+#                     the nearest member: omit "none" for models whose reasoning
+#                     cannot be disabled; single-member lists mean no control.
 #   intelligence/speed/price_level  1-5 ratings.
 #   compress_cold/compress_warm/compress_hot
 #                     Optional per-model history-compression thresholds in tokens.
@@ -41,6 +47,7 @@
   supports_video_input: true
   supports_file_input: false
   reasoning_effort: "high"
+  reasoning_levels: ["minimal", "high"]
   timeout: 300
 
 - id: "openrouter/free"
@@ -60,6 +67,7 @@
   supports_video_input: false
   supports_file_input: false
   reasoning_effort: "high"
+  reasoning_levels: ["none", "minimal", "low", "medium", "high", "xhigh", "max"]
   timeout: 300
 
 - id: "qwen/qwen3.7-max"
@@ -80,6 +88,7 @@
   supports_video_input: false
   supports_file_input: false
   reasoning_effort: "high"
+  reasoning_levels: ["none", "high"]
   timeout: 300
 
 - id: "qwen/qwen3.7-plus"
@@ -101,12 +110,14 @@
   supports_video_input: false
   supports_file_input: false
   reasoning_effort: "high"
+  reasoning_levels: ["none", "high"]
   timeout: 300
 
 - id: "minimax/minimax-m3"
   name: "MiniMax M3"
   provider: openrouter
   origin_provider: "minimax/fp8"   # lock OpenRouter upstream
+  legacy_ids: ["minimax/minimax-m2-her"]
   enabled: true
   input_price: "0.6"
   cached_input_price: "0.12"
@@ -121,26 +132,7 @@
   supports_video_input: true
   supports_file_input: false
   reasoning_effort: "high"
-  timeout: 300
-
-- id: "minimax/minimax-m2-her"
-  name: "Minimax M2 Her"
-  provider: openrouter
-  origin_provider: "minimax"   # lock OpenRouter upstream (m2-her has no /fp8 tag)
-  enabled: true
-  input_price: "0.3"
-  cached_input_price: "0.03"
-  output_price: "1.2"
-  price_level: 2
-  context_length: 65536
-  output_length: 2048
-  intelligence: 3
-  speed: 3
-  supports_image_input: false
-  supports_audio_input: false
-  supports_video_input: false
-  supports_file_input: false
-  reasoning_effort: "none"
+  reasoning_levels: ["none", "high"]
   timeout: 300
 
 - id: "xiaomi/mimo-v2.5-pro"
@@ -161,6 +153,7 @@
   supports_video_input: false
   supports_file_input: false
   reasoning_effort: "high"
+  reasoning_levels: ["none", "high"]
   timeout: 300
 
 - id: "xiaomi/mimo-v2.5"
@@ -181,6 +174,7 @@
   supports_video_input: true
   supports_file_input: false
   reasoning_effort: "high"
+  reasoning_levels: ["none", "high"]
   timeout: 300
 
 - id: "mimo-v2.5-pro"
@@ -200,6 +194,7 @@
   supports_video_input: false
   supports_file_input: false
   reasoning_effort: "high"
+  reasoning_levels: ["none", "high"]
   timeout: 300
 
 - id: "mimo-v2.5"
@@ -219,6 +214,7 @@
   supports_video_input: true
   supports_file_input: false
   reasoning_effort: "high"
+  reasoning_levels: ["none", "high"]
   timeout: 300
 
 - id: "moonshotai/kimi-k2.6"
@@ -239,6 +235,7 @@
   supports_video_input: false
   supports_file_input: false
   reasoning_effort: "high"
+  reasoning_levels: ["none", "high"]
   timeout: 300
 
 - id: "moonshotai/kimi-k2.7-code"
@@ -259,6 +256,7 @@
   supports_video_input: false
   supports_file_input: false
   reasoning_effort: "high"
+  reasoning_levels: ["high"]
   timeout: 300
 
 - id: "qwen/qwen3.6-flash"
@@ -279,6 +277,7 @@
   supports_video_input: true
   supports_file_input: false
   reasoning_effort: "none"
+  reasoning_levels: ["none", "high"]
   timeout: 300
 
 # No first-party z-ai endpoint on OpenRouter for glm-4.7-flash (as of
@@ -300,6 +299,7 @@
   supports_video_input: false
   supports_file_input: false
   reasoning_effort: "none"
+  reasoning_levels: ["none", "high"]
   timeout: 300
 
 - id: "z-ai/glm-5.2"
@@ -321,6 +321,7 @@
   supports_video_input: false
   supports_file_input: false
   reasoning_effort: "high"
+  reasoning_levels: ["none", "minimal", "low", "medium", "high", "xhigh", "max"]
   timeout: 300
 
 - id: "anthropic/claude-sonnet-5"
@@ -342,6 +343,7 @@
   supports_video_input: false
   supports_file_input: true
   reasoning_effort: "high"
+  reasoning_levels: ["none", "low", "medium", "high", "xhigh", "max"]
   timeout: 300
 
 - id: "anthropic/claude-opus-4.8"
@@ -362,6 +364,7 @@
   supports_video_input: false
   supports_file_input: false
   reasoning_effort: "high"
+  reasoning_levels: ["none", "low", "medium", "high", "xhigh", "max"]
   timeout: 300
 
 # GA id "gemini-3.1-pro" 404s on Vertex express mode (as of 2026-07);
@@ -383,6 +386,7 @@
   supports_video_input: true
   supports_file_input: true
   reasoning_effort: "high"
+  reasoning_levels: ["low", "medium", "high"]
   timeout: 300
 
 - id: "google/gemini-3.1-pro-preview-customtools"
@@ -403,6 +407,7 @@
   supports_video_input: true
   supports_file_input: true
   reasoning_effort: "high"
+  reasoning_levels: ["low", "medium", "high"]
   timeout: 300
 
 - id: "gemini-3.1-flash-lite"
@@ -423,6 +428,7 @@
   supports_video_input: true
   supports_file_input: true
   reasoning_effort: "high"
+  reasoning_levels: ["minimal", "low", "medium", "high"]
   timeout: 300
 
 - id: "google/gemini-3.1-flash-lite"
@@ -444,6 +450,7 @@
   supports_video_input: true
   supports_file_input: true
   reasoning_effort: "high"
+  reasoning_levels: ["minimal", "low", "medium", "high"]
   timeout: 300
 
 - id: "gemini-3.5-flash"
@@ -464,6 +471,7 @@
   supports_video_input: true
   supports_file_input: true
   reasoning_effort: "high"
+  reasoning_levels: ["minimal", "low", "medium", "high"]
   timeout: 300
 
 - id: "google/gemini-3.5-flash"
@@ -485,6 +493,7 @@
   supports_video_input: true
   supports_file_input: true
   reasoning_effort: "high"
+  reasoning_levels: ["minimal", "low", "medium", "high"]
   timeout: 300
 
 - id: "gpt-5.6-sol"
@@ -504,6 +513,7 @@
   supports_video_input: false
   supports_file_input: true
   reasoning_effort: "high"
+  reasoning_levels: ["none", "low", "medium", "high", "xhigh", "max"]
   timeout: 180
 
 - id: "openai/gpt-5.6-sol"
@@ -524,6 +534,7 @@
   supports_video_input: false
   supports_file_input: true
   reasoning_effort: "high"
+  reasoning_levels: ["none", "low", "medium", "high", "xhigh", "max"]
   timeout: 180
 
 - id: "gpt-5.6-terra"
@@ -544,6 +555,7 @@
   supports_video_input: false
   supports_file_input: true
   reasoning_effort: "high"
+  reasoning_levels: ["none", "low", "medium", "high", "xhigh", "max"]
   timeout: 180
 
 - id: "openai/gpt-5.6-terra"
@@ -565,6 +577,7 @@
   supports_video_input: false
   supports_file_input: true
   reasoning_effort: "high"
+  reasoning_levels: ["none", "low", "medium", "high", "xhigh", "max"]
   timeout: 180
 
 - id: "gpt-5.6-luna"
@@ -585,6 +598,7 @@
   supports_video_input: false
   supports_file_input: true
   reasoning_effort: "low"
+  reasoning_levels: ["none", "low", "medium", "high", "xhigh", "max"]
   timeout: 180
 
 - id: "openai/gpt-5.6-luna"
@@ -606,6 +620,7 @@
   supports_video_input: false
   supports_file_input: true
   reasoning_effort: "low"
+  reasoning_levels: ["none", "low", "medium", "high", "xhigh", "max"]
   timeout: 180
 
 - id: "deepseek-v4-flash"
@@ -625,6 +640,7 @@
   supports_video_input: false
   supports_file_input: false
   reasoning_effort: "none"
+  reasoning_levels: ["none", "high", "max"]
   timeout: 300
 
 - id: "deepseek/deepseek-v4-flash"
@@ -645,6 +661,7 @@
   supports_video_input: false
   supports_file_input: false
   reasoning_effort: "none"
+  reasoning_levels: ["none", "high", "max"]
   timeout: 300
 
 - id: "deepseek-v4-pro"
@@ -664,6 +681,7 @@
   supports_video_input: false
   supports_file_input: false
   reasoning_effort: "high"
+  reasoning_levels: ["none", "high", "max"]
   timeout: 300
 
 - id: "deepseek/deepseek-v4-pro"
@@ -684,12 +702,14 @@
   supports_video_input: false
   supports_file_input: false
   reasoning_effort: "high"
+  reasoning_levels: ["none", "high", "max"]
   timeout: 300
 
 - id: "grok-4.5"
   name: "Grok 4.5"
   provider: xai
-  legacy_ids: ["grok-4.3"]
+  # grok-4.20 is older than 4.5 despite the version number (Musk-style numbering)
+  legacy_ids: ["grok-4.3", "grok-4.20-non-reasoning"]
   enabled: true
   input_price: "2"
   cached_input_price: "0.5"
@@ -704,13 +724,15 @@
   supports_video_input: false
   supports_file_input: true
   reasoning_effort: "high"
+  reasoning_levels: ["low", "medium", "high"]
   timeout: 180
 
 - id: "x-ai/grok-4.5"
   name: "Grok 4.5"
   provider: openrouter
   origin_provider: "xai"   # lock OpenRouter upstream
-  legacy_ids: ["x-ai/grok-4.3"]
+  # grok-4.20 is older than 4.5 despite the version number (Musk-style numbering)
+  legacy_ids: ["x-ai/grok-4.3", "x-ai/grok-4.20"]
   enabled: true
   input_price: "2"
   cached_input_price: "0.5"
@@ -725,45 +747,7 @@
   supports_video_input: false
   supports_file_input: true
   reasoning_effort: "high"
-  timeout: 180
-
-- id: "grok-4.20-non-reasoning"
-  name: "Grok 4.20"
-  provider: xai
-  enabled: true
-  input_price: "1.25"
-  cached_input_price: "0.2"
-  output_price: "2.5"
-  price_level: 2
-  context_length: 2000000
-  output_length: 128000
-  intelligence: 4
-  speed: 4
-  supports_image_input: true
-  supports_audio_input: false
-  supports_video_input: false
-  supports_file_input: true
-  reasoning_effort: "none"
-  timeout: 180
-
-- id: "x-ai/grok-4.20"
-  name: "Grok 4.20"
-  provider: openrouter
-  origin_provider: "xai"   # lock OpenRouter upstream
-  enabled: true
-  input_price: "1.25"
-  cached_input_price: "0.2"
-  output_price: "2.5"
-  price_level: 2
-  context_length: 2000000
-  output_length: 128000
-  intelligence: 4
-  speed: 4
-  supports_image_input: true
-  supports_audio_input: false
-  supports_video_input: false
-  supports_file_input: true
-  reasoning_effort: "none"
+  reasoning_levels: ["low", "medium", "high"]
   timeout: 180
 
 - id: "MiniMax-M3"
@@ -783,4 +767,5 @@
   supports_video_input: true
   supports_file_input: false
   reasoning_effort: "high"
+  reasoning_levels: ["none", "high"]
   timeout: 300

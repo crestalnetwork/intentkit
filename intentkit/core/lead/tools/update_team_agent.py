@@ -12,6 +12,7 @@ from intentkit.core.lead.constants import SYSTEM_PROMPT_FIELD_DESCRIPTION
 from intentkit.core.lead.service import verify_agent_in_team
 from intentkit.core.lead.tools.base import LeadTool
 from intentkit.models.agent import AgentUpdate
+from intentkit.models.llm import ReasoningEffort
 
 
 class UpdateTeamAgentInput(BaseModel):
@@ -31,6 +32,10 @@ class UpdateTeamAgentInput(BaseModel):
         ),
     )
     model: str | None = Field(default=None, description="LLM model ID")
+    reasoning_effort: ReasoningEffort | None = Field(
+        default=None,
+        description="Reasoning effort; unset follows the model default",
+    )
     tools: list[str] | None = Field(
         default=None, description="List of enabled tool names"
     )
@@ -100,6 +105,7 @@ class UpdateTeamAgent(LeadTool):
         system_prompt: str | None = None,
         description: str | None = None,
         model: str | None = None,
+        reasoning_effort: ReasoningEffort | None = None,
         tools: list[str] | None = None,
         slug: str | None = None,
         search_internet: bool | None = None,
@@ -128,6 +134,7 @@ class UpdateTeamAgent(LeadTool):
             "system_prompt": system_prompt,
             "description": description,
             "model": model,
+            "reasoning_effort": reasoning_effort,
             "tools": tools,
             "slug": slug,
             "search_internet": search_internet,

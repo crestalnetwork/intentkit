@@ -66,7 +66,7 @@ def pick_summarize_model() -> str:
         ("gemini-3.1-flash-lite", LLMProvider.GOOGLE),
         ("deepseek/deepseek-v4-flash", LLMProvider.OPENROUTER),
         ("gpt-5.6-luna", LLMProvider.OPENAI),
-        ("grok-4.20-non-reasoning", LLMProvider.XAI),
+        ("grok-4.5", LLMProvider.XAI),
         ("deepseek-v4-flash", LLMProvider.DEEPSEEK),
         ("MiniMax-M3", LLMProvider.MINIMAX),
         ("mimo-v2.5", LLMProvider.MIMO_PLAN),
@@ -85,7 +85,7 @@ def pick_default_model() -> str:
         ("MiniMax-M3", LLMProvider.MINIMAX),
         ("minimax/minimax-m3", LLMProvider.OPENROUTER),
         ("gpt-5.6-luna", LLMProvider.OPENAI),
-        ("grok-4.20-non-reasoning", LLMProvider.XAI),
+        ("grok-4.5", LLMProvider.XAI),
         ("deepseek-v4-flash", LLMProvider.DEEPSEEK),
         ("mimo-v2.5", LLMProvider.MIMO_PLAN),
     ]
@@ -103,7 +103,7 @@ def pick_lead_model() -> str:
         ("gemini-3.5-flash", LLMProvider.GOOGLE),
         ("google/gemini-3.5-flash", LLMProvider.OPENROUTER),
         ("gpt-5.6-luna", LLMProvider.OPENAI),
-        ("grok-4.20-non-reasoning", LLMProvider.XAI),
+        ("grok-4.5", LLMProvider.XAI),
         ("MiniMax-M3", LLMProvider.MINIMAX),
         ("deepseek-v4-flash", LLMProvider.DEEPSEEK),
         ("mimo-v2.5", LLMProvider.MIMO_PLAN),
@@ -119,7 +119,7 @@ def pick_lite_model() -> str:
         ("deepseek-v4-flash", LLMProvider.DEEPSEEK),
         # Luna is OpenAI's cheapest tier now; pricier than the entries above.
         ("gpt-5.6-luna", LLMProvider.OPENAI),
-        ("grok-4.20-non-reasoning", LLMProvider.XAI),
+        ("grok-4.5", LLMProvider.XAI),
         ("MiniMax-M3", LLMProvider.MINIMAX),
         ("mimo-v2.5", LLMProvider.MIMO_PLAN),
     ]
@@ -148,7 +148,7 @@ def pick_fastest_model() -> str:
         ("gemini-3.1-flash-lite", LLMProvider.GOOGLE),
         ("qwen/qwen3.6-flash", LLMProvider.OPENROUTER),
         ("gpt-5.6-luna", LLMProvider.OPENAI),
-        ("grok-4.20-non-reasoning", LLMProvider.XAI),
+        ("grok-4.5", LLMProvider.XAI),
         ("deepseek-v4-flash", LLMProvider.DEEPSEEK),
         ("MiniMax-M3", LLMProvider.MINIMAX),
         ("mimo-v2.5", LLMProvider.MIMO_PLAN),
@@ -249,7 +249,6 @@ def pick_long_context_model() -> str:
     # Priority order based on cost (cheapest first), one per provider:
     order: list[tuple[str, LLMProvider]] = [
         ("gemini-3.1-flash-lite", LLMProvider.GOOGLE),
-        ("grok-4.20-non-reasoning", LLMProvider.XAI),
         ("deepseek/deepseek-v4-flash", LLMProvider.OPENROUTER),
         ("deepseek-v4-flash", LLMProvider.DEEPSEEK),
         ("gpt-5.6-luna", LLMProvider.OPENAI),

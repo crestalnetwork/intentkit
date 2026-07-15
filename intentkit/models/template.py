@@ -59,6 +59,11 @@ class TemplateTable(Base):
         default=pick_default_model,
         comment="LLM of the template",
     )
+    reasoning_effort: Mapped[str | None] = mapped_column(
+        String,
+        nullable=True,
+        comment="Reasoning/thinking effort (none/minimal/low/medium/high/xhigh/max); NULL follows the model default.",
+    )
     system_prompt: Mapped[str | None] = mapped_column(
         Text,
         nullable=True,

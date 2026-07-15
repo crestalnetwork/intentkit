@@ -38,6 +38,11 @@ class AgentUserInputColumns:
         nullable=False,
         comment="AI model identifier to be used by this agent for processing requests.",
     )
+    reasoning_effort: Mapped[str | None] = mapped_column(
+        String,
+        nullable=True,
+        comment="Reasoning/thinking effort (none/minimal/low/medium/high/xhigh/max); NULL follows the model default.",
+    )
     system_prompt: Mapped[str | None] = mapped_column(
         Text,
         nullable=True,

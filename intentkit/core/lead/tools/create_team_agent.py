@@ -12,6 +12,7 @@ from intentkit.core.agent.management import create_agent
 from intentkit.core.lead.constants import SYSTEM_PROMPT_FIELD_DESCRIPTION
 from intentkit.core.lead.tools.base import LeadTool
 from intentkit.models.agent import AgentCreate, AgentVisibility
+from intentkit.models.llm import ReasoningEffort
 
 logger = logging.getLogger(__name__)
 
@@ -33,6 +34,10 @@ class CreateTeamAgentInput(BaseModel):
         ),
     )
     model: str | None = Field(default=None, description="LLM model ID")
+    reasoning_effort: ReasoningEffort | None = Field(
+        default=None,
+        description="Reasoning effort; unset follows the model default",
+    )
     tools: list[str] | None = Field(
         default=None, description="List of enabled tool names"
     )
@@ -77,6 +82,7 @@ class CreateTeamAgent(LeadTool):
         slug: str,
         description: str | None = None,
         model: str | None = None,
+        reasoning_effort: ReasoningEffort | None = None,
         tools: list[str] | None = None,
         search_internet: bool | None = None,
         enable_activity: bool | None = None,
@@ -97,6 +103,8 @@ class CreateTeamAgent(LeadTool):
             agent_data["description"] = description
         if model is not None:
             agent_data["model"] = model
+        if reasoning_effort is not None:
+            agent_data["reasoning_effort"] = reasoning_effort
         if tools is not None:
             agent_data["tools"] = tools
         if search_internet is not None:

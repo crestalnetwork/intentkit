@@ -8,7 +8,7 @@ from langchain_core.tools import ArgsSchema
 from pydantic import BaseModel, Field
 
 from intentkit.core.lead.tools.base import LeadTool
-from intentkit.models.llm import LLMModelInfo
+from intentkit.models.llm import LLMModelInfo, ReasoningEffort
 from intentkit.tools.base import NoArgsSchema
 
 
@@ -28,8 +28,12 @@ class LLMModelSummary(BaseModel):
     supports_audio_input: bool = Field(description="Whether supports audio input")
     supports_video_input: bool = Field(description="Whether supports video input")
     supports_file_input: bool = Field(description="Whether supports file input")
-    reasoning_effort: str | None = Field(
-        default=None, description="Reasoning effort level"
+    reasoning_effort: ReasoningEffort | None = Field(
+        default=None, description="Default reasoning effort level"
+    )
+    reasoning_levels: list[ReasoningEffort] | None = Field(
+        default=None,
+        description="Reasoning effort levels this model supports",
     )
 
 
@@ -71,6 +75,7 @@ class LeadGetAvailableLLMs(LeadTool):
                 supports_video_input=m.supports_video_input,
                 supports_file_input=m.supports_file_input,
                 reasoning_effort=m.reasoning_effort,
+                reasoning_levels=m.reasoning_levels,
             )
             for m in (models or [])
         ]
