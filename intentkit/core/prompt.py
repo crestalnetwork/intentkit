@@ -1,5 +1,4 @@
 import asyncio
-from datetime import datetime, timezone
 
 from eth_utils.address import is_address
 
@@ -335,8 +334,10 @@ async def _build_autonomous_task_prompt(agent: Agent, context: AgentContext) -> 
     if autonomous_task.cron:
         task_info += f". This task runs on schedule: {autonomous_task.cron}"
 
-    # Add current time
-    current_time = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
+    # Add run start time. Frozen per run (not the current time): the system
+    # prompt is rebuilt on every model call, and a per-call timestamp would
+    # break provider prefix caching at this position for every step.
+    current_time = context.run_started_at.strftime("%Y-%m-%d %H:%M:%S UTC")
     task_info += f". Current time is {current_time}"
 
     # Add autonomous task guidelines

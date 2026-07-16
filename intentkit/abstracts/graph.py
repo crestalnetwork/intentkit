@@ -1,4 +1,5 @@
 from collections.abc import Callable, Sequence
+from datetime import UTC, datetime
 from enum import Enum
 from typing import Annotated, Any, Literal, NotRequired, TypedDict
 
@@ -15,7 +16,7 @@ from langgraph.graph.message import (
     REMOVE_ALL_MESSAGES,
     _messages_delta_reducer,  # pyright: ignore[reportPrivateUsage]
 )
-from pydantic import BaseModel
+from pydantic import BaseModel, Field, field_validator
 
 from intentkit.models.agent import Agent
 from intentkit.models.chat import AuthorType, ChatMessageAttachment
@@ -133,6 +134,21 @@ class AgentContext(BaseModel):
     start_message_id: str = ""
     start_message_attachments: list[ChatMessageAttachment] | None = None
     call_depth: int = 0
+    # Frozen at context creation (once per run). Prompt builders must use this
+    # instead of the current time: the system prompt is rebuilt on every model
+    # call, and a changing timestamp breaks provider prefix caching for the
+    # whole conversation after it.
+    run_started_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
+
+    @field_validator("run_started_at")
+    @classmethod
+    def _run_started_at_utc(cls, v: datetime) -> datetime:
+        """Normalize to UTC-aware: prompt builders render it with a hardcoded
+        "UTC" suffix. Naive values come from drivers (SQLite) that drop the
+        tzinfo of stored-as-UTC columns, so attach UTC rather than convert."""
+        if v.tzinfo is None:
+            return v.replace(tzinfo=UTC)
+        return v.astimezone(UTC)
 
     @property
     def agent(self) -> Agent:

@@ -503,6 +503,9 @@ async def stream_agent_raw(
         start_message_id=user_message.id,
         start_message_attachments=user_message.attachments,
         call_depth=message.call_depth,
+        # Single source of truth for the run's "now": the same clock the
+        # rendered chat history shows for this message.
+        run_started_at=user_message.created_at,
     )
 
     # Observation-level session/user attribution. Top-level runs only: nested

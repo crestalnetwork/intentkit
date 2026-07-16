@@ -8,7 +8,8 @@ call_agent delegation at any depth: sub-agent input messages carry it in
 ``call_depth``, never encoded in the entrypoint.
 """
 
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta, timezone
+from types import SimpleNamespace
 from unittest.mock import AsyncMock, patch
 
 import pytest
@@ -62,8 +63,10 @@ def _context(
     entrypoint: AuthorType = AuthorType.WEB,
     chat_id: str = "chat_1",
     call_depth: int = 0,
+    agent: Agent | None = None,
+    run_started_at: datetime | None = None,
 ) -> AgentContext:
-    agent = _agent()
+    agent = agent or _agent()
     return AgentContext(
         agent_id=agent.id,
         get_agent=lambda: agent,
@@ -71,6 +74,9 @@ def _context(
         entrypoint=entrypoint,
         is_own_team=True,
         call_depth=call_depth,
+        run_started_at=(
+            run_started_at if run_started_at is not None else datetime.now(UTC)
+        ),
     )
 
 
@@ -154,6 +160,88 @@ async def test_trigger_entrypoint_subagent_skips_task_lookup():
     assert result is not None
     assert "cannot ask the user" in result.lower()
     assert "call-xyz" not in result
+
+
+@pytest.mark.asyncio
+async def test_trigger_prompt_timestamp_frozen_per_run():
+    """The autonomous prompt stamps the run start time, never the current time.
+
+    The system prompt is rebuilt on every model call; a per-call timestamp
+    would change the prompt mid-run and break provider prefix caching for
+    everything after it (see DynamicPromptMiddleware).
+    """
+    agent = _agent()
+    agent.team_id = "team-1"
+    context = _context(
+        entrypoint=AuthorType.TRIGGER,
+        chat_id="autonomous-task-1",
+        agent=agent,
+        run_started_at=datetime(2026, 1, 2, 3, 4, 5, tzinfo=UTC),
+    )
+
+    task = SimpleNamespace(name="Test Task", description="A task", cron="0 */4 * * *")
+    with patch(
+        "intentkit.core.autonomous.get_autonomous_task",
+        new=AsyncMock(return_value=task),
+    ):
+        first = await build_entrypoint_prompt(agent, context)
+        second = await build_entrypoint_prompt(agent, context)
+
+    assert first is not None
+    assert "Current time is 2026-01-02 03:04:05 UTC" in first
+    assert first == second
+
+
+def test_run_started_at_normalized_to_utc():
+    """Naive datetimes (SQLite drops tzinfo of stored-as-UTC columns) get UTC
+    attached; aware non-UTC values are converted. The prompt renders this
+    value with a hardcoded "UTC" suffix, so it must never be anything else."""
+    naive = _context(run_started_at=datetime(2026, 1, 2, 3, 4, 5))
+    assert naive.run_started_at == datetime(2026, 1, 2, 3, 4, 5, tzinfo=UTC)
+
+    plus8 = timezone(timedelta(hours=8))
+    aware = _context(run_started_at=datetime(2026, 1, 2, 11, 4, 5, tzinfo=plus8))
+    assert aware.run_started_at == datetime(2026, 1, 2, 3, 4, 5, tzinfo=UTC)
+
+
+@pytest.mark.asyncio
+async def test_system_prompt_stable_across_model_calls():
+    """Two rebuilds of the full system prompt within one run are byte-identical.
+
+    DynamicPromptMiddleware rebuilds the system prompt on every model call;
+    any per-call dynamic value slipped into a prompt section would break
+    provider prefix caching for everything after it.
+    """
+    agent = _agent()
+    agent.team_id = "team-1"
+    agent_data = AgentData(
+        id=agent.id,
+        created_at=datetime.now(UTC),
+        updated_at=datetime.now(UTC),
+    )
+    context = _context(
+        entrypoint=AuthorType.TRIGGER,
+        chat_id="autonomous-task-1",
+        agent=agent,
+        run_started_at=datetime(2026, 1, 2, 3, 4, 5, tzinfo=UTC),
+    )
+    task = SimpleNamespace(name="Test Task", description="A task", cron="0 */4 * * *")
+
+    with (
+        patch(
+            "intentkit.models.memory.Memory.get",
+            new=AsyncMock(return_value=None),
+        ),
+        patch(
+            "intentkit.core.autonomous.get_autonomous_task",
+            new=AsyncMock(return_value=task),
+        ),
+    ):
+        first = await build_system_prompt(agent, agent_data, context)
+        second = await build_system_prompt(agent, agent_data, context)
+
+    assert "Current time is 2026-01-02 03:04:05 UTC" in first
+    assert first == second
 
 
 @pytest.mark.asyncio
