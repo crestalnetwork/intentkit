@@ -59,7 +59,7 @@ def test_origin_provider_loaded_from_catalog():
     assert opus is not None
     assert opus.origin_provider == "anthropic"
 
-    kimi = models.get("openrouter:moonshotai/kimi-k2.6")
+    kimi = models.get("openrouter:moonshotai/kimi-k3")
     assert kimi is not None
     assert kimi.origin_provider == "moonshotai/int4"
 

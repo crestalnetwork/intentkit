@@ -217,46 +217,28 @@
   reasoning_levels: ["none", "high"]
   timeout: 300
 
-- id: "moonshotai/kimi-k2.6"
-  name: "Moonshot Kimi K2.6"
+# Reasoning is always on for K3 and "max" is the only effort Moonshot
+# currently accepts ("more levels coming soon" per their API docs).
+- id: "moonshotai/kimi-k3"
+  name: "Moonshot Kimi K3"
   provider: openrouter
   origin_provider: "moonshotai/int4"   # lock OpenRouter upstream
+  legacy_ids: ["moonshotai/kimi-k2.6", "moonshotai/kimi-k2.7-code"]
   enabled: true
-  input_price: "0.95"
-  cached_input_price: "0.16"
-  output_price: "4"
-  price_level: 2
-  context_length: 256000
-  output_length: 65536
-  intelligence: 4
-  speed: 3
+  input_price: "3"
+  cached_input_price: "0.3"
+  output_price: "15"
+  price_level: 4
+  context_length: 1048576
+  output_length: 131072
+  intelligence: 5
+  speed: 2
   supports_image_input: true
   supports_audio_input: false
   supports_video_input: false
   supports_file_input: false
-  reasoning_effort: "high"
-  reasoning_levels: ["none", "high"]
-  timeout: 300
-
-- id: "moonshotai/kimi-k2.7-code"
-  name: "Moonshot Kimi K2.7 Code"
-  provider: openrouter
-  origin_provider: "moonshotai/int4"   # lock OpenRouter upstream
-  enabled: true
-  input_price: "0.95"
-  cached_input_price: "0.16"
-  output_price: "4"
-  price_level: 2
-  context_length: 262144
-  output_length: 65536
-  intelligence: 4
-  speed: 3
-  supports_image_input: true
-  supports_audio_input: false
-  supports_video_input: false
-  supports_file_input: false
-  reasoning_effort: "high"
-  reasoning_levels: ["high"]
+  reasoning_effort: "max"
+  reasoning_levels: ["max"]
   timeout: 300
 
 - id: "qwen/qwen3.6-flash"

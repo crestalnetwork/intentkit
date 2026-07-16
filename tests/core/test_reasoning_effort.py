@@ -83,14 +83,14 @@ def test_resolve_never_clamps_positive_request_to_none():
 
 
 def test_resolve_single_level_model():
-    # Kimi K2.7 Code shape: thinking always on, no control.
+    # Kimi K3 shape: thinking always on, "max" is the only level.
     info = _info(
         LLMProvider.OPENROUTER,
-        reasoning_effort="high",
-        reasoning_levels=["high"],
+        reasoning_effort="max",
+        reasoning_levels=["max"],
     )
-    for requested in ("none", "minimal", "low", "medium", "xhigh", "max", None):
-        assert info.resolve_reasoning_effort(requested) == "high"
+    for requested in ("none", "minimal", "low", "medium", "high", "xhigh", "max", None):
+        assert info.resolve_reasoning_effort(requested) == "max"
 
 
 # ---------------------------------------------------------------------------
