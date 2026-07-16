@@ -12,6 +12,8 @@ from sqlalchemy.orm import Mapped, mapped_column
 
 from intentkit.config.base import Base
 
+SLUG_MAX_LENGTH = 60
+
 
 class AgentPostBase(BaseModel):
     """Base model for AgentPost."""
@@ -50,7 +52,7 @@ class AgentPostBase(BaseModel):
         PydanticField(
             default=None,
             description="URL slug for the post",
-            max_length=60,
+            max_length=SLUG_MAX_LENGTH,
             pattern="^[a-zA-Z0-9-]+$",
         ),
     ] = None

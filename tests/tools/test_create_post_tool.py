@@ -4,22 +4,13 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from intentkit.abstracts.graph import AgentContext
-from intentkit.core.system_tools.create_post import CreatePostInput, CreatePostTool
+from intentkit.core.system_tools.create_post import (
+    CreatePostInput,
+    CreatePostTool,
+    _truncate_slug,
+)
 from intentkit.models.agent_activity import AgentActivityTable
-from intentkit.models.agent_post import AgentPostTable
-
-
-@pytest.fixture
-def mock_runtime():
-    """Fixture for mocked runtime context."""
-    agent_id = "test_agent_123"
-    mock_context = MagicMock(spec=AgentContext)
-    mock_context.agent_id = agent_id
-
-    with patch("intentkit.core.system_tools.base.get_runtime") as mock_get_runtime:
-        mock_get_runtime.return_value.context = mock_context
-        yield mock_get_runtime
+from intentkit.models.agent_post import SLUG_MAX_LENGTH, AgentPostTable
 
 
 @pytest.fixture
@@ -55,19 +46,11 @@ def mock_db_session():
         yield mock_session
 
 
-@pytest.mark.asyncio
-async def test_create_post_success(mock_db_session):
-    """Test successful post creation."""
+async def _run_create_post(**kwargs):
+    """Run CreatePostTool._arun with runtime/agent lookups patched out."""
     tool = CreatePostTool()
     mock_context = MagicMock()
     mock_context.agent_id = "test_agent_123"
-
-    title = "Test Post Title"
-    markdown = "This is the content."
-    slug = "test-post-title"
-    excerpt = "Short excerpt."
-    tags = ["tag1", "tag2"]
-
     mock_agent = MagicMock()
     mock_agent.name = "Test Agent"
     mock_agent.picture = "https://example.com/avatar.png"
@@ -78,12 +61,31 @@ async def test_create_post_success(mock_db_session):
             return_value=mock_context,
         ),
     ):
-        result = await tool._arun(
-            title=title, markdown=markdown, slug=slug, excerpt=excerpt, tags=tags
-        )
+        return await tool._arun(**kwargs)
 
-    # _arun returns (content, attachments) tuple
-    content, attachments = result
+
+def _stored(mock_db_session, cls):
+    """Return the first object of the given table class added to the session."""
+    added = [call[0][0] for call in mock_db_session.add.call_args_list]
+    return next((obj for obj in added if isinstance(obj, cls)), None)
+
+
+@pytest.mark.asyncio
+async def test_create_post_success(mock_db_session):
+    """Test successful post creation."""
+    title = "Test Post Title"
+    slug = "test-post-title"
+    excerpt = "Short excerpt."
+    tags = ["tag1", "tag2"]
+
+    content, attachments = await _run_create_post(
+        title=title,
+        markdown="This is the content.",
+        slug=slug,
+        excerpt=excerpt,
+        tags=tags,
+    )
+
     assert "Post created successfully" in content
     assert isinstance(attachments, list)
     assert len(attachments) == 1
@@ -91,13 +93,8 @@ async def test_create_post_success(mock_db_session):
     # Verify post creation
     assert mock_db_session.add.call_count == 2
 
-    added_objects = [call[0][0] for call in mock_db_session.add.call_args_list]
-    post_obj = next(
-        (obj for obj in added_objects if isinstance(obj, AgentPostTable)), None
-    )
-    activity_obj = next(
-        (obj for obj in added_objects if isinstance(obj, AgentActivityTable)), None
-    )
+    post_obj = _stored(mock_db_session, AgentPostTable)
+    activity_obj = _stored(mock_db_session, AgentActivityTable)
 
     assert post_obj is not None
     assert post_obj.slug == slug
@@ -107,6 +104,37 @@ async def test_create_post_success(mock_db_session):
     # Verify activity creation
     assert activity_obj is not None
     assert post_obj.id == activity_obj.post_id
+
+
+def test_truncate_slug():
+    """Overlong slugs are cut to the limit, preferring a hyphen boundary."""
+    # Fits: passes through untouched
+    assert _truncate_slug("short-slug") == "short-slug"
+    # No hyphen before the limit: hard cut
+    assert _truncate_slug("a" * 70) == "a" * SLUG_MAX_LENGTH
+    # Hyphen boundary: the half word after the last hyphen is dropped
+    assert _truncate_slug("a" * 30 + "-" + "b" * 30) == "a" * 30
+    # Early hyphen must not eat the whole budget: hard cut instead
+    assert _truncate_slug("a-" + "b" * 100) == "a-" + "b" * (SLUG_MAX_LENGTH - 2)
+    # Pathological all-hyphen input still yields a non-empty slug
+    assert _truncate_slug("-" * 70) == "-" * SLUG_MAX_LENGTH
+
+
+@pytest.mark.asyncio
+async def test_create_post_truncates_overlong_slug(mock_db_session):
+    """An overlong slug from the LLM is stored truncated, not rejected."""
+    content, _ = await _run_create_post(
+        title="Title",
+        markdown="Content",
+        slug="a" * 30 + "-" + "b" * 30,
+        excerpt="Excerpt",
+        tags=["tag1"],
+    )
+
+    assert "Post created successfully" in content
+    post_obj = _stored(mock_db_session, AgentPostTable)
+    assert post_obj is not None
+    assert post_obj.slug == "a" * 30
 
 
 def test_create_post_input_validation():
@@ -121,15 +149,15 @@ def test_create_post_input_validation():
         tags=["tag1"],
     )
 
-    # Test invalid slug (too long)
-    with pytest.raises(Exception):  # Pydantic ValidationError
-        CreatePostInput(
-            title="Valid Title",
-            markdown="Content",
-            slug="a" * 61,
-            excerpt="Valid excerpt",
-            tags=["tag1"],
-        )
+    # Overlong slug passes the schema: LLMs occasionally overshoot and a
+    # hard rejection wastes a whole turn. It is truncated later in _arun.
+    CreatePostInput(
+        title="Valid Title",
+        markdown="Content",
+        slug="a" * 61,
+        excerpt="Valid excerpt",
+        tags=["tag1"],
+    )
 
     # Test invalid slug (bad chars)
     with pytest.raises(Exception):
