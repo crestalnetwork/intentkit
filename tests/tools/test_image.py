@@ -178,3 +178,66 @@ async def test_openrouter_payload_uses_image_only_modalities():
             call_kwargs = mock_send.call_args.kwargs
             assert call_kwargs["modalities"] == ["image"]
             assert call_kwargs["model"] == "black-forest-labs/flux.2-pro"
+
+
+@pytest.mark.asyncio
+async def test_openrouter_gpt_image_uses_images_endpoint():
+    """Regression: OpenRouter serves OpenAI image models only via the
+    dedicated images endpoint; chat completions rejects them with
+    "cannot be used with the chat/completions endpoint".
+    """
+    fake_b64 = base64.b64encode(b"png-data").decode()
+    response = SimpleNamespace(data=[SimpleNamespace(b64_json=fake_b64)])
+    mock_generate = AsyncMock(return_value=response)
+    mock_client = MagicMock(
+        images=MagicMock(generate_async=mock_generate),
+        chat=MagicMock(send_async=AsyncMock()),
+    )
+
+    with patch("intentkit.tools.image.base.config") as mock_config:
+        mock_config.openrouter_api_key = "test-key"
+        with patch(
+            "intentkit.tools.image.base.openrouter.OpenRouter",
+            return_value=mock_client,
+        ):
+            # Text-to-image: no input references
+            result = await GPTImageFlagship()._generate_via_openrouter("a cat", None)
+            assert result == b"png-data"
+            mock_client.chat.send_async.assert_not_called()
+            call_kwargs = mock_generate.call_args.kwargs
+            assert call_kwargs["model"] == "openai/gpt-image-2"
+            assert call_kwargs["prompt"] == "a cat"
+            assert call_kwargs["input_references"] is None
+
+            # Editing mode: input image goes along as a data-URL reference
+            result = await GPTImageMini()._generate_via_openrouter(
+                "make it blue", [b"input-image"]
+            )
+            assert result == b"png-data"
+            call_kwargs = mock_generate.call_args.kwargs
+            assert call_kwargs["model"] == "openai/gpt-image-1-mini"
+            refs = call_kwargs["input_references"]
+            assert len(refs) == 1
+            assert refs[0]["type"] == "image_url"
+            assert refs[0]["image_url"]["url"].startswith("data:image/png;base64,")
+
+
+@pytest.mark.asyncio
+async def test_openrouter_gpt_image_empty_response_raises():
+    """An images-endpoint response with no data raises a clean tool error."""
+    from langchain_core.tools.base import ToolException
+
+    mock_client = MagicMock(
+        images=MagicMock(
+            generate_async=AsyncMock(return_value=SimpleNamespace(data=[]))
+        ),
+    )
+
+    with patch("intentkit.tools.image.base.config") as mock_config:
+        mock_config.openrouter_api_key = "test-key"
+        with patch(
+            "intentkit.tools.image.base.openrouter.OpenRouter",
+            return_value=mock_client,
+        ):
+            with pytest.raises(ToolException, match="No image found"):
+                await GPTImageFlagship()._generate_via_openrouter("a cat", None)

@@ -19,6 +19,10 @@ logger = logging.getLogger(__name__)
 class GPTImageBase(ImageBaseTool):
     """Base class for GPT image generation tools."""
 
+    # OpenRouter serves OpenAI image models only via /api/v1/images;
+    # chat completions rejects them.
+    openrouter_images_api: bool = True
+
     @override
     def has_native_key(self) -> bool:
         return bool(config.openai_api_key)

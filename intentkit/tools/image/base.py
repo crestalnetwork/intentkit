@@ -45,6 +45,10 @@ class ImageBaseTool(IntentKitTool, metaclass=ABCMeta):
     # Subclasses set these
     native_model: str = ""
     openrouter_model: str = ""
+    # OpenAI image models are served only by OpenRouter's dedicated images
+    # endpoint; chat completions rejects them. Most other image models are
+    # chat-only, so the images endpoint stays opt-in per tool.
+    openrouter_images_api: bool = False
 
     @override
     def available(self) -> bool:
@@ -76,34 +80,57 @@ class ImageBaseTool(IntentKitTool, metaclass=ABCMeta):
     async def _generate_via_openrouter(
         self, prompt: str, images: list[bytes] | None
     ) -> bytes:
-        """Generate image via the OpenRouter chat completions API.
+        """Generate image via OpenRouter.
 
         Uses the ``openrouter`` Python SDK so attribution headers and retry
-        config stay consistent with the rest of the integration.
+        config stay consistent with the rest of the integration. Tools with
+        ``openrouter_images_api`` set go to the dedicated images endpoint;
+        the rest go through chat completions with image output modality.
         """
         key = config.openrouter_api_key
         if not key:
             raise ToolException("OpenRouter API key is not configured")
 
-        content: list[dict[str, Any]] = [{"type": "text", "text": prompt}]
-        if images:
-            for img in images:
-                b64 = base64.b64encode(img).decode()
-                content.append(
-                    {
-                        "type": "image_url",
-                        "image_url": {"url": f"data:image/png;base64,{b64}"},
-                    }
-                )
+        client = openrouter.OpenRouter(
+            api_key=key,
+            http_referer="https://github.com/crestalnetwork/intentkit",
+            x_open_router_title="IntentKit",
+            x_open_router_categories="cloud-agent",
+            timeout_ms=120_000,
+        )
+        if self.openrouter_images_api:
+            return await self._openrouter_images_request(client, prompt, images)
+        return await self._openrouter_chat_request(client, prompt, images)
+
+    async def _openrouter_images_request(
+        self, client: openrouter.OpenRouter, prompt: str, images: list[bytes] | None
+    ) -> bytes:
+        """Generate via the dedicated images endpoint (/api/v1/images)."""
+        input_references = _image_references(images)
+        try:
+            response = await client.images.generate_async(
+                model=self.openrouter_model,
+                prompt=prompt,
+                # None rather than an empty list when there are no references
+                input_references=input_references or None,  # pyright: ignore[reportArgumentType]
+            )
+        except Exception as e:
+            raise ToolException(f"OpenRouter request failed: {e}")
+
+        if not response.data:
+            raise ToolException("No image found in OpenRouter response")
+        return base64.b64decode(response.data[0].b64_json)
+
+    async def _openrouter_chat_request(
+        self, client: openrouter.OpenRouter, prompt: str, images: list[bytes] | None
+    ) -> bytes:
+        """Generate via chat completions with image output modality."""
+        content: list[dict[str, Any]] = [
+            {"type": "text", "text": prompt},
+            *_image_references(images),
+        ]
 
         try:
-            client = openrouter.OpenRouter(
-                api_key=key,
-                http_referer="https://github.com/crestalnetwork/intentkit",
-                x_open_router_title="IntentKit",
-                x_open_router_categories="cloud-agent",
-                timeout_ms=120_000,
-            )
             # Image-only OpenRouter models (seedream/flux/riverflow) reject
             # ["image", "text"] with "No endpoints found that support the
             # requested output modalities". ["image"] works universally.
@@ -183,6 +210,21 @@ class ImageBaseTool(IntentKitTool, metaclass=ABCMeta):
             "The image has been displayed to the user via attachment. "
             "Do not include the image URL in your response unless the user explicitly asks for it."
         ), [attachment]
+
+
+def _to_data_url(image: bytes) -> str:
+    """Encode raw image bytes as a base64 data URL with the detected MIME."""
+    kind = filetype.guess(image)
+    mime = kind.mime if kind else "image/png"
+    return f"data:{mime};base64,{base64.b64encode(image).decode()}"
+
+
+def _image_references(images: list[bytes] | None) -> list[dict[str, Any]]:
+    """Build image_url content parts from raw input images."""
+    return [
+        {"type": "image_url", "image_url": {"url": _to_data_url(img)}}
+        for img in images or []
+    ]
 
 
 async def _extract_openrouter_image_bytes(response: Any) -> bytes | None:
