@@ -1,5 +1,6 @@
-# Release v2.26.2
+# Release v2.26.3
 
 ## Improvements
 
-- Significantly cheaper scheduled tasks: fixed an issue in the autonomous task module where each step of a run was billed as if the whole conversation were new, instead of reusing the AI provider's prompt cache. Long multi-step runs now cost a fraction of what they did, with no change in behavior.
+- Fixed GPT image generation when running through OpenRouter: requests now go to the correct image endpoint, so `image_gpt` and `image_gpt_mini` work again without a native OpenAI key.
+- Publishing posts is more forgiving: an overlong URL slug no longer fails the whole request — it is now shortened automatically at a word boundary.
