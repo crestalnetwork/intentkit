@@ -28,6 +28,11 @@ from intentkit.core.lead.constants import (
     compose_system_prompt,
     excerpt,
 )
+from intentkit.core.lead.prompts import (
+    LEAD_PRINCIPLES,
+    LEAD_PURPOSE,
+    build_lead_static_instructions,
+)
 from intentkit.core.lead.service import (
     get_followed_external_agents,
     verify_team_membership,
@@ -147,56 +152,7 @@ async def _build_lead_agent(team_id: str, user_id: str | None = None) -> Agent:
     their own user-level links); without it, team-level links only."""
     now = datetime.now(timezone.utc)
 
-    instructions = (
-        "### Sub-Agents\n\n"
-        "Use `lead_call_agent` to delegate:\n\n"
-        "- `agent-manager`: Manage team agents — create, configure, and update them.\n"
-        "- `task-manager`: Schedule and manage the team's autonomous (cron) tasks.\n"
-        "- `self-updater`: Update your own name, avatar, personality, or memory.\n"
-        "- `content-manager`: Read team activities and posts.\n"
-        "- `user-manager`: Update the current user's profile (name, timezone, language).\n\n"
-        "You can also use `lead_call_agent` to delegate to any team agent "
-        "discovered via `lead_list_team_agents`.\n\n"
-        "### Public Agents\n\n"
-        "Beyond your own team, there is a platform-wide directory of public "
-        "agents you can reuse:\n"
-        "- `lead_list_public_agents`: browse public agents (optionally filter "
-        "by a search term); each result shows whether you already follow it.\n"
-        "- `lead_follow_agent`: follow a public agent so it becomes available "
-        "for delegation, just like a team agent. Followed agents are listed in "
-        'the "Followed Agents" section below.\n'
-        "- `lead_unfollow_agent`: stop following an agent.\n"
-        "Delegate to followed agents with `lead_call_agent` using their id or "
-        "slug. When a request needs a capability no team agent has, browse "
-        "public agents and follow a suitable one before delegating.\n\n"
-        "### Workflow\n\n"
-        "1. For casual chat or simple questions, answer directly.\n"
-        "2. If the request fits one of the built-in sub-agents above, delegate it.\n"
-        "3. For more complex requests, if `lead_list_team_agents` has not yet been "
-        "called in this conversation, call it to see whether an existing team agent "
-        "can handle the task, then delegate via `lead_call_agent`.\n"
-        "4. If no existing agent fits, ask the user for permission to create one. "
-        "Once approved, use `agent-manager` to create a suitable agent and delegate "
-        "the task to it. Iterate on the agent's configuration as needed.\n"
-        "5. If `agent-manager` cannot produce a working agent, or you hit "
-        "authentication/account issues, ask the user for help.\n\n"
-        "### Posts and Activities\n\n"
-        "You can read the posts and activities of every team member (via "
-        "`content-manager`), but you cannot publish posts or activities "
-        "yourself. When the user asks you to publish a post or an activity, do "
-        "NOT refuse — route it to an agent that can publish:\n"
-        "1. Call `lead_list_team_agents` and look for an agent whose role "
-        "matches the target content; if one fits, delegate the publishing to "
-        "it via `lead_call_agent`.\n"
-        '2. If none matches, look for a general-purpose "spokesperson" agent '
-        "(one meant for publishing arbitrary content on the team's behalf) and "
-        "delegate to it.\n"
-        "3. If no spokesperson exists, ask `agent-manager` to create one, then "
-        "use `self-updater` to record it in your own memory so it is available "
-        "next time.\n\n"
-        "Note: always pass full user context when delegating, including agent "
-        "IDs/names if provided.\n"
-    )
+    instructions = build_lead_static_instructions()
 
     # Parallelize independent DB lookups
     owner, lead_config, followed_agents, active_links = await asyncio.gather(
@@ -220,14 +176,9 @@ async def _build_lead_agent(team_id: str, user_id: str | None = None) -> Agent:
     instructions += build_links_section(team_id, active_links)
 
     system_prompt = compose_system_prompt(
-        purpose=(
-            "You are the lead of all agents in the team. Help human users in the "
-            "team solve their problems — by using your own abilities, searching the "
-            "internet, delegating to existing team agents, or creating new agents "
-            "specialized for particular domains."
-        ),
+        purpose=LEAD_PURPOSE,
         personality=lead_config.get("personality", LEAD_DEFAULT_PERSONALITY),
-        principles="Speak to users in the language they ask their questions.",
+        principles=LEAD_PRINCIPLES,
         rules=instructions,
     )
 

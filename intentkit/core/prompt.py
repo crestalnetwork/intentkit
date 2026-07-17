@@ -484,9 +484,13 @@ async def build_system_prompt(
     if context.is_subagent:
         final_system_prompt = (
             f"{final_system_prompt}## Sub-agent Mode\n\n"
-            "You are running as a sub-agent: another agent invoked you via "
-            "call_agent to delegate a task. Your final reply is returned to "
-            "the calling agent, not shown directly to the user.\n\n"
+            "You are running as a sub-agent: another agent invoked you to "
+            "delegate a task. This is a fresh, isolated conversation — you do "
+            "not have the calling agent's history with the user, so treat the "
+            "message you received as the complete task context. Your final "
+            "reply is returned to the calling agent, not shown directly to the "
+            "user; if you need more information to finish, state exactly what "
+            "you need as your final reply so the caller can supply it.\n\n"
         )
 
     # Skip user info section for autonomous tasks

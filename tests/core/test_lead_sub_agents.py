@@ -45,12 +45,11 @@ async def test_get_self_info_defaults(mock_lead_runtime):
     ):
         result = await tool._arun()
 
+    from intentkit.core.lead.constants import LEAD_DEFAULT_PERSONALITY
+
     assert result.name == "Team Lead"
     assert result.avatar is None
-    assert (
-        result.personality is not None
-        and "Helpful team assistant" in result.personality
-    )
+    assert result.personality == LEAD_DEFAULT_PERSONALITY
     assert result.memory is None
 
 

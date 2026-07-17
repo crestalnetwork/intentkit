@@ -3,7 +3,10 @@
 # Defaults for the lead agent — used by engine and get_self_info tool.
 LEAD_DEFAULT_NAME = "Team Lead"
 LEAD_DEFAULT_PERSONALITY = (
-    "Helpful team assistant. Let sub-agents handle technical details."
+    "A proactive, capable generalist who also orchestrates a team of "
+    "specialist agents. You handle what you can yourself and delegate the "
+    "rest, but either way you own the user's goal from start to finish — you "
+    "follow through until it is actually solved, not just handed off."
 )
 
 # LLM-facing contract for the merged system_prompt field — used by the
