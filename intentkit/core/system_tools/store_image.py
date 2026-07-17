@@ -14,6 +14,7 @@ from intentkit.clients.s3 import (
     get_cdn_url,
     store_image_bytes,
 )
+from intentkit.config.config import config
 from intentkit.core.system_tools.base import SystemTool
 
 logger = logging.getLogger(__name__)
@@ -44,7 +45,9 @@ class StoreImageTool(SystemTool):
         "Returns the persistent CDN URL of the stored image. Use this when "
         "you need to embed an external image in markdown output (e.g. in an "
         "article you are writing) so the link stays valid after the source "
-        "site changes. Input is a single image URL; output is one CDN URL."
+        "site changes. Input is a single image URL; output is one CDN URL. "
+        "Images already on our CDN (e.g. ones you just generated) are "
+        "persistent — do not call this on them."
     )
     args_schema: ArgsSchema | None = StoreImageInput
 
@@ -56,6 +59,13 @@ class StoreImageTool(SystemTool):
     ) -> str:
         """Download ``url``, validate as image, upload to S3, return CDN URL."""
         try:
+            # URLs already on our CDN are persistent by definition; re-storing
+            # them would only duplicate the object. Match on prefix + "/" so a
+            # lookalike host (cdn.example.com.evil.com) doesn't short-circuit.
+            cdn_base = (config.aws_s3_cdn_url or "").rstrip("/")
+            if cdn_base and url.startswith(f"{cdn_base}/"):
+                return url
+
             context = self.get_context()
 
             try:

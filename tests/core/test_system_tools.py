@@ -1176,6 +1176,10 @@ async def test_store_image_success(mock_runtime):
     tool = StoreImageTool()
     with (
         patch(
+            "intentkit.core.system_tools.store_image.config.aws_s3_cdn_url",
+            "https://cdn.example.com",
+        ),
+        patch(
             "intentkit.core.system_tools.store_image.download_image_bytes",
             new=AsyncMock(return_value=(_PNG_PAYLOAD, "image/png", "png")),
         ),
@@ -1193,6 +1197,95 @@ async def test_store_image_success(mock_runtime):
     assert result == (
         "https://cdn.example.com/prod/test_agent_123/image/store_image/abc.png"
     )
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "cdn_config",
+    ["https://cdn.example.com", "https://cdn.example.com/"],
+)
+async def test_store_image_internal_url_returned_as_is(mock_runtime, cdn_config):
+    """URLs already on our CDN are returned unchanged without re-storing."""
+    tool = StoreImageTool()
+    download = AsyncMock()
+    store = AsyncMock()
+    with (
+        patch(
+            "intentkit.core.system_tools.store_image.config.aws_s3_cdn_url",
+            cdn_config,
+        ),
+        patch(
+            "intentkit.core.system_tools.store_image.download_image_bytes",
+            new=download,
+        ),
+        patch(
+            "intentkit.core.system_tools.store_image.store_image_bytes",
+            new=store,
+        ),
+    ):
+        url = "https://cdn.example.com/prod/agent/image/image_gemini_flash/x.png"
+        assert await tool._arun(url) == url
+    download.assert_not_awaited()
+    store.assert_not_awaited()
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "lookalike_url",
+    [
+        "https://cdn.example.com.evil.com/foo.png",
+        "https://cdn.example.com@evil.com/foo.png",
+    ],
+)
+async def test_store_image_lookalike_host_not_short_circuited(
+    mock_runtime, lookalike_url
+):
+    """A lookalike host sharing the CDN prefix still goes through the store."""
+    tool = StoreImageTool()
+    with (
+        patch(
+            "intentkit.core.system_tools.store_image.config.aws_s3_cdn_url",
+            "https://cdn.example.com",
+        ),
+        patch(
+            "intentkit.core.system_tools.store_image.download_image_bytes",
+            new=AsyncMock(return_value=(_PNG_PAYLOAD, "image/png", "png")),
+        ),
+        patch(
+            "intentkit.core.system_tools.store_image.store_image_bytes",
+            new=AsyncMock(return_value="prod/test_agent_123/image/store_image/abc.png"),
+        ) as store,
+        patch(
+            "intentkit.core.system_tools.store_image.get_cdn_url",
+            return_value="https://cdn.example.com/prod/test_agent_123/image/store_image/abc.png",
+        ),
+    ):
+        result = await tool._arun(lookalike_url)
+
+    store.assert_awaited_once()
+    assert result == (
+        "https://cdn.example.com/prod/test_agent_123/image/store_image/abc.png"
+    )
+
+
+@pytest.mark.asyncio
+async def test_store_image_no_cdn_config_not_short_circuited(mock_runtime):
+    """Without a configured CDN base, no URL is short-circuited."""
+    tool = StoreImageTool()
+    download = AsyncMock(side_effect=ValueError("URL does not point to an image"))
+    with (
+        patch(
+            "intentkit.core.system_tools.store_image.config.aws_s3_cdn_url",
+            None,
+        ),
+        patch(
+            "intentkit.core.system_tools.store_image.download_image_bytes",
+            new=download,
+        ),
+    ):
+        with pytest.raises(ToolException, match="does not point to an image"):
+            await tool._arun("/relative/path.png")
+    download.assert_awaited_once()
 
 
 @pytest.mark.asyncio
