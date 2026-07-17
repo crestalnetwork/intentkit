@@ -1,6 +1,6 @@
-# Release v2.27.2
+# Release v2.27.3
 
-## Improvements
+## Bug Fixes
 
-- More reliable web-enabled agents: when a model's built-in web search or page-fetch briefly fails upstream, or a response is cut off in transit, the request is now retried automatically instead of surfacing as an error. Genuinely permanent failures — such as an exhausted usage limit — still stop right away, so real problems stay visible.
-- Routine maintenance: refreshed the underlying software dependencies to their latest compatible versions.
+- Fixed a crash on the agent chat page ("Failed to load agent") that could occur while an agent streamed several updates in quick succession, such as live tool-call status frames. The chat now stays stable through rapid bursts of activity.
+- Follow-up messages in the same conversation now stream their replies live from the start; previously the beginning of a second reply could stay hidden until the response finished.
