@@ -1,5 +1,6 @@
-# Release v2.27.1
+# Release v2.27.2
 
 ## Improvements
 
-- Smarter image storage: when an agent tries to persist an image that is already hosted on our CDN (for example, one it just generated), the existing link is now returned directly instead of downloading and uploading a duplicate copy. This eliminates wasted transfers and duplicate files in storage.
+- More reliable web-enabled agents: when a model's built-in web search or page-fetch briefly fails upstream, or a response is cut off in transit, the request is now retried automatically instead of surfacing as an error. Genuinely permanent failures — such as an exhausted usage limit — still stop right away, so real problems stay visible.
+- Routine maintenance: refreshed the underlying software dependencies to their latest compatible versions.
