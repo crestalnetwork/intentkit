@@ -1,6 +1,5 @@
-# Release v2.27.3
+# Release v2.27.4
 
 ## Bug Fixes
 
-- Fixed a crash on the agent chat page ("Failed to load agent") that could occur while an agent streamed several updates in quick succession, such as live tool-call status frames. The chat now stays stable through rapid bursts of activity.
-- Follow-up messages in the same conversation now stream their replies live from the start; previously the beginning of a second reply could stay hidden until the response finished.
+- Fixed web-enabled agents on OpenRouter models stalling mid-task. Certain models would occasionally emit their internal tool-call instructions as visible text instead of actually running the tool, leaving the task unfinished. These agents now use our own web search and page-reading tools, which run reliably across every model, so multi-step research and publishing flows complete as expected.
