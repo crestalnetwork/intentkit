@@ -400,20 +400,32 @@ export default function AgentChatPage() {
       setIsSending(next);
     };
 
+    const resetStreamCursor = () => {
+      processedCount = 0;
+      appliedTerminalStatus = null;
+    };
+
     const unsubscribe = subscribeToChatStream(currentThreadId, (snapshot) => {
       if (!snapshot) {
-        processedCount = 0;
-        appliedTerminalStatus = null;
+        resetStreamCursor();
         return;
       }
 
       const { messages: streamMessages } = snapshot;
+      // A new stream in the same thread replaces the finished session and its
+      // message array restarts from empty — resync so its frames render.
+      if (streamMessages.length < processedCount) {
+        resetStreamCursor();
+      }
       if (streamMessages.length > processedCount) {
         const startIdx = processedCount;
         processedCount = streamMessages.length;
         setMessages((prev) => {
           let next = prev;
-          for (let i = startIdx; i < processedCount; i++) {
+          // Bound the loop by this callback's snapshot, not processedCount:
+          // the updater runs deferred, and a later callback may have advanced
+          // processedCount past this (shorter) snapshot's length.
+          for (let i = startIdx; i < streamMessages.length; i++) {
             const uiMsg = apiMessageToUIMessage(streamMessages[i]);
             // A finished tool call folds its result into the pending frame
             // that announced it (matched by tool call id).
@@ -431,6 +443,10 @@ export default function AgentChatPage() {
       }
 
       if (snapshot.status === "active") {
+        // An active snapshot means any terminal status recorded earlier came
+        // from a replaced session (a zero-message session leaves no length
+        // shrink to detect) — clear it so the new session's ending applies.
+        appliedTerminalStatus = null;
         setSending(true);
         return;
       }

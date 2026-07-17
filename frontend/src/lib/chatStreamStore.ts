@@ -72,6 +72,11 @@ export function startChatStream(
   }
 
   const controller = new AbortController();
+  // Subscribers rely on two invariants of the session lifecycle: within a
+  // session the messages array only ever grows (the push below is the sole
+  // mutation), and a replacing session notifies with an empty array before
+  // its first message. The chat page's stream cursor infers session
+  // replacement from a length shrink — keep both if you change this.
   const session: Session = {
     controller,
     snapshot: { messages: [], status: "active" },
