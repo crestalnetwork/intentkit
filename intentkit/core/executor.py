@@ -22,6 +22,7 @@ from langchain_core.tools import BaseTool
 from langchain_core.tools.base import ToolException
 from langgraph.checkpoint.memory import InMemorySaver
 from langgraph.graph.state import CompiledStateGraph
+from openrouter.errors import OpenRouterError, ResponseValidationError
 from pydantic import ValidationError
 from pydantic.v1 import ValidationError as ValidationErrorV1
 
@@ -73,7 +74,9 @@ def _should_retry_model_failure(exc: Exception) -> bool:
     ``ChatGoogleGenerativeAIError`` whose status code only survives on the
     cause. ``status_code``/``code``/``response.status_code`` are duck-typed
     for the same reason — one filter must cover the openai, anthropic, and
-    google exception families.
+    google exception families. OpenRouter needs the two explicit cases below
+    instead: its transient server-tool failures are indistinguishable from
+    permanent ones by status alone.
     """
     cause: BaseException | None = exc
     seen: set[int] = set()
@@ -89,6 +92,26 @@ def _should_retry_model_failure(exc: Exception) -> bool:
                 httpcore.NetworkError,
                 httpcore.ProtocolError,
             ),
+        ):
+            return True
+        if isinstance(cause, ResponseValidationError):
+            # A 2xx whose body stopped mid-JSON — the upstream stream dropped.
+            # The SDK's own retries never see it: parsing happens after the
+            # HTTP layer already succeeded. Two neighbours deliberately fall
+            # through to the status filter instead: a body that parsed but
+            # failed the schema (SDK/API drift, permanent), and any non-2xx,
+            # since the SDK unmarshals error bodies too and a truncated 402
+            # must stay as final as an intact one.
+            if 200 <= cause.status_code < 300 and not isinstance(
+                cause.__cause__, (ValidationError, ValidationErrorV1)
+            ):
+                return True
+        elif isinstance(cause, OpenRouterError) and (
+            # OpenRouter ran web_search/web_fetch itself and the tool failed
+            # upstream; it reports that as a 4xx, which reads permanent even
+            # though the request was fine. Matched as a substring because
+            # OpenRouterDefaultError rewrites the message around it.
+            "server tool request failed" in str(cause).lower()
         ):
             return True
         candidates = (

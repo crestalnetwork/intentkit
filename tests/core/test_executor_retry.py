@@ -12,6 +12,7 @@ import openai
 import pytest
 from anthropic import APIStatusError as AnthropicAPIStatusError
 from langchain_core.tools.base import ToolException
+from openrouter.errors import OpenRouterError, ResponseValidationError
 from pydantic import BaseModel, ValidationError
 
 from intentkit.core.executor import (
@@ -23,6 +24,34 @@ from intentkit.core.executor import (
 def _response(status_code: int) -> httpx.Response:
     request = httpx.Request("POST", "https://api.example.com/v1/messages")
     return httpx.Response(status_code, request=request)
+
+
+def _response_validation_error(
+    cause: Exception, status_code: int = 200
+) -> ResponseValidationError:
+    """Build the error the openrouter SDK raises when a body won't unmarshal.
+
+    Raised via ``from cause`` to mirror unmarshal_json_response: the SDK's
+    constructor does not set ``__cause__`` itself, the raise statement does,
+    and ``__cause__`` is what tells a truncated body from a schema mismatch.
+    """
+    try:
+        raise ResponseValidationError(
+            "Response validation failed", _response(status_code), cause
+        ) from cause
+    except ResponseValidationError as exc:
+        return exc
+
+
+def _schema_mismatch() -> ValidationError:
+    """A body that parsed as JSON but did not match the SDK's model."""
+
+    class Body(BaseModel):
+        id: str
+
+    with pytest.raises(ValidationError) as exc_info:
+        Body(id=123)  # pyright: ignore[reportArgumentType]
+    return exc_info.value
 
 
 class TestShouldRetryModelFailure:
@@ -136,6 +165,86 @@ class TestShouldRetryModelFailure:
         a.__cause__ = b
         b.__cause__ = a
         assert not _should_retry_model_failure(a)
+
+
+class TestOpenRouterServerToolFailures:
+    """OpenRouter server-tool failures that arrive dressed as permanent errors.
+
+    Both reach us as an HTTP-level success or a 4xx, so the status filter lets
+    them through untried even though a retry usually succeeds.
+    """
+
+    def test_truncated_body_retries(self):
+        # HTTP 200 whose JSON stopped mid-value: pydantic_core.from_json raises
+        # a bare ValueError, which the SDK wraps as ResponseValidationError.
+        exc = _response_validation_error(
+            ValueError("EOF while parsing a value at line 175 column 0")
+        )
+        assert _should_retry_model_failure(exc)
+
+    @pytest.mark.parametrize("status_code", [400, 402, 404, 422])
+    def test_truncated_body_on_permanent_status_does_not_retry(self, status_code: int):
+        # The SDK unmarshals error bodies too, so a 4xx whose body is truncated
+        # or non-JSON (a gateway's HTML page) also arrives as a
+        # ResponseValidationError. Its status is the honest signal: a truncated
+        # 402 "Key limit exceeded" is exactly as final as an intact one.
+        exc = _response_validation_error(
+            ValueError("EOF while parsing a value at line 1 column 0"),
+            status_code=status_code,
+        )
+        assert not _should_retry_model_failure(exc)
+
+    @pytest.mark.parametrize(
+        ("status_code", "retries"),
+        [
+            # Schema drift on a good response is SDK/API drift — permanent, and
+            # retrying would burn three attempts on every request until noticed.
+            (200, False),
+            # ...but drift on a 503 is incidental; the status filter must win.
+            (503, True),
+        ],
+    )
+    def test_schema_mismatch_retries_only_on_transient_status(
+        self, status_code: int, retries: bool
+    ):
+        exc = _response_validation_error(_schema_mismatch(), status_code=status_code)
+        assert _should_retry_model_failure(exc) is retries
+
+    def test_server_tool_request_failed_retries(self):
+        # OpenRouter's own web_search/web_fetch failed upstream; reported 4xx.
+        exc = OpenRouterError("Server tool request failed", _response(400))
+        assert _should_retry_model_failure(exc)
+
+    def test_server_tool_failure_matched_inside_wrapped_message(self):
+        # OpenRouterDefaultError rewrites the message to embed status and body,
+        # so the marker has to be found as a substring, not an exact match.
+        exc = OpenRouterError(
+            'Status 400. Body: {"error":{"message":"Server tool request failed"}}',
+            _response(400),
+        )
+        assert _should_retry_model_failure(exc)
+
+    def test_unrelated_openrouter_4xx_does_not_retry(self):
+        exc = OpenRouterError(
+            "No endpoints found matching your data policy", _response(404)
+        )
+        assert not _should_retry_model_failure(exc)
+
+    def test_openrouter_transient_statuses_still_retry(self):
+        # Regression: the server-tool checks must not short-circuit the status
+        # filter for OpenRouter's own rate limits and provider outages.
+        assert _should_retry_model_failure(
+            OpenRouterError("Rate limit exceeded", _response(429))
+        )
+        assert _should_retry_model_failure(
+            OpenRouterError("Provider overloaded", _response(503))
+        )
+
+    def test_key_limit_exceeded_does_not_retry(self):
+        # A spent key is permanent until a human resets it; retrying only
+        # delays the error the operator needs to see.
+        exc = OpenRouterError("Key limit exceeded (monthly limit).", _response(402))
+        assert not _should_retry_model_failure(exc)
 
 
 class TestShouldRetryToolFailure:
