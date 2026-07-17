@@ -170,9 +170,9 @@ def _tool_keys(tools: list) -> set[str]:
 
 @pytest.mark.asyncio
 async def test_build_executor_openrouter_tools(mock_agent, mock_agent_data):
-    """OpenRouter agents use our own current_time tool plus the web_search and
-    web_fetch server tools, and never OpenRouter's datetime server tool or the
-    Cloudflare webpage reader tool."""
+    """OpenRouter agents use our own client-side web tools (web_search plus the
+    Cloudflare reader), never OpenRouter's server-side web_search/web_fetch —
+    those corrupt tool calling on continuation turns across every routed model."""
     mock_agent.search_internet = True
 
     with (
@@ -200,10 +200,10 @@ async def test_build_executor_openrouter_tools(mock_agent, mock_agent_data):
 
     keys = _tool_keys(tool_binding.all_tools)
     assert "current_time" in keys
-    assert "openrouter:web_search" in keys
-    assert "openrouter:web_fetch" in keys
-    assert "openrouter:datetime" not in keys
-    assert "read_webpage_cloudflare" not in keys
+    assert "web_search" in keys
+    assert "read_webpage_cloudflare" in keys
+    assert "openrouter:web_search" not in keys
+    assert "openrouter:web_fetch" not in keys
 
 
 @pytest.mark.asyncio

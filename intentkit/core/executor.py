@@ -22,7 +22,7 @@ from langchain_core.tools import BaseTool
 from langchain_core.tools.base import ToolException
 from langgraph.checkpoint.memory import InMemorySaver
 from langgraph.graph.state import CompiledStateGraph
-from openrouter.errors import OpenRouterError, ResponseValidationError
+from openrouter.errors import ResponseValidationError
 from pydantic import ValidationError
 from pydantic.v1 import ValidationError as ValidationErrorV1
 
@@ -74,9 +74,10 @@ def _should_retry_model_failure(exc: Exception) -> bool:
     ``ChatGoogleGenerativeAIError`` whose status code only survives on the
     cause. ``status_code``/``code``/``response.status_code`` are duck-typed
     for the same reason — one filter must cover the openai, anthropic, and
-    google exception families. OpenRouter needs the two explicit cases below
-    instead: its transient server-tool failures are indistinguishable from
-    permanent ones by status alone.
+    google exception families. OpenRouter needs the explicit
+    ``ResponseValidationError`` case below on top of that: a stream truncated
+    mid-body surfaces as a would-be parse failure that status alone cannot
+    tell apart from a genuine, permanent schema mismatch.
     """
     cause: BaseException | None = exc
     seen: set[int] = set()
@@ -97,7 +98,7 @@ def _should_retry_model_failure(exc: Exception) -> bool:
         if isinstance(cause, ResponseValidationError):
             # A 2xx whose body stopped mid-JSON — the upstream stream dropped.
             # The SDK's own retries never see it: parsing happens after the
-            # HTTP layer already succeeded. Two neighbours deliberately fall
+            # HTTP layer already succeeded. Two sibling cases deliberately fall
             # through to the status filter instead: a body that parsed but
             # failed the schema (SDK/API drift, permanent), and any non-2xx,
             # since the SDK unmarshals error bodies too and a truncated 402
@@ -106,14 +107,6 @@ def _should_retry_model_failure(exc: Exception) -> bool:
                 cause.__cause__, (ValidationError, ValidationErrorV1)
             ):
                 return True
-        elif isinstance(cause, OpenRouterError) and (
-            # OpenRouter ran web_search/web_fetch itself and the tool failed
-            # upstream; it reports that as a 4xx, which reads permanent even
-            # though the request was fine. Matched as a substring because
-            # OpenRouterDefaultError rewrites the message around it.
-            "server tool request failed" in str(cause).lower()
-        ):
-            return True
         candidates = (
             getattr(cause, "status_code", None),
             getattr(cause, "code", None),
@@ -277,22 +270,19 @@ async def build_executor(
         elif model_provider == LLMProvider.XAI:
             search_tools = [{"type": "web_search"}, {"type": "x_search"}]
             tools.extend(search_tools)
-        elif model_provider == LLMProvider.OPENROUTER:
-            # Pair web search with OpenRouter's web_fetch server tool so the
-            # agent can both discover and read pages natively, instead of our
-            # own webpage reader tool.
-            search_tools = [
-                {"type": "openrouter:web_search"},
-                {"type": "openrouter:web_fetch"},
-            ]
-            tools.extend(search_tools)
         elif model_provider == LLMProvider.GOOGLE:
             search_tools = [{"google_search": {}}, {"url_context": {}}]
             tools.extend(search_tools)
         else:
-            # Providers without a native search tool (deepseek, minimax,
-            # mimo_plan, ollama, *_compatible): use our unified web_search tool
-            # plus the Cloudflare webpage reader. Each self-checks its own
+            # Everyone else uses our own client-side web tools: deepseek,
+            # minimax, mimo_plan, ollama, *_compatible, and all OpenRouter
+            # models. OpenRouter is deliberately here rather than on its
+            # server-side web_search/web_fetch tools: those corrupt tool
+            # calling on continuation turns — every routed model leaks its
+            # native tool-call tokens as plain text (DeepSeek DSML, MiMo
+            # `<function=>`, GPT `to=functions.`) instead of a structured
+            # call, so multi-step tasks never complete. Our client-side
+            # web_search + reader avoid that path. Each self-checks its own
             # config and raises a clear error if unconfigured.
             tools.extend([web_search, read_webpage_cloudflare])
 

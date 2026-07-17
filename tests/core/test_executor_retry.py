@@ -167,11 +167,12 @@ class TestShouldRetryModelFailure:
         assert not _should_retry_model_failure(a)
 
 
-class TestOpenRouterServerToolFailures:
-    """OpenRouter server-tool failures that arrive dressed as permanent errors.
+class TestOpenRouterResponseFailures:
+    """OpenRouter SDK failures that need care beyond the plain status filter.
 
-    Both reach us as an HTTP-level success or a 4xx, so the status filter lets
-    them through untried even though a retry usually succeeds.
+    A body truncated mid-stream arrives as a would-be-permanent parse failure
+    on a 2xx and must be retried, while the same parse failure on a 4xx, a real
+    schema mismatch, or a spent key must stay final.
     """
 
     def test_truncated_body_retries(self):
@@ -210,29 +211,15 @@ class TestOpenRouterServerToolFailures:
         exc = _response_validation_error(_schema_mismatch(), status_code=status_code)
         assert _should_retry_model_failure(exc) is retries
 
-    def test_server_tool_request_failed_retries(self):
-        # OpenRouter's own web_search/web_fetch failed upstream; reported 4xx.
-        exc = OpenRouterError("Server tool request failed", _response(400))
-        assert _should_retry_model_failure(exc)
-
-    def test_server_tool_failure_matched_inside_wrapped_message(self):
-        # OpenRouterDefaultError rewrites the message to embed status and body,
-        # so the marker has to be found as a substring, not an exact match.
-        exc = OpenRouterError(
-            'Status 400. Body: {"error":{"message":"Server tool request failed"}}',
-            _response(400),
-        )
-        assert _should_retry_model_failure(exc)
-
     def test_unrelated_openrouter_4xx_does_not_retry(self):
         exc = OpenRouterError(
             "No endpoints found matching your data policy", _response(404)
         )
         assert not _should_retry_model_failure(exc)
 
-    def test_openrouter_transient_statuses_still_retry(self):
-        # Regression: the server-tool checks must not short-circuit the status
-        # filter for OpenRouter's own rate limits and provider outages.
+    def test_openrouter_transient_statuses_retry(self):
+        # A plain OpenRouterError is retried purely on its status: rate limits
+        # and provider outages go through the same duck-typed filter.
         assert _should_retry_model_failure(
             OpenRouterError("Rate limit exceeded", _response(429))
         )

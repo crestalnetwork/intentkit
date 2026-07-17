@@ -547,8 +547,10 @@ def is_model_resolvable(model_id: str) -> bool:
     return model_id in AVAILABLE_MODELS or model_id in _MODEL_ID_INDEX
 
 
-# USD cost per single web search call, by provider.
-# OpenRouter bundles search cost in token billing — no separate charge.
+# USD cost per single provider-billed server-side web search call. Only
+# providers whose native search tool we use appear here. OpenRouter, deepseek,
+# minimax, etc. run our client-side web_search tool instead, whose cost is
+# accounted by that tool, so they have no entry.
 _SEARCH_PRICE_BY_PROVIDER: dict[LLMProvider, Decimal] = {
     LLMProvider.OPENAI: Decimal("0.01"),
     LLMProvider.GOOGLE: Decimal("0.014"),
@@ -808,7 +810,8 @@ class OpenRouterLLM(LLMModel):
 
     @override
     async def create_instance(self, params: dict[str, Any] = {}) -> BaseChatModel:
-        """Create and return a ChatOpenRouter instance with server tool support."""
+        """Create and return a ChatOpenRouter instance."""
+        from langchain_openrouter import ChatOpenRouter
 
         info = await self.model_info()
 
@@ -843,54 +846,7 @@ class OpenRouterLLM(LLMModel):
         # Update kwargs with params to allow overriding
         kwargs.update(params)
 
-        return _create_openrouter_with_server_tools(**kwargs)
-
-
-def _create_openrouter_with_server_tools(**kwargs: Any) -> BaseChatModel:
-    """Create a ChatOpenRouter subclass that supports server tools.
-
-    OpenRouter server tools (e.g. ``{"type": "openrouter:web_search"}``) are
-    not recognised by ``convert_to_openai_tool`` used inside the upstream
-    ``ChatOpenRouter.bind_tools``. This subclass overrides ``bind_tools`` to
-    pull server-tool dicts out, delegate the rest to the parent, and re-inject
-    the server tools into the bound kwargs so they are sent as-is in the API
-    request.
-
-    The underlying ``openrouter`` SDK (>=0.8.0) exposes ``ChatFunctionTool`` as
-    a discriminated union that natively accepts the ``openrouter:`` server-tool
-    types we use, so no SDK-level patch is required for tool types.
-    """
-    from langchain_openrouter import ChatOpenRouter
-
-    class _WithServerTools(ChatOpenRouter):
-        @override
-        def bind_tools(
-            self,
-            tools: Sequence[dict[str, Any] | type | Callable | BaseTool],
-            **bt_kwargs: Any,
-        ) -> Runnable[LanguageModelInput, AIMessage]:
-            server_tools: list[dict[str, Any]] = []
-            regular_tools: list[dict[str, Any] | type | Callable | BaseTool] = []
-            for tool in tools:
-                if (
-                    isinstance(tool, dict)
-                    and isinstance(tool.get("type"), str)
-                    and tool["type"].startswith("openrouter:")
-                ):
-                    server_tools.append(tool)
-                else:
-                    regular_tools.append(tool)
-
-            bound = super().bind_tools(regular_tools, **bt_kwargs)
-
-            if server_tools:
-                bound_kwargs: dict[str, Any] = bound.kwargs  # pyright: ignore[reportAttributeAccessIssue]
-                existing = list(bound_kwargs.get("tools", []))
-                updated = {k: v for k, v in bound_kwargs.items() if k != "tools"}
-                return self.bind(tools=existing + server_tools, **updated)
-            return bound
-
-    return _WithServerTools(**kwargs)
+        return ChatOpenRouter(**kwargs)
 
 
 class GoogleLLM(LLMModel):
