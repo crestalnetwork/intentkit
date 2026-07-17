@@ -187,9 +187,17 @@ async def publish_agent(
         if description is not None:
             db_agent.description = description
         db_agent.visibility = AgentVisibility.PUBLIC
+        team_id = db_agent.team_id
 
         await session.commit()
         await session.refresh(db_agent)
+
+        # Publishing can rewrite the description, which the team lead's injected
+        # roster renders — drop the lead cache so it isn't stale. Deferred
+        # import avoids a core.agent -> core.lead cycle at module load.
+        from intentkit.core.lead.cache import invalidate_lead_cache
+
+        invalidate_lead_cache(team_id)
 
         return Agent.model_validate(db_agent)
 

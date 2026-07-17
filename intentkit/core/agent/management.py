@@ -25,6 +25,24 @@ from .tool_registry import filter_wallet_tool_names, sanitize_tools, validate_to
 logger = logging.getLogger(__name__)
 
 
+def _invalidate_lead_for_team(team_id: str | None) -> None:
+    """Drop the team lead's cached prompt after an agent mutation.
+
+    The lead's system prompt embeds the team's agent roster (each agent's
+    name, slug, and description), so edits to those fields must invalidate the
+    lead cache or the roster shows stale text until the cache TTL. Invalidating
+    here — at the patch/override funnel — covers every field-editing caller
+    (the lead's own tool and the REST patch/override endpoints) without each
+    one remembering to. The import is deferred to avoid a core.agent ->
+    core.lead cycle at module load.
+    """
+    if not team_id:
+        return
+    from intentkit.core.lead.cache import invalidate_lead_cache
+
+    invalidate_lead_cache(team_id)
+
+
 async def _validate_wallet_tools(tools: list[str] | None, team_id: str | None) -> None:
     """Reject wallet-operating tools for teams that own no wallets.
 
@@ -206,6 +224,7 @@ async def override_agent(
         latest_agent = Agent.model_validate(db_agent)
 
     await invalidate_agent_info(agent_id)
+    _invalidate_lead_for_team(latest_agent.team_id)
     agent_data = await AgentData.get(agent_id)
     send_agent_notification(latest_agent, agent_data, "Agent Overridden Deployed")
 
@@ -300,6 +319,7 @@ async def patch_agent(
         latest_agent = Agent.model_validate(db_agent)
 
     await invalidate_agent_info(agent_id)
+    _invalidate_lead_for_team(latest_agent.team_id)
     agent_data = await AgentData.get(agent_id)
     send_agent_notification(latest_agent, agent_data, "Agent Patched")
 

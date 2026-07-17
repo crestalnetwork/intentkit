@@ -155,7 +155,9 @@ class UpdateTeamAgent(LeadTool):
             if value is not None:
                 update_data[key] = value
 
-        # AgentUpdate has name with default=None, so it's safe to omit
+        # AgentUpdate has name with default=None, so it's safe to omit.
+        # patch_agent invalidates the team lead cache so the injected roster
+        # reflects any name/slug/description change.
         agent_update = AgentUpdate.model_validate(update_data)
         updated_agent, _ = await patch_agent(agent_id, agent_update)
 

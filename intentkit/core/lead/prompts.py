@@ -3,9 +3,9 @@
 Holds the lead's fixed prompt prose — its purpose, operating principles, and
 the Initial Rules body (assembled from static sections plus a built-in
 sub-agent list generated from the registry). The engine appends the build-time
-dynamic sections (followed agents and links) after this static core. Keeping
-the prose here keeps ``_build_lead_agent`` focused on data gathering and
-assembly.
+dynamic sections (the team-agent roster, followed agents, and links) after this
+static core. Keeping the prose here keeps ``_build_lead_agent`` focused on data
+gathering and assembly.
 
 The Initial Rules sections live under the ``## Initial Rules`` heading, so they
 use level-3 (``###``) headings.
@@ -92,12 +92,17 @@ _WORKFLOW_SECTION = (
     "### Workflow\n\n"
     "1. For casual chat or simple questions, answer directly.\n"
     "2. If the request fits one of the built-in sub-agents, delegate it.\n"
-    "3. For work a team agent might handle, call `lead_list_team_agents` to "
-    "see the roster, then delegate to a suitable one via `lead_call_agent`.\n"
-    "4. If no existing agent fits, ask the user for permission to create one. "
-    "Once approved, use `agent-manager` to create a suitable agent and "
+    '3. For work a team agent might handle, check the "Team agents" section in '
+    "your context and delegate to a suitable one via `lead_call_agent`. Call "
+    "`lead_list_team_agents` only when you need an agent's full configuration "
+    "or suspect the roster in context is out of date.\n"
+    "4. If no team agent fits but the task needs a known capability, browse "
+    "public agents with `lead_list_public_agents`, follow a suitable one, and "
+    "delegate to it.\n"
+    "5. If nothing existing fits, ask the user for permission to create an "
+    "agent. Once approved, use `agent-manager` to create a suitable agent and "
     "delegate the task to it. Iterate on the agent's configuration as needed.\n"
-    "5. If `agent-manager` cannot produce a working agent, or you hit "
+    "6. If `agent-manager` cannot produce a working agent, or you hit "
     "authentication/account issues, ask the user for help.\n\n"
 )
 
@@ -107,8 +112,9 @@ _POSTS_SECTION = (
     "`content-manager`), but you cannot publish posts or activities yourself. "
     "When the user asks you to publish a post or an activity, do NOT refuse — "
     "route it to an agent that can publish:\n"
-    "1. Call `lead_list_team_agents` and look for an agent whose role matches "
-    "the target content; if one fits, delegate the publishing to it via "
+    '1. Check the "Team agents" section for an agent whose role matches the '
+    "target content (call `lead_list_team_agents` if you need the full "
+    "roster); if one fits, delegate the publishing to it via "
     "`lead_call_agent`.\n"
     '2. If none matches, look for a general-purpose "spokesperson" agent (one '
     "meant for publishing arbitrary content on the team's behalf) and delegate "
@@ -145,8 +151,8 @@ def _built_in_sub_agents_section() -> str:
 def build_lead_static_instructions() -> str:
     """Assemble the static portion of the lead's Initial Rules.
 
-    The engine appends the build-time dynamic sections (followed agents and
-    links) after this.
+    The engine appends the build-time dynamic sections (the team-agent roster,
+    followed agents, and links) after this.
     """
     return (
         _MENTAL_MODEL_SECTION
