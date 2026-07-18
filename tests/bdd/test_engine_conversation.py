@@ -83,7 +83,7 @@ async def test_simple_conversation() -> None:
     """
     Scenario: Simple Conversation Without Tools
 
-    Given a deployed agent with `model=GLM-4.7` and no tools
+    Given an existing agent with `model=GLM-4.7` and no tools
     When a user sends "Hello, who are you?"
     Then the engine returns at least one agent reply message
     And the user input message is persisted in the database
@@ -144,7 +144,7 @@ async def test_tool_call_current_time() -> None:
     """
     Scenario: Tool Call (current_time)
 
-    Given a deployed agent
+    Given an existing agent
     When a user sends a message requiring the current time
     Then the engine returns messages including a tool call message with
         `current_time` / `success=True` and a date-like string
@@ -236,7 +236,7 @@ async def test_multi_turn_conversation() -> None:
     """
     Scenario: Multi-turn Conversation with Memory
 
-    Given a deployed agent with `model=GLM-4.7`
+    Given an existing agent with `model=GLM-4.7`
     When user sends "My name is TestUser" and then "What is my name?"
     Then the second response contains "TestUser" (memory works)
     And both turns produce chat messages in the database
@@ -302,7 +302,7 @@ async def test_clear_memory_command() -> None:
     """
     Scenario: Clear Memory Command
 
-    Given a deployed agent
+    Given an existing agent
     When a user sends "@clear"
     Then the engine returns a single message saying memory has been cleared
     And the reply has `author_type=agent`

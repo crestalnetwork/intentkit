@@ -41,7 +41,6 @@ def mock_agent():
         name="Test Agent",
         description="A test agent",
         model="gpt-4o",
-        deployed_at=datetime.now(),
         updated_at=datetime.now(),
         created_at=datetime.now(),
         owner="user_1",
@@ -273,10 +272,7 @@ async def test_agent_executor_caching(mock_agent):
 
         async def side_effect(aid, agent, agent_data):
             agents[aid] = mock_executor
-            agents_updated[aid] = max(
-                agent.deployed_at if agent.deployed_at else agent.updated_at,
-                agent_data.updated_at,
-            )
+            agents_updated[aid] = max(agent.updated_at, agent_data.updated_at)
 
         mock_build_and_cache.side_effect = side_effect
 
@@ -290,15 +286,12 @@ async def test_agent_executor_caching(mock_agent):
         assert executor2 == mock_executor
         assert mock_build_and_cache.call_count == 1  # Still 1
 
-        # Update agent deployed_at to force re-init
-        mock_agent.deployed_at = datetime.now()
-        # (Assuming the logic compares timestamps. Python datetime equality is exact)
-        # We need to make sure the new timestamp is different.
-        # In the test execution, datetime.now() might be close, but let's assume it changes or we force it.
+        # Bump agent updated_at to force re-init; sleep so the new
+        # timestamp is guaranteed to differ from the cached one.
         import time
 
         time.sleep(0.001)
-        mock_agent.deployed_at = datetime.now()
+        mock_agent.updated_at = datetime.now()
 
         # Third call - should re-initialize
         _executor3, _cost3 = await agent_executor(mock_agent.id)

@@ -44,7 +44,7 @@ def test_validate_tools_rejects_non_string_entries():
 
 def test_validate_tools_accepts_migrated_system_tool_names():
     # ui tools moved to auto-bound system tools; legacy configs still carrying
-    # their names must not be rejected (e.g. re-deploying an old export).
+    # their names must not be rejected (e.g. re-importing an old export).
     validate_tools(["http_get", "ui_show_card", "ui_ask_user"])  # Should not raise
 
 

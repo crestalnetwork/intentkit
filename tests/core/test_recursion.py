@@ -17,7 +17,6 @@ def mock_agent():
         name="Test Agent",
         description="A test agent",
         model="gpt-4o",
-        deployed_at=datetime.now(),
         updated_at=datetime.now(),
         created_at=datetime.now(),
         owner="user_1",

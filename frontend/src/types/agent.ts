@@ -19,7 +19,6 @@ export interface Agent {
   search_internet: boolean | null;
   enable_activity: boolean | null;
   enable_post: boolean | null;
-  deployed_at: string | null;
   public_info_updated_at: string | null;
   created_at: string;
   updated_at: string;

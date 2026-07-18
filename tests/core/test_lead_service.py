@@ -38,7 +38,6 @@ def _mock_agent_row(
     now = datetime.now()
     row.created_at = now
     row.updated_at = now
-    row.deployed_at = now
     row.archived_at = None
     row.public_info_updated_at = now
     return row

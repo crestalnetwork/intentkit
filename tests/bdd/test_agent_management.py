@@ -25,7 +25,7 @@ async def test_create_agent_minimal_config():
     When I call `create_agent` with `id=test-agent-1`, `name=Test Agent`
     Then an agent with `id=test-agent-1` is persisted in the database
     And the agent has `owner=system` (default)
-    And `deployed_at` is set
+    And `updated_at` is set
     """
     # Given: clean database (handled by conftest fixture)
 
@@ -41,7 +41,7 @@ async def test_create_agent_minimal_config():
     assert agent.id == "test-agent-1"
     assert agent.name == "Test Agent"
     assert agent.owner == "system"
-    assert agent.deployed_at is not None
+    assert agent.updated_at is not None
 
 
 @pytest.mark.bdd

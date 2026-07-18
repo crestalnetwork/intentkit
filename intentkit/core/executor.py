@@ -415,8 +415,7 @@ async def build_and_cache_executor(
     """
     executor = await build_executor(agent, agent_data)
     agents[aid] = executor
-    agent_ts = agent.deployed_at if agent.deployed_at else agent.updated_at
-    agents_updated[aid] = max(agent_ts, agent_data.updated_at)
+    agents_updated[aid] = max(agent.updated_at, agent_data.updated_at)
     _agents_accessed_at[aid] = datetime.now(timezone.utc)
 
 
@@ -434,8 +433,7 @@ async def agent_executor(
             status_code=404, key="AgentNotFound", message="Agent not found"
         )
     agent_data = await AgentData.get(agent_id)
-    agent_ts = agent.deployed_at if agent.deployed_at else agent.updated_at
-    updated_at = max(agent_ts, agent_data.updated_at)
+    updated_at = max(agent.updated_at, agent_data.updated_at)
     # Check if agent needs reinitialization due to updates
     needs_reinit = False
     if agent_id in agents:

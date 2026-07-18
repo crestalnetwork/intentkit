@@ -30,7 +30,6 @@ def _agent() -> Agent:
         name="Test Agent",
         description="A test agent",
         model="gpt-4o",
-        deployed_at=now,
         updated_at=now,
         created_at=now,
         owner="user_1",

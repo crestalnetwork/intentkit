@@ -33,8 +33,8 @@ async def verify_team_membership(team_id: str, user_id: str) -> None:
 
 async def get_team_agents(team_id: str) -> list[Agent]:
     """Query AgentTable where team_id matches, exclude archived, order by
-    updated_at desc — recently edited/deployed agents first, so the lead
-    prompt's capped roster keeps the most recently active ones."""
+    updated_at desc — recently edited agents first, so the lead prompt's
+    capped roster keeps the most recently active ones."""
     async with get_session() as db:
         stmt = (
             select(AgentTable)

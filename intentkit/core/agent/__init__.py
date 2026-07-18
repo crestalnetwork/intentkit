@@ -15,7 +15,6 @@ from .info import (
 from .management import (
     backfill_agent_avatar,
     create_agent,
-    deploy_agent,
     override_agent,
     patch_agent,
 )
@@ -38,7 +37,6 @@ __all__ = [
     "patch_agent",
     "create_agent",
     "backfill_agent_avatar",
-    "deploy_agent",
     "agent_action_cost",
     "update_agent_action_cost",
     "update_agents_account_snapshot",

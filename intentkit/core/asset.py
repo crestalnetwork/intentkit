@@ -252,7 +252,12 @@ async def agent_asset(agent_id: str) -> AgentAssets:
             await session.execute(
                 update(AgentTable)
                 .where(AgentTable.id == agent_id)
-                .values(assets=assets_payload)
+                .values(
+                    # Derived cache column: don't bump updated_at (executor
+                    # rebuilds and roster ordering key off it).
+                    assets=assets_payload,
+                    updated_at=AgentTable.updated_at,
+                )
             )
             await session.commit()
     except Exception as exc:  # pragma: no cover - db persistence path only

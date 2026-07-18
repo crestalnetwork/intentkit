@@ -9,7 +9,7 @@ import logging
 from datetime import UTC, datetime
 from pathlib import Path
 
-from sqlalchemy import func, select
+from sqlalchemy import select
 from yaml import safe_load
 
 from intentkit.config.db import get_session
@@ -212,7 +212,6 @@ async def sync_public_agents() -> None:
                 if tags is not None:
                     existing.tags = tags
                 existing.version = new_hash
-                existing.deployed_at = func.now()
                 existing.visibility = AgentVisibility.PUBLIC
                 existing.archived_at = None  # Un-archive on update
                 updated += 1
@@ -232,7 +231,6 @@ async def sync_public_agents() -> None:
                 db_agent.owner = OWNER
                 db_agent.team_id = TEAM_ID
                 db_agent.version = new_hash
-                db_agent.deployed_at = func.now()
                 db_agent.visibility = AgentVisibility.PUBLIC
                 if tags is not None:
                     db_agent.tags = tags

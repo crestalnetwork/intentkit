@@ -239,11 +239,6 @@ class AgentTable(Base, AgentUserInputColumns):
         nullable=True,
         comment="Public extra data of the agent",
     )
-    deployed_at: Mapped[datetime | None] = mapped_column(
-        DateTime(timezone=True),
-        nullable=True,
-        comment="Timestamp when the agent was deployed",
-    )
     public_info_updated_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True),
         nullable=True,

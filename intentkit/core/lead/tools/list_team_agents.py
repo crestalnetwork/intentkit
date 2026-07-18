@@ -22,7 +22,7 @@ class AgentSummary(BaseModel):
     model: str | None = None
     visibility: int | None = None
     owner: str | None = None
-    deployed_at: str | None = None
+    updated_at: str | None = None
     created_at: str | None = None
 
 
@@ -38,7 +38,7 @@ class ListTeamAgents(LeadTool):
     name: str = "lead_list_team_agents"
     description: str = (
         "List all agents in the team with summary info: id, name, slug, "
-        "description, model, visibility, owner, deployed_at, created_at. "
+        "description, model, visibility, owner, updated_at, created_at. "
         "Use lead_get_team_agent for the full config."
     )
     args_schema: ArgsSchema | None = NoArgsSchema
@@ -57,7 +57,7 @@ class ListTeamAgents(LeadTool):
                 model=a.model,
                 visibility=a.visibility,
                 owner=a.owner,
-                deployed_at=(a.deployed_at.isoformat() if a.deployed_at else None),
+                updated_at=(a.updated_at.isoformat() if a.updated_at else None),
                 created_at=(a.created_at.isoformat() if a.created_at else None),
             )
             for a in agents

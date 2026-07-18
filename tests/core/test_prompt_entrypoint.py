@@ -24,7 +24,6 @@ def _wechat_agent() -> Agent:
         name="WeChat Agent",
         description="A test agent",
         model="gpt-4o",
-        deployed_at=now,
         updated_at=now,
         created_at=now,
         owner="user_1",

@@ -11,7 +11,6 @@ type Agent struct {
 	ID                        string            `gorm:"primaryKey;type:varchar"`
 	TelegramEntrypointEnabled bool              `gorm:"default:false"`
 	TelegramConfig            datatypes.JSONMap `gorm:"type:jsonb"`
-	DeployedAt                *time.Time
 	UpdatedAt                 time.Time
 }
 

@@ -398,60 +398,6 @@ class TestCreateAgent:
 
 
 # ===========================================================================
-# deploy_agent
-# ===========================================================================
-
-
-class TestDeployAgent:
-    @pytest.mark.asyncio
-    @patch(f"{MODULE}.override_agent", new_callable=AsyncMock)
-    async def test_existing_agent_calls_override(self, mock_override):
-        from intentkit.core.agent.management import deploy_agent
-
-        expected = (MagicMock(), MagicMock())
-        mock_override.return_value = expected
-
-        agent_update = _make_agent_update()
-        result = await deploy_agent("agent-1", agent_update, "owner-1")
-
-        mock_override.assert_awaited_once_with("agent-1", agent_update, "owner-1")
-        assert result == expected
-
-    @pytest.mark.asyncio
-    @patch(f"{MODULE}.create_agent", new_callable=AsyncMock)
-    @patch(f"{MODULE}.override_agent", new_callable=AsyncMock)
-    async def test_not_found_falls_back_to_create(self, mock_override, mock_create):
-        from intentkit.core.agent.management import deploy_agent
-
-        mock_override.side_effect = IntentKitAPIError(404, "AgentNotFound", "not found")
-        expected = (MagicMock(), MagicMock())
-        mock_create.return_value = expected
-
-        agent_update = _make_agent_update()
-
-        with patch("intentkit.models.agent.AgentCreate.model_validate") as mock_v:
-            mock_new = MagicMock()
-            mock_v.return_value = mock_new
-            result = await deploy_agent("agent-1", agent_update, "owner-1")
-
-        mock_create.assert_awaited_once()
-        assert mock_new.id == "agent-1"
-        assert mock_new.owner == "owner-1"
-        assert result == expected
-
-    @pytest.mark.asyncio
-    @patch(f"{MODULE}.override_agent", new_callable=AsyncMock)
-    async def test_non_404_error_propagates(self, mock_override):
-        from intentkit.core.agent.management import deploy_agent
-
-        mock_override.side_effect = IntentKitAPIError(403, "Forbidden", "forbidden")
-        agent_update = _make_agent_update()
-        with pytest.raises(IntentKitAPIError) as exc_info:
-            await deploy_agent("agent-1", agent_update, "owner-1")
-        assert exc_info.value.status_code == 403
-
-
-# ===========================================================================
 # backfill_agent_avatar (runs as BackgroundTask after create/patch/override)
 # ===========================================================================
 

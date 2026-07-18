@@ -64,13 +64,6 @@ class Agent(AgentCreate, AgentPublicInfo):
             description="Other helper data fields for query, come from agent and agent data",
         ),
     ] = None
-    deployed_at: Annotated[
-        datetime | None,
-        PydanticField(
-            default=None,
-            description="Timestamp when the agent was deployed",
-        ),
-    ] = None
     public_info_updated_at: Annotated[
         datetime | None,
         PydanticField(

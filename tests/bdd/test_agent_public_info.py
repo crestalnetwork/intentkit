@@ -25,7 +25,7 @@ async def test_update_public_info_partial():
     """
     Scenario: Update Public Info with Partial Fields
 
-    Given a deployed agent with `id=pub-agent-1`
+    Given an existing agent with `id=pub-agent-1`
     When I call `update_public_info` with only `external_website` and `ticker`
     Then the agent's `external_website` and `ticker` are updated
     And other public info fields remain at their defaults
@@ -74,7 +74,7 @@ async def test_override_public_info_resets_unset_fields():
     """
     Scenario: Override Public Info Resets Unset Fields to Defaults
 
-    Given a deployed agent with `id=pub-agent-2` that has `example_intro` and `ticker` set
+    Given an existing agent with `id=pub-agent-2` that has `example_intro` and `ticker` set
     When I call `override_public_info` with only `external_website`
     Then `external_website` is set
     And `example_intro` and `ticker` are reset to None (defaults)
@@ -110,7 +110,7 @@ async def test_update_public_info_with_examples():
     """
     Scenario: Update Public Info with Example Prompts
 
-    Given a deployed agent with `id=pub-agent-3`
+    Given an existing agent with `id=pub-agent-3`
     When I call `update_public_info` with `examples` containing AgentExample items
     Then the agent's `examples` are correctly persisted
     """
@@ -154,7 +154,7 @@ async def test_partial_update_preserves_existing_fields():
     """
     Scenario: Partial Update Preserves Previously Set Fields
 
-    Given a deployed agent with `id=pub-agent-4` that has `example_intro` set
+    Given an existing agent with `id=pub-agent-4` that has `example_intro` set
     When I call `update_public_info` with only `ticker`
     Then `ticker` is updated
     And `example_intro` remains unchanged from the first update
@@ -188,7 +188,7 @@ async def test_public_info_updated_at_is_set():
     """
     Scenario: Public Info Updated At Timestamp Is Set
 
-    Given a deployed agent with `id=pub-agent-5`
+    Given an existing agent with `id=pub-agent-5`
     When I call `update_public_info`
     Then the agent's `public_info_updated_at` is not None
     """

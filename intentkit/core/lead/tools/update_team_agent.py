@@ -87,12 +87,12 @@ class UpdateTeamAgentOutput(BaseModel):
 
 
 class UpdateTeamAgent(LeadTool):
-    """Tool to update (patch) a team agent. Changes are directly deployed."""
+    """Tool to update (patch) a team agent. Changes take effect immediately."""
 
     name: str = "lead_update_team_agent"
     description: str = (
         "Update a team agent with partial changes. Only provided fields will be updated. "
-        "Changes are directly deployed. "
+        "Changes take effect immediately. "
         "The update function is efficient and safe, only updating fields you explicitly provide."
     )
     args_schema: ArgsSchema | None = UpdateTeamAgentInput
@@ -163,7 +163,7 @@ class UpdateTeamAgent(LeadTool):
 
         return UpdateTeamAgentOutput(
             agent_id=updated_agent.id,
-            message=f"Agent '{updated_agent.name}' updated and deployed successfully.",
+            message=f"Agent '{updated_agent.name}' updated successfully; changes are already live.",
         )
 
 

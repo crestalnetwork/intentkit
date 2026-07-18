@@ -1,7 +1,7 @@
 import logging
 from datetime import datetime
 
-from sqlalchemy import func, or_, select, update
+from sqlalchemy import or_, select, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -218,7 +218,6 @@ async def override_agent(
             setattr(db_agent, key, value)
         # version
         db_agent.version = agent.hash()
-        db_agent.deployed_at = func.now()
         await db.commit()
         await db.refresh(db_agent)
         latest_agent = Agent.model_validate(db_agent)
@@ -226,7 +225,7 @@ async def override_agent(
     await invalidate_agent_info(agent_id)
     _invalidate_lead_for_team(latest_agent.team_id)
     agent_data = await AgentData.get(agent_id)
-    send_agent_notification(latest_agent, agent_data, "Agent Overridden Deployed")
+    send_agent_notification(latest_agent, agent_data, "Agent Overridden")
 
     return latest_agent, agent_data
 
@@ -313,7 +312,6 @@ async def patch_agent(
         for key, value in update_data.items():
             setattr(db_agent, key, value)
         db_agent.version = agent.hash()
-        db_agent.deployed_at = func.now()
         await db.commit()
         await db.refresh(db_agent)
         latest_agent = Agent.model_validate(db_agent)
@@ -384,7 +382,6 @@ async def create_agent(agent: AgentCreate) -> tuple[Agent, AgentData]:
             create_data = agent.model_dump()
             db_agent = AgentTable(**create_data)
             db_agent.version = agent.hash()
-            db_agent.deployed_at = func.now()
             db.add(db_agent)
             await db.commit()
             await db.refresh(db_agent)
@@ -400,7 +397,7 @@ async def create_agent(agent: AgentCreate) -> tuple[Agent, AgentData]:
     # A lookup before creation may have negative-cached this id.
     await invalidate_agent_info(latest_agent.id)
     agent_data = await AgentData.get(latest_agent.id)
-    send_agent_notification(latest_agent, agent_data, "Agent Deployed")
+    send_agent_notification(latest_agent, agent_data, "Agent Created")
 
     if latest_agent.team_id:
         try:
@@ -460,40 +457,3 @@ async def backfill_agent_avatar(agent_id: str) -> None:
         await invalidate_agent_info(agent_id)
     except Exception as e:
         logger.warning("Agent avatar backfill write failed for %s: %s", agent_id, e)
-
-
-async def deploy_agent(
-    agent_id: str, agent: AgentUpdate, owner: str | None = None
-) -> tuple[Agent, AgentData]:
-    """Deploy an agent by first attempting to override, then creating if not found.
-
-    This function first tries to override an existing agent. If the agent is not found
-    (404 error), it will create a new agent instead.
-
-    Args:
-        agent_id: ID of the agent to deploy
-        agent: Agent configuration data
-        owner: Optional owner for the agent
-
-    Returns:
-        tuple[Agent, AgentData]: Deployed agent configuration and processed agent data
-
-    Raises:
-        IntentKitAPIError:
-            - 400: Invalid agent configuration or upstream ID conflict
-            - 403: Permission denied (if owner mismatch)
-            - 500: Database error
-    """
-    try:
-        # First try to override the existing agent
-        return await override_agent(agent_id, agent, owner)
-    except IntentKitAPIError as e:
-        # If agent not found (404), create a new one
-        if e.status_code == 404:
-            new_agent = AgentCreate.model_validate(agent)
-            new_agent.id = agent_id
-            new_agent.owner = owner
-            return await create_agent(new_agent)
-        else:
-            # Re-raise other errors
-            raise

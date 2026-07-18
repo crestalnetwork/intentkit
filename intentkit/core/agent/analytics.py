@@ -290,6 +290,10 @@ async def update_agents_account_snapshot(batch_size: int = 100) -> None:
                         .where(AgentTable.id == agent_id)
                         .values(
                             account_snapshot=account.model_dump(mode="json"),
+                            # Derived cache column: keep updated_at untouched so
+                            # this hourly sweep doesn't read as an agent edit
+                            # (executor rebuilds and roster ordering key off it).
+                            updated_at=AgentTable.updated_at,
                         )
                     )
                     await session.commit()
@@ -349,7 +353,11 @@ async def update_agents_assets(batch_size: int = 100) -> None:
                     await session.execute(
                         update(AgentTable)
                         .where(AgentTable.id == agent_id)
-                        .values(assets=assets.model_dump(mode="json"))
+                        .values(
+                            assets=assets.model_dump(mode="json"),
+                            # Derived cache column: don't bump updated_at.
+                            updated_at=AgentTable.updated_at,
+                        )
                     )
                     await session.commit()
 
@@ -410,7 +418,11 @@ async def update_agents_statistics(
                     await session.execute(
                         update(AgentTable)
                         .where(AgentTable.id == agent_id)
-                        .values(statistics=statistics.model_dump(mode="json"))
+                        .values(
+                            statistics=statistics.model_dump(mode="json"),
+                            # Derived cache column: don't bump updated_at.
+                            updated_at=AgentTable.updated_at,
+                        )
                     )
                     await session.commit()
 

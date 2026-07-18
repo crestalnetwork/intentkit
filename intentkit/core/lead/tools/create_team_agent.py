@@ -69,7 +69,7 @@ class CreateTeamAgent(LeadTool):
 
     name: str = "lead_create_team_agent"
     description: str = (
-        "Create a new agent for the team. The agent will be directly deployed. "
+        "Create a new agent for the team. The agent takes effect immediately. "
         "Auto-sets team_id and owner from context, visibility defaults to TEAM."
     )
     args_schema: ArgsSchema | None = CreateTeamAgentInput
@@ -145,7 +145,7 @@ class CreateTeamAgent(LeadTool):
         return CreateTeamAgentOutput(
             agent_id=created_agent.id,
             name=created_agent.name,
-            message=f"Agent '{created_agent.name}' created and deployed successfully.",
+            message=f"Agent '{created_agent.name}' created successfully and ready to use.",
         )
 
 

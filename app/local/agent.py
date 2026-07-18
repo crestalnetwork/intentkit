@@ -22,7 +22,6 @@ from intentkit.config.db import get_db, get_session
 from intentkit.core.agent import (
     backfill_agent_avatar,
     create_agent,
-    deploy_agent,
     get_agent_by_id_or_slug,
     override_agent,
     patch_agent,
@@ -389,13 +388,6 @@ async def import_agent(
         - 404: Agent not found
         - 500: Server error
     """
-    # First check if agent exists
-    existing_agent = await get_agent_by_id(agent_id)
-    if not existing_agent:
-        raise IntentKitAPIError(
-            status_code=404, key="NotFound", message="Agent not found"
-        )
-
     # Read and parse YAML
     content = await file.read()
     try:
@@ -411,8 +403,9 @@ async def import_agent(
     except ValidationError as e:
         raise IntentKitAPIError(400, "BadRequest", f"Invalid agent configuration: {e}")
 
-    # Get the latest agent from create_or_update
-    _ = await deploy_agent(agent_id, agent, "admin")
+    # Update-only: override_agent 404s when the agent doesn't exist
+    # (override semantics: unspecified fields reset).
+    _ = await override_agent(agent_id, agent, "admin")
 
     return "Agent import successful"
 
