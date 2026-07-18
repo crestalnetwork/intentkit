@@ -79,8 +79,10 @@ def test_agent_bullet_caps_name_and_description_length():
 # ──────────────────────────────────────────────
 
 
-def test_team_agents_section_empty():
-    assert _build_team_agents_section([]) == ""
+def test_team_agents_section_empty_renders_placeholder():
+    # The Workflow rules point at this section, so it must exist even for a
+    # team with no agents yet.
+    assert _build_team_agents_section([]) == "### Team agents\n\n(none yet)\n\n"
 
 
 def test_team_agents_section_lists_agents():

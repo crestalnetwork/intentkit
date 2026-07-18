@@ -32,7 +32,9 @@ async def verify_team_membership(team_id: str, user_id: str) -> None:
 
 
 async def get_team_agents(team_id: str) -> list[Agent]:
-    """Query AgentTable where team_id matches, exclude archived, order by created_at desc."""
+    """Query AgentTable where team_id matches, exclude archived, order by
+    updated_at desc — recently edited/deployed agents first, so the lead
+    prompt's capped roster keeps the most recently active ones."""
     async with get_session() as db:
         stmt = (
             select(AgentTable)
@@ -40,7 +42,7 @@ async def get_team_agents(team_id: str) -> list[Agent]:
                 AgentTable.team_id == team_id,
                 AgentTable.archived_at.is_(None),
             )
-            .order_by(AgentTable.created_at.desc())
+            .order_by(AgentTable.updated_at.desc())
         )
         result = await db.scalars(stmt)
         return [Agent.model_validate(row) for row in result]

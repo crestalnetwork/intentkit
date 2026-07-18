@@ -141,10 +141,11 @@ def _build_team_agents_section(agents: list[Agent]) -> str:
     Lists the team's own agents so the lead can delegate to them without a
     discovery tool call first. Capped at ``_TEAM_AGENTS_PROMPT_CAP`` entries to
     bound prompt size; the lead can call ``lead_list_team_agents`` for the full
-    roster. Returns an empty string when the team has no agents.
+    roster. When the team has no agents yet, a placeholder is rendered so the
+    Workflow rules' reference to this section always resolves.
     """
     if not agents:
-        return ""
+        return "### Team agents\n\n(none yet)\n\n"
 
     shown = agents[:_TEAM_AGENTS_PROMPT_CAP]
     lines = [
