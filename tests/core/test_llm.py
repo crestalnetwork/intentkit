@@ -3,6 +3,16 @@ from unittest.mock import patch
 from intentkit.models.llm import LLMProvider, load_default_llm_models
 
 
+def test_minimax_catalog_contains_current_models():
+    """The native MiniMax catalog mirrors the current subscription API lineup."""
+    with patch("intentkit.models.llm.config") as mock_config:
+        mock_config.minimax_plan_api_key = "test-key"
+        models = load_default_llm_models()
+
+    assert models["minimax:MiniMax-M3"].context_length == 1_000_000
+    assert models["minimax:MiniMax-M2.7"].context_length == 204_800
+
+
 def test_llm_model_filtering():
     """Test that models are filtered based on available API keys in config."""
 

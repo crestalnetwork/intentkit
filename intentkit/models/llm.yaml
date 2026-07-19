@@ -889,7 +889,7 @@
   cached_input_price: "0.12"
   output_price: "2.4"
   price_level: 2
-  context_length: 524288
+  context_length: 1000000
   output_length: 512000
   intelligence: 5
   speed: 3
@@ -901,4 +901,24 @@
   supports_temperature: true
   supports_frequency_penalty: true
   supports_presence_penalty: true
+  timeout: 300
+
+- id: "MiniMax-M2.7"
+  name: "MiniMax M2.7"
+  provider: minimax
+  enabled: true
+  input_price: "0.3"
+  cached_input_price: "0.06"
+  output_price: "1.2"
+  price_level: 2
+  context_length: 204800
+  output_length: 131072
+  intelligence: 4
+  speed: 4
+  supports_image_input: false
+  supports_audio_input: false
+  supports_video_input: false
+  supports_file_input: false
+  reasoning_effort: "high"
+  supports_temperature: false
   timeout: 300
