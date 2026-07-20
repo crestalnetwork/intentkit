@@ -15,7 +15,6 @@
     "@radix-ui/react-avatar": "^1.2.1",
     "@radix-ui/react-dropdown-menu": "^2.1.19",
     "@radix-ui/react-slot": "^1.2.5",
-    "@radix-ui/react-tabs": "^1.1.16",
     "@radix-ui/react-toast": "^1.2.18",
     "@rjsf/core": "^6.6.2",
     "@rjsf/utils": "^6.6.2",
@@ -35,8 +34,7 @@
     "remark-breaks": "^4.0.0",
     "remark-gfm": "^4.0.1",
     "tailwind-merge": "^3.6.0",
-    "tailwindcss-animate": "^1.0.7",
-    "zustand": "^5.0.14"
+    "tailwindcss-animate": "^1.0.7"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.3.2",
