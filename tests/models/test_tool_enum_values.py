@@ -1,8 +1,8 @@
 """Pin the persisted enum string VALUES that the skill->tool rename flipped.
 
 These strings are written to the DB / sent on the wire, so a missed literal
-compiles fine but corrupts data. The DB migration flips them in lockstep
-(scripts/migrate_skill_to_tool.sql); these asserts are the canaries.
+compiles fine but corrupts data. The skill->tool DB rename is captured in the
+Alembic baseline; these asserts are the canaries.
 """
 
 from intentkit.models.app_setting import DEFAULT_SYSTEM_MESSAGES, SystemMessageType
