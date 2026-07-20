@@ -446,7 +446,6 @@ Extract the URLs now:"""
             # Extract agent_id for error logging if possible
             agent_id = "UNKNOWN"
             try:
-                # TODO: Fix config reference
                 context = self.get_context()
                 if context and context.agent_id:
                     agent_id = context.agent_id

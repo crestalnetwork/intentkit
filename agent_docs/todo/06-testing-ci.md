@@ -91,12 +91,3 @@ Test coverage gaps and CI pipeline improvements.
 
 > **User notes:**
 
----
-
-## 6.10 Multiple TODO/FIXME Comments Unaddressed
-
-**Location:** `tools/web_scraper/website_indexer.py:448`, `tools/web_scraper/scrape_and_index.py:156,256`, `tools/firecrawl/query.py:113`
-**Issue:** Repeated "TODO: Fix config reference" across multiple files — systematic config reference problem.
-**Fix:** Investigate and resolve the underlying config reference issue.
-
-> **User notes:**
