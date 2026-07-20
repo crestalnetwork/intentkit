@@ -4,10 +4,10 @@
 
 - **Next.js 16+** (App Router, SSR mode — NOT static export)
 - **Shadcn/ui** (components in `src/components/ui/`) + **Tailwind CSS**
-- **TanStack Query v5** for server state, **Zustand** for client UI state
+- **TanStack Query v5** for server state
 - **@rjsf** (React JSON Schema Form) for agent config forms
 - **Lucide React** for icons
-- **ky** as HTTP client (available but `fetch` is also used directly)
+- Native `fetch` as HTTP client
 - API communication: REST + SSE streaming for chat
 
 ## Directory Structure
@@ -21,16 +21,16 @@ src/
 │   ├── post/           # Post detail
 │   ├── timeline/       # Activity timeline
 │   ├── layout.tsx      # Root layout + providers
-│   └── providers.tsx   # TanStack Query + Zustand providers
+│   └── providers.tsx   # TanStack Query provider
 ├── components/
 │   ├── ui/             # Shadcn primitives (Button, Input, etc.)
-│   └── features/       # Business components (ChatWindow, AgentCard, etc.)
+│   └── features/       # Business components (ChatSidebar, AgentCard, etc.)
 ├── lib/
 │   ├── api.ts          # All API client functions (agentApi, chatApi, activityApi, postApi, autonomousApi)
 │   ├── config.ts       # Environment config (NEXT_PUBLIC_API_BASE_URL, NEXT_PUBLIC_AWS_S3_CDN_URL)
 │   └── utils.ts        # Helpers (cn, etc.)
 ├── hooks/              # Custom hooks
-└── types/              # TypeScript types (agent, chat, content)
+└── types/              # TypeScript types (agent, chat, memory)
 ```
 
 ## API & Dev Setup
