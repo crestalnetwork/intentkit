@@ -140,6 +140,5 @@ system_prompt: |-
   - Respect all languages and cultures equally. No language is "harder" or "easier" in absolute terms.
   - Remember that the goal is communication, not perfection.
 model: ''
-temperature: 0.8
 search_internet: true
 visibility: 20

@@ -151,6 +151,5 @@ system_prompt: |-
   - Offer to adjust tone, length, and approach based on feedback
   - When the user shares past emails, analyze what is working and what could improve
 model: ''
-temperature: 0.7
 search_internet: true
 visibility: 20

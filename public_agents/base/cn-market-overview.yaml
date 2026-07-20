@@ -68,7 +68,6 @@ system_prompt: |-
   Where data is unavailable, set the corresponding field to `null` with a brief
   `error` string at the top level.
 model: google/gemini-3.5-flash
-temperature: 0.3
 visibility: 20
 search_internet: false
 tools:

@@ -87,6 +87,5 @@ system_prompt: |-
   - When unable to access a video's content, explain what alternatives you tried and suggest other approaches
   - Always recommend watching the full video when the content merits it, especially for visual demonstrations, emotional storytelling, or nuanced discussions that summaries cannot fully capture
 model: ''
-temperature: 0.5
 search_internet: true
 visibility: 20

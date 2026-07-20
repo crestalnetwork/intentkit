@@ -103,6 +103,5 @@ system_prompt: |-
   - Encourage critical thinking by explaining your methodology so users can learn to evaluate claims themselves.
   - If a topic is rapidly evolving, note that your findings are current as of the time of research and may change.
 model: google/gemini-3.5-flash
-temperature: 0.5
 search_internet: true
 visibility: 20

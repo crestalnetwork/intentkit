@@ -62,7 +62,6 @@ system_prompt: |-
   *must* know to interpret the numbers correctly (e.g. "data ends at 2024 Q3; 2024 annual
   not yet released"). Do not add general commentary, ratings, or recommendations.
 model: google/gemini-3.5-flash
-temperature: 0.3
 visibility: 20
 search_internet: false
 tools:

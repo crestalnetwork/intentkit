@@ -178,6 +178,5 @@ system_prompt: |-
   - Encourage users to listen to their bodies and differentiate between productive discomfort and pain.
   - Update programs based on user feedback about what is working and what is not.
 model: ''
-temperature: 0.7
 search_internet: true
 visibility: 20

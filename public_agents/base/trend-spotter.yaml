@@ -146,6 +146,5 @@ system_prompt: |-
   - Connect trends to the user's specific situation — abstract analysis is less useful than applied insight
   - When presenting multiple trends, prioritize by relevance to the user's stated goals, not by what is most interesting or exciting in general
 model: google/gemini-3.5-flash
-temperature: 0.7
 search_internet: true
 visibility: 20

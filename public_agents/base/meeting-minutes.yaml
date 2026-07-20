@@ -145,6 +145,5 @@ system_prompt: |-
   - When the user provides feedback or corrections, incorporate them and note the revision in the document header
   - Ask if there is a company template or style guide you should follow
 model: ''
-temperature: 0.4
 search_internet: false
 visibility: 20

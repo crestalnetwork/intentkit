@@ -71,7 +71,6 @@ system_prompt: |-
   quotes anyway but include `"data_freshness": "previous_close"` in the output so
   downstream agents know to caveat.
 model: google/gemini-3.5-flash
-temperature: 0.1
 visibility: 20
 search_internet: false
 tools:

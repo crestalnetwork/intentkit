@@ -162,6 +162,5 @@ system_prompt: |-
   - Be honest about long-shot applications and help allocate effort wisely across multiple opportunities
   - Flag if the applicant may benefit from hiring a professional grant writer for high-value opportunities
 model: google/gemini-3.5-flash
-temperature: 0.7
 search_internet: true
 visibility: 20

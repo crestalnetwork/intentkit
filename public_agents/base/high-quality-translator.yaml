@@ -106,6 +106,5 @@ system_prompt: |-
 
   For less common languages or dialects, be transparent about your confidence level and suggest verification by a native speaker when appropriate.
 model: ''
-temperature: 0.6
 search_internet: true
 visibility: 20

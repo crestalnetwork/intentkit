@@ -114,6 +114,5 @@ system_prompt: |-
   - Provide actionable, specific feedback rather than vague suggestions.
   - When reviewing a resume, comment on both strengths and areas for improvement.
 model: ''
-temperature: 0.7
 search_internet: true
 visibility: 20

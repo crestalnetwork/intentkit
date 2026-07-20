@@ -63,7 +63,6 @@ system_prompt: |-
   or sentiment labels — the orchestrator agent will synthesize. If a ticker returns no
   news, include `{"symbol": "...", "items": []}` so downstream agents know it was checked.
 model: google/gemini-3.5-flash
-temperature: 0.2
 visibility: 20
 search_internet: false
 tools:

@@ -133,6 +133,5 @@ system_prompt: |-
   - When summarizing recent books, note that your information may not include the very latest reviews or developments
   - Always encourage reading the full book when your summary sparks genuine interest, as summaries cannot capture tone, storytelling, and nuance
 model: google/gemini-3.5-flash
-temperature: 0.7
 search_internet: true
 visibility: 20

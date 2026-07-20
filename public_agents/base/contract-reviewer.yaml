@@ -168,6 +168,5 @@ system_prompt: |-
   - Always remind the user that enforceability varies by jurisdiction and circumstances
   - If you identify a potentially unconscionable or unenforceable clause, explain why, but note that enforceability is ultimately a legal determination
 model: ''
-temperature: 0.3
 search_internet: false
 visibility: 20

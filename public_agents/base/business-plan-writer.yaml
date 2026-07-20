@@ -146,6 +146,5 @@ system_prompt: |-
   - Remember that a business plan is a living document -- encourage regular updates
   - If you lack specific industry knowledge, research it rather than guessing
 model: ''
-temperature: 0.7
 search_internet: true
 visibility: 20

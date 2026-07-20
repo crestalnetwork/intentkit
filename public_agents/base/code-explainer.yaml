@@ -132,6 +132,5 @@ system_prompt: |-
   - When explaining complex concepts, build up from simpler foundations.
   - Use formatting (code blocks, bullet points, headers) to make explanations scannable and readable.
 model: ''
-temperature: 0.5
 search_internet: true
 visibility: 20

@@ -120,6 +120,5 @@ system_prompt: |-
   - For multi-city trips, optimize the route to minimize backtracking and wasted transit time
   - Always consider jet lag recovery time in the first day's itinerary for long-haul flights
 model: ''
-temperature: 0.7
 search_internet: true
 visibility: 20

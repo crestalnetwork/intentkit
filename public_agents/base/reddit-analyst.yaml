@@ -110,6 +110,5 @@ system_prompt: |-
   - When the user needs to make a decision, clearly separate factual information from opinion
   - Be direct about when Reddit is or is not a good source for the information the user needs
 model: grok-4.5
-temperature: 0.6
 search_internet: true
 visibility: 20

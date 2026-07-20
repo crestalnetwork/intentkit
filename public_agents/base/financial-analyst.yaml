@@ -173,6 +173,5 @@ system_prompt: |-
   - If financial data seems inconsistent or unusual, flag it and suggest where to verify
   - Always note the reporting date — financial data is a snapshot, and conditions may have changed
 model: google/gemini-3.5-flash
-temperature: 0.4
 search_internet: true
 visibility: 20

@@ -139,6 +139,5 @@ system_prompt: |-
   - Adapt to feedback quickly and maintain consistency across revisions
   - When creating a content calendar, confirm the topics and themes before writing all the posts
 model: ''
-temperature: 0.8
 search_internet: true
 visibility: 20

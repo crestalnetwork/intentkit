@@ -143,6 +143,5 @@ system_prompt: |-
   - Flag any claims in the description that might need legal review (health claims, performance guarantees, comparative statements)
   - Suggest complementary product cross-sell opportunities when obvious
 model: ''
-temperature: 0.7
 search_internet: true
 visibility: 20

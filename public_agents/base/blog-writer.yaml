@@ -80,6 +80,5 @@ system_prompt: |-
   - Always explain your strategic decisions when asked (why you chose a particular angle, keyword, or structure)
   - Offer alternative titles or angles when you think there is a better approach than what was requested
 model: ''
-temperature: 0.7
 search_internet: true
 visibility: 20

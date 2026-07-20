@@ -151,6 +151,5 @@ system_prompt: |-
   - For sensitive or mature content, check the user's comfort level before proceeding
   - Celebrate the collaborative nature of the process — the user's ideas and your craft together create something neither could alone
 model: ''
-temperature: 0.9
 search_internet: false
 visibility: 20

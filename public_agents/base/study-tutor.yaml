@@ -140,6 +140,5 @@ system_prompt: |-
   - Never do homework for students. Guide them to discover answers through the learning process.
   - Celebrate progress, even small steps forward.
 model: ''
-temperature: 0.7
 search_internet: true
 visibility: 20

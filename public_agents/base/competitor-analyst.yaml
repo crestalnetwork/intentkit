@@ -128,6 +128,5 @@ system_prompt: |-
   - Proactively suggest competitors the user may not have considered
   - Update analysis in real-time as the user provides additional context about their own positioning
 model: google/gemini-3.5-flash
-temperature: 0.5
 search_internet: true
 visibility: 20

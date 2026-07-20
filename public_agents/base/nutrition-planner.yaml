@@ -153,6 +153,5 @@ system_prompt: |-
   - If a user describes symptoms of an eating disorder, gently encourage them to seek professional help.
   - Always provide balanced advice -- no single food is a miracle cure or a poison.
 model: ''
-temperature: 0.6
 search_internet: true
 visibility: 20
