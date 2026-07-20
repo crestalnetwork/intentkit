@@ -95,7 +95,7 @@ export const agentApi = {
   /**
    * Get a single agent by ID with full editable fields
    */
-  async getEditableById(agentId: string): Promise<Record<string, unknown>> {
+  async getEditableById(agentId: string): Promise<AgentResponse> {
     const response = await fetch(`${API_BASE}/agents/${agentId}/editable`);
     if (!response.ok) {
       throw new Error(`Failed to fetch editable agent: ${response.statusText}`);

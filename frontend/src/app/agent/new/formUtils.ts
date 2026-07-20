@@ -2,6 +2,9 @@ import { customizeValidator } from "@rjsf/validator-ajv8";
 import { RegistryFieldsType } from "@rjsf/utils";
 import { ToolsField } from "./ToolsField";
 
+// Cache lifetime for the shared agent-schema query
+export const SCHEMA_STALE_TIME = 5 * 60 * 1000;
+
 // Shared RJSF validator
 export const validator = customizeValidator({
     ajvOptionsOverrides: {
@@ -136,11 +139,13 @@ export function cleanToolsData(
 
 /**
  * Filter agent data to only include fields defined in the schema.
+ * Accepts any object (e.g. a typed AgentResponse) so callers need no cast.
  */
 export function filterBySchema(
-    agentData: Record<string, unknown>,
+    agent: object,
     schemaData: Record<string, unknown>,
 ): Record<string, unknown> {
+    const agentData = agent as Record<string, unknown>;
     if (!schemaData.properties || typeof schemaData.properties !== "object") {
         return {};
     }
