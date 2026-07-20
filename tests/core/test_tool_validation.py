@@ -42,15 +42,18 @@ def test_validate_tools_rejects_non_string_entries():
     assert exc_info.value.key == "InvalidToolFormat"
 
 
-def test_validate_tools_accepts_migrated_system_tool_names():
-    # ui tools moved to auto-bound system tools; legacy configs still carrying
-    # their names must not be rejected (e.g. re-importing an old export).
-    validate_tools(["http_get", "ui_show_card", "ui_ask_user"])  # Should not raise
+def test_validate_tools_rejects_retired_system_tool_names():
+    # ui_show_card/ui_ask_user became auto-bound system tools; stored configs
+    # were stripped by migration c1d4b7e9a2f5, so the names are now plain
+    # unknown tools and must be rejected like any other.
+    with pytest.raises(IntentKitAPIError, match="Unknown tool") as exc_info:
+        validate_tools(["http_get", "ui_show_card", "ui_ask_user"])
+    assert exc_info.value.key == "InvalidToolName"
 
 
-def test_sanitize_tools_drops_migrated_system_tool_names():
-    # On update the migrated names are cleaned out of the stored config; the
-    # capability itself is bound automatically as a system tool.
+def test_sanitize_tools_drops_retired_system_tool_names():
+    # The retired ui tool names are unknown to the catalog and cleaned out;
+    # the capability itself is bound automatically as a system tool.
     assert sanitize_tools(["http_get", "ui_show_card", "ui_ask_user"]) == ["http_get"]
 
 

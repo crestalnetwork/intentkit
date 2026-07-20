@@ -202,12 +202,6 @@ def get_tool_category_index() -> dict[str, str]:
     }
 
 
-# Tool names migrated to auto-bound system tools (intentkit/core/system_tools).
-# Legacy agent configs may still carry them: accepted and silently ignored
-# everywhere (the capability is bound automatically), never in the catalog.
-MIGRATED_SYSTEM_TOOL_NAMES = frozenset({"ui_show_card", "ui_ask_user"})
-
-
 def group_tool_names_by_category(tool_names: list[str]) -> dict[str, list[str]]:
     """Group requested tool names by their toolset category.
 
@@ -217,8 +211,6 @@ def group_tool_names_by_category(tool_names: list[str]) -> dict[str, list[str]]:
     index = get_tool_category_index()
     grouped: dict[str, list[str]] = {}
     for name in tool_names:
-        if name in MIGRATED_SYSTEM_TOOL_NAMES:
-            continue
         category = index.get(name)
         if category is None:
             logger.warning("Skipping unknown tool '%s' in agent config", name)
@@ -247,7 +239,7 @@ def validate_tools(tools: Any) -> None:
                 "InvalidToolFormat",
                 f"Tool names must be strings, got {type(name).__name__}",
             )
-        if name not in index and name not in MIGRATED_SYSTEM_TOOL_NAMES:
+        if name not in index:
             raise IntentKitAPIError(
                 400,
                 "InvalidToolName",

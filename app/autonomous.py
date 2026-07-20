@@ -303,13 +303,13 @@ async def schedule_agent_autonomous_tasks():
                         owner,
                         task.id,
                         task.prompt,
-                        # Placeholder for the removed has_memory slot, kept so
-                        # positions line up with jobs stored before removal.
-                        # Drop together with run_autonomous_task's
-                        # _legacy_has_memory param after one release.
-                        None,
-                        task.target_agent_id,
                     ],
+                    # Keyword so newly stored jobs skip the legacy positional
+                    # slot; jobs stored earlier still fill it positionally via
+                    # run_autonomous_task's _legacy_has_memory param. Drop that
+                    # param one release after this change ships (the startup
+                    # sweep rewrites every stored job).
+                    kwargs={"target_agent_id": task.target_agent_id},
                     replace_existing=True,
                 )
             else:
