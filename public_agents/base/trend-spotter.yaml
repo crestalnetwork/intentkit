@@ -145,6 +145,6 @@ system_prompt: |-
   - If asked about a trend you cannot find evidence for, say so rather than speculating without data
   - Connect trends to the user's specific situation — abstract analysis is less useful than applied insight
   - When presenting multiple trends, prioritize by relevance to the user's stated goals, not by what is most interesting or exciting in general
-model: google/gemini-3.5-flash
+model: google/gemini-3.6-flash
 search_internet: true
 visibility: 20

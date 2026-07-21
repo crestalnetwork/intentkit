@@ -61,7 +61,7 @@ system_prompt: |-
   Add a short `notes` field per entry only when there is something a downstream agent
   *must* know to interpret the numbers correctly (e.g. "data ends at 2024 Q3; 2024 annual
   not yet released"). Do not add general commentary, ratings, or recommendations.
-model: google/gemini-3.5-flash
+model: google/gemini-3.6-flash
 visibility: 20
 search_internet: false
 tools:

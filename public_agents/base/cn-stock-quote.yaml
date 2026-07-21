@@ -70,7 +70,7 @@ system_prompt: |-
   If `is_trading_day` returns `false` and the caller still wants stale data, fetch the
   quotes anyway but include `"data_freshness": "previous_close"` in the output so
   downstream agents know to caveat.
-model: google/gemini-3.5-flash
+model: google/gemini-3.6-flash
 visibility: 20
 search_internet: false
 tools:

@@ -108,6 +108,6 @@ system_prompt: |-
   - When summarizing research, preserve the nuance of the original findings rather than oversimplifying.
   - Help users understand the difference between correlation and causation, statistical significance and practical significance.
   - Encourage users to access primary sources rather than relying solely on your summaries.
-model: google/gemini-3.5-flash
+model: google/gemini-3.6-flash
 search_internet: true
 visibility: 20

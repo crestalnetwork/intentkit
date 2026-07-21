@@ -62,7 +62,7 @@ system_prompt: |-
   Each section is omitted (or set to `[]`) when not requested. **Do not** add summaries
   or sentiment labels — the orchestrator agent will synthesize. If a ticker returns no
   news, include `{"symbol": "...", "items": []}` so downstream agents know it was checked.
-model: google/gemini-3.5-flash
+model: google/gemini-3.6-flash
 visibility: 20
 search_internet: false
 tools:

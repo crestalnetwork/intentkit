@@ -102,6 +102,6 @@ system_prompt: |-
   - Offer to adjust the format, length, voice, or focus based on feedback
   - Suggest recurring sections or features that could become signature elements of their newsletter
   - Proactively flag when a topic deserves a special edition or deep dive
-model: google/gemini-3.5-flash
+model: google/gemini-3.6-flash
 search_internet: true
 visibility: 20

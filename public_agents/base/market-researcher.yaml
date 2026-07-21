@@ -114,6 +114,6 @@ system_prompt: |-
   - Proactively suggest adjacent analyses that might be valuable
   - Offer to export findings in a structured format suitable for presentations or reports
   - When the user asks for a quick overview vs. deep dive, adjust your depth accordingly
-model: google/gemini-3.5-flash
+model: google/gemini-3.6-flash
 search_internet: true
 visibility: 20

@@ -392,14 +392,14 @@
   reasoning_levels: ["low", "medium", "high"]
   timeout: 300
 
-- id: "gemini-3.1-flash-lite"
-  name: "Gemini 3.1 Flash Lite"
+- id: "gemini-3.5-flash-lite"
+  name: "Gemini 3.5 Flash Lite"
   provider: google
-  legacy_ids: ["gemini-3.1-flash-lite-preview"]
+  legacy_ids: ["gemini-3.1-flash-lite-preview", "gemini-3.1-flash-lite"]
   enabled: true
-  input_price: "0.25"
-  cached_input_price: "0.025"
-  output_price: "1.5"
+  input_price: "0.3"
+  cached_input_price: "0.03"
+  output_price: "2.5"
   price_level: 2
   context_length: 1048576
   output_length: 65536
@@ -413,15 +413,15 @@
   reasoning_levels: ["minimal", "low", "medium", "high"]
   timeout: 300
 
-- id: "google/gemini-3.1-flash-lite"
-  name: "Gemini 3.1 Flash Lite"
+- id: "google/gemini-3.5-flash-lite"
+  name: "Gemini 3.5 Flash Lite"
   provider: openrouter
   origin_provider: "google-ai-studio"   # lock OpenRouter upstream
-  legacy_ids: ["google/gemini-3.1-flash-lite-preview"]
+  legacy_ids: ["google/gemini-3.1-flash-lite-preview", "google/gemini-3.1-flash-lite"]
   enabled: true
-  input_price: "0.25"
-  cached_input_price: "0.025"
-  output_price: "1.5"
+  input_price: "0.3"
+  cached_input_price: "0.03"
+  output_price: "2.5"
   price_level: 2
   context_length: 1048576
   output_length: 65536
@@ -435,14 +435,14 @@
   reasoning_levels: ["minimal", "low", "medium", "high"]
   timeout: 300
 
-- id: "gemini-3.5-flash"
-  name: "Gemini 3.5 Flash"
+- id: "gemini-3.6-flash"
+  name: "Gemini 3.6 Flash"
   provider: google
-  legacy_ids: ["gemini-3-flash-preview"]
+  legacy_ids: ["gemini-3-flash-preview", "gemini-3.5-flash"]
   enabled: true
   input_price: "1.5"
   cached_input_price: "0.15"
-  output_price: "9"
+  output_price: "7.5"
   price_level: 3
   context_length: 1048576
   output_length: 65536
@@ -456,15 +456,15 @@
   reasoning_levels: ["minimal", "low", "medium", "high"]
   timeout: 300
 
-- id: "google/gemini-3.5-flash"
-  name: "Gemini 3.5 Flash"
+- id: "google/gemini-3.6-flash"
+  name: "Gemini 3.6 Flash"
   provider: openrouter
   origin_provider: "google-ai-studio"   # lock OpenRouter upstream
-  legacy_ids: ["google/gemini-3-flash-preview"]
+  legacy_ids: ["google/gemini-3-flash-preview", "google/gemini-3.5-flash"]
   enabled: true
   input_price: "1.5"
   cached_input_price: "0.15"
-  output_price: "9"
+  output_price: "7.5"
   price_level: 3
   context_length: 1048576
   output_length: 65536

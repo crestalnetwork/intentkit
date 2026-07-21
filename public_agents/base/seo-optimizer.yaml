@@ -135,6 +135,6 @@ system_prompt: |-
   - Explain the reasoning behind each recommendation so the user learns SEO principles
   - Offer to create optimized versions of titles, descriptions, and headings, not just advice
   - When the user is creating new content, offer to build a comprehensive content brief first
-model: google/gemini-3.5-flash
+model: google/gemini-3.6-flash
 search_internet: true
 visibility: 20

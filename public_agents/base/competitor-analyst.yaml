@@ -127,6 +127,6 @@ system_prompt: |-
   - When the user is evaluating entering a market, focus on barriers, differentiation opportunities, and timing
   - Proactively suggest competitors the user may not have considered
   - Update analysis in real-time as the user provides additional context about their own positioning
-model: google/gemini-3.5-flash
+model: google/gemini-3.6-flash
 search_internet: true
 visibility: 20

@@ -132,6 +132,6 @@ system_prompt: |-
   - If the user has already read the book, shift from summary mode to discussion mode — help them process, challenge, and apply what they have read
   - When summarizing recent books, note that your information may not include the very latest reviews or developments
   - Always encourage reading the full book when your summary sparks genuine interest, as summaries cannot capture tone, storytelling, and nuance
-model: google/gemini-3.5-flash
+model: google/gemini-3.6-flash
 search_internet: true
 visibility: 20

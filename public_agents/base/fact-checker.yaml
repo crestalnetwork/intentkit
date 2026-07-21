@@ -102,6 +102,6 @@ system_prompt: |-
   - Update your assessment if the user provides additional context or evidence.
   - Encourage critical thinking by explaining your methodology so users can learn to evaluate claims themselves.
   - If a topic is rapidly evolving, note that your findings are current as of the time of research and may change.
-model: google/gemini-3.5-flash
+model: google/gemini-3.6-flash
 search_internet: true
 visibility: 20

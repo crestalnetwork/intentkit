@@ -63,7 +63,7 @@ def _first_configured(
 def pick_summarize_model() -> str:
     """Pick the best available summarize model based on configured API keys."""
     order: list[tuple[str, LLMProvider]] = [
-        ("gemini-3.1-flash-lite", LLMProvider.GOOGLE),
+        ("gemini-3.5-flash-lite", LLMProvider.GOOGLE),
         ("deepseek/deepseek-v4-flash", LLMProvider.OPENROUTER),
         ("gpt-5.6-luna", LLMProvider.OPENAI),
         ("grok-4.5", LLMProvider.XAI),
@@ -81,7 +81,7 @@ def pick_default_model() -> str:
     crash — it falls back to a reasonable model when nothing is configured.
     """
     order: list[tuple[str, LLMProvider]] = [
-        ("gemini-3.5-flash", LLMProvider.GOOGLE),
+        ("gemini-3.6-flash", LLMProvider.GOOGLE),
         ("MiniMax-M3", LLMProvider.MINIMAX),
         ("minimax/minimax-m3", LLMProvider.OPENROUTER),
         ("gpt-5.6-luna", LLMProvider.OPENAI),
@@ -100,8 +100,8 @@ def pick_lead_model() -> str:
     (``pick_default_model``).
     """
     order: list[tuple[str, LLMProvider]] = [
-        ("gemini-3.5-flash", LLMProvider.GOOGLE),
-        ("google/gemini-3.5-flash", LLMProvider.OPENROUTER),
+        ("gemini-3.6-flash", LLMProvider.GOOGLE),
+        ("google/gemini-3.6-flash", LLMProvider.OPENROUTER),
         ("gpt-5.6-luna", LLMProvider.OPENAI),
         ("grok-4.5", LLMProvider.XAI),
         ("MiniMax-M3", LLMProvider.MINIMAX),
@@ -114,7 +114,7 @@ def pick_lead_model() -> str:
 def pick_lite_model() -> str:
     """Pick the cheapest/fastest "lite" model — good enough for simple tasks."""
     order: list[tuple[str, LLMProvider]] = [
-        ("gemini-3.1-flash-lite", LLMProvider.GOOGLE),
+        ("gemini-3.5-flash-lite", LLMProvider.GOOGLE),
         ("z-ai/glm-4.7-flash", LLMProvider.OPENROUTER),
         ("deepseek-v4-flash", LLMProvider.DEEPSEEK),
         # Luna is OpenAI's cheapest tier now; pricier than the entries above.
@@ -145,7 +145,7 @@ def pick_smartest_model() -> str:
 def pick_fastest_model() -> str:
     """Pick the lowest-latency model for snappy, simple interactions."""
     order: list[tuple[str, LLMProvider]] = [
-        ("gemini-3.1-flash-lite", LLMProvider.GOOGLE),
+        ("gemini-3.5-flash-lite", LLMProvider.GOOGLE),
         ("qwen/qwen3.6-flash", LLMProvider.OPENROUTER),
         ("gpt-5.6-luna", LLMProvider.OPENAI),
         ("grok-4.5", LLMProvider.XAI),
@@ -161,8 +161,8 @@ def pick_fastest_model() -> str:
 def pick_multimodal_model() -> str:
     """Pick the best model that accepts image/audio/video input."""
     order: list[tuple[str, LLMProvider]] = [
-        ("gemini-3.5-flash", LLMProvider.GOOGLE),
-        ("google/gemini-3.5-flash", LLMProvider.OPENROUTER),
+        ("gemini-3.6-flash", LLMProvider.GOOGLE),
+        ("google/gemini-3.6-flash", LLMProvider.OPENROUTER),
         ("mimo-v2.5", LLMProvider.MIMO_PLAN),
         ("MiniMax-M3", LLMProvider.MINIMAX),
         ("gpt-5.6-terra", LLMProvider.OPENAI),
@@ -217,7 +217,7 @@ def pick_search_model() -> str:
     """Pick the best model for web/realtime search (native-search providers first)."""
     order: list[tuple[str, LLMProvider]] = [
         ("grok-4.5", LLMProvider.XAI),
-        ("gemini-3.5-flash", LLMProvider.GOOGLE),
+        ("gemini-3.6-flash", LLMProvider.GOOGLE),
         ("gpt-5.6-terra", LLMProvider.OPENAI),
         ("x-ai/grok-4.5", LLMProvider.OPENROUTER),
         ("deepseek-v4-flash", LLMProvider.DEEPSEEK),
@@ -248,7 +248,7 @@ def pick_long_context_model() -> str:
     """
     # Priority order based on cost (cheapest first), one per provider:
     order: list[tuple[str, LLMProvider]] = [
-        ("gemini-3.1-flash-lite", LLMProvider.GOOGLE),
+        ("gemini-3.5-flash-lite", LLMProvider.GOOGLE),
         ("deepseek/deepseek-v4-flash", LLMProvider.OPENROUTER),
         ("deepseek-v4-flash", LLMProvider.DEEPSEEK),
         ("gpt-5.6-luna", LLMProvider.OPENAI),

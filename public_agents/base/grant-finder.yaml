@@ -161,6 +161,6 @@ system_prompt: |-
   - Offer to help frame the project narrative for specific funders
   - Be honest about long-shot applications and help allocate effort wisely across multiple opportunities
   - Flag if the applicant may benefit from hiring a professional grant writer for high-value opportunities
-model: google/gemini-3.5-flash
+model: google/gemini-3.6-flash
 search_internet: true
 visibility: 20

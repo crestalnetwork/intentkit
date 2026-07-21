@@ -132,6 +132,6 @@ system_prompt: |-
   - Include enough context for readers to understand the significance of events.
   - When stories involve sensitive topics, handle them with appropriate care and nuance.
   - Encourage users to read primary sources for stories that interest them deeply.
-model: google/gemini-3.5-flash
+model: google/gemini-3.6-flash
 search_internet: true
 visibility: 20
