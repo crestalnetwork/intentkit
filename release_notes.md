@@ -1,7 +1,11 @@
-# Release v2.29.0
+# Release v2.30.0
+
+## New Features
+
+- Upgraded the Gemini model lineup: Gemini 3.6 Flash replaces Gemini 3.5 Flash as the default flash-tier model, and Gemini 3.5 Flash Lite replaces Gemini 3.1 Flash Lite as the lite-tier model. Both are available natively and via OpenRouter, and agents using the previous models switch over automatically — no configuration change needed.
+- Pricing follows the new models: Gemini 3.6 Flash produces output about 17% cheaper than its predecessor, while Gemini 3.5 Flash Lite costs slightly more than the old lite model (still the budget tier). Public agent templates and built-in web search now run on Gemini 3.6 Flash.
 
 ## Improvements
 
-- Simplified the agent lifecycle: creating or updating an agent simply takes effect immediately. The leftover "deploy" wording from an older draft-based workflow is gone from agent tools, messages, and notifications, so assistants describe changes the way they actually work.
-- An agent's "last updated" time now reflects real edits only — routine background refreshes such as hourly account snapshots and asset caches no longer count. This keeps the Team Lead's view of recently active agents meaningful and avoids unnecessary periodic reinitialization of busy agents.
-- Internal cleanup of legacy code and a leftover database column from the retired draft system; the database schema updates itself automatically on upgrade.
+- Streamlined the agent management UI: the agent creation and editing pages now share one consistent form, and unused frontend code was removed for a lighter build.
+- Internal cleanup of legacy compatibility code, one-off migration scripts, and orphaned modules left over from earlier refactors.
