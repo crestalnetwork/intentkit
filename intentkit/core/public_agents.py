@@ -11,7 +11,6 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 from sqlalchemy import select
-from yaml import safe_load
 
 from intentkit.config.db import get_session
 from intentkit.models.agent.core import AgentVisibility
@@ -20,6 +19,7 @@ from intentkit.models.agent.user_input import AgentUpdate
 from intentkit.models.llm import is_model_resolvable
 from intentkit.models.team import TeamMemberTable, TeamRole, TeamTable
 from intentkit.models.user import UserTable
+from intentkit.utils.yaml import safe_load
 
 logger = logging.getLogger(__name__)
 

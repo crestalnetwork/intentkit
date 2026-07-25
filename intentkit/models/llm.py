@@ -6,7 +6,6 @@ from enum import Enum
 from pathlib import Path
 from typing import Annotated, Any, Callable, ClassVar, Literal, get_args
 
-import yaml
 from langchain_core.language_models import LanguageModelInput
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.messages import AIMessage, BaseMessage
@@ -19,6 +18,7 @@ from typing_extensions import override
 from intentkit.config.config import config
 from intentkit.models.app_setting import AppSetting
 from intentkit.utils.error import IntentKitAPIError
+from intentkit.utils.yaml import safe_load
 
 logger = logging.getLogger(__name__)
 
@@ -43,7 +43,7 @@ def load_default_llm_models() -> dict[str, "LLMModelInfo"]:
         return {}
 
     with path.open(encoding="utf-8") as f:
-        rows: list[dict[str, Any]] = yaml.safe_load(f) or []
+        rows: list[dict[str, Any]] = safe_load(f) or []
 
     defaults: dict[str, LLMModelInfo] = {}
     for row in rows:

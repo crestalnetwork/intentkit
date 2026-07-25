@@ -16,7 +16,6 @@ from fastapi.responses import PlainTextResponse
 from pydantic import ValidationError
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from yaml import safe_load
 
 from intentkit.config.db import get_db, get_session
 from intentkit.core.agent import (
@@ -45,6 +44,7 @@ from intentkit.models.agent import (
 )
 from intentkit.models.agent_data import AgentData, AgentDataTable
 from intentkit.utils.error import IntentKitAPIError
+from intentkit.utils.yaml import safe_load
 
 from app.common.upload import validate_and_store_image
 
