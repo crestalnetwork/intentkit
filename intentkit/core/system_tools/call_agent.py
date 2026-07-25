@@ -207,14 +207,19 @@ class CallAgentTool(SystemTool):
         Raises:
             ToolException: If no response received, timeout, or the last message is not from agent.
         """
-        # Import here to avoid circular dependency
-        # When initializing an agent, it may import this tool,
-        # and this tool imports engine, which imports tools
+        # Import here to avoid circular dependency: initializing an agent may
+        # import this tool. Running a nested agent is NOT imported at all --
+        # the engine injects it on the context (see AgentContext.execute_agent).
         from intentkit.core.agent import get_agent_by_id_or_slug
-        from intentkit.core.engine import execute_agent
 
         try:
             context = self.get_context()
+            execute_agent = context.execute_agent
+            if execute_agent is None:
+                raise ToolException(
+                    "call_agent is unavailable: this run was started without a "
+                    "nested-execution capability on the agent context"
+                )
 
             # Check recursion depth before proceeding
             if context.call_depth >= MAX_CALL_DEPTH:

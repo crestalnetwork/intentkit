@@ -142,23 +142,11 @@ def _get_cached_executor(agent_id: str):
     # cached per (team, user). Any of the team's executors works here — they
     # share the DB checkpointer, and appending a message doesn't involve the
     # per-user toolset.
-    try:
-        from intentkit.core.lead.cache import any_lead_executor
+    from intentkit.core import caches
 
-        executor = any_lead_executor(agent_id)
-        if executor:
-            return executor
-    except ImportError:
-        pass
+    executor = caches.any_lead_executor(agent_id)
+    if executor:
+        return executor
 
     # Check regular agent executor cache
-    try:
-        from intentkit.core.executor import agents
-
-        executor = agents.get(agent_id)
-        if executor:
-            return executor
-    except ImportError:
-        pass
-
-    return None
+    return caches.agent_executors.get(agent_id)

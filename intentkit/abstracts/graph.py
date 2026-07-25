@@ -1,4 +1,4 @@
-from collections.abc import Callable, Sequence
+from collections.abc import Awaitable, Callable, Sequence
 from datetime import UTC, datetime
 from enum import Enum
 from typing import Annotated, Any, Literal, NotRequired, TypedDict
@@ -19,7 +19,12 @@ from langgraph.graph.message import (
 from pydantic import BaseModel, Field, field_validator
 
 from intentkit.models.agent import Agent
-from intentkit.models.chat import AuthorType, ChatMessageAttachment
+from intentkit.models.chat import (
+    AuthorType,
+    ChatMessage,
+    ChatMessageAttachment,
+    ChatMessageCreate,
+)
 
 
 class AgentError(str, Enum):
@@ -117,6 +122,12 @@ class AgentState(BaseAgentState[Any]):
 class AgentContext(BaseModel):
     agent_id: str
     get_agent: Callable[[], Agent]
+    # Runs a nested agent turn to completion. Injected by the engine when it
+    # builds the context, so tools that delegate (call_agent) never import
+    # intentkit.core.engine — that import closed a core import cycle.
+    execute_agent: (
+        Callable[[ChatMessageCreate], Awaitable[list[ChatMessage]]] | None
+    ) = None
     chat_id: str
     user_id: str | None = None
     team_id: str | None = None

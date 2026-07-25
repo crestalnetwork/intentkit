@@ -29,6 +29,7 @@ from pydantic.v1 import ValidationError as ValidationErrorV1
 from intentkit.abstracts.graph import AgentContext, AgentState
 from intentkit.config.config import config
 from intentkit.config.db import get_checkpointer
+from intentkit.core import caches
 from intentkit.core.agent import get_agent
 from intentkit.models.agent import Agent
 from intentkit.models.agent_data import AgentData
@@ -39,11 +40,11 @@ from intentkit.utils.error import IntentKitAPIError
 
 logger = logging.getLogger(__name__)
 
-# Global variable to cache all agent executors
-agents: dict[str, CompiledStateGraph[AgentState, AgentContext, Any, Any]] = {}
-
-# Global dictionaries to cache agent update times
-agents_updated: dict[str, datetime] = {}
+# Executor caches. The storage lives in core.caches so that lookup-only callers
+# (core.chat) can read it without importing this module; re-exported here under
+# the historical names because this is where they are written.
+agents = caches.agent_executors
+agents_updated = caches.agent_executors_updated
 
 # Track when each executor was last accessed, for TTL eviction
 _agents_accessed_at: dict[str, datetime] = {}

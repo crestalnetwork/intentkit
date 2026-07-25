@@ -493,6 +493,7 @@ async def stream_agent_raw(
     context = AgentContext(
         agent_id=user_message.agent_id,
         get_agent=get_agent_for_context,
+        execute_agent=execute_agent,
         chat_id=user_message.chat_id,
         user_id=user_message.user_id,
         team_id=message.team_id,

@@ -11,9 +11,6 @@ responsibility:
 - ``recovery`` — checkpoint cleanup after cancels/empty outputs/corruption
 """
 
-# pyright: reportImportCycles=false
-# (system_tools/call_agent lazily imports execute_agent back from this package)
-
 from intentkit.core.engine.content import (
     count_web_searches,
     extract_cached_input_tokens,

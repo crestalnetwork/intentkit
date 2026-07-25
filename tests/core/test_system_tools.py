@@ -51,6 +51,9 @@ def mock_runtime():
     mock_context.start_message_attachments = None
     mock_context.agent = MagicMock()
     mock_context.agent.sub_agents = None
+    # The engine injects this on the real context; tools call it instead of
+    # importing intentkit.core.engine.
+    mock_context.execute_agent = AsyncMock(return_value=[])
 
     with patch("intentkit.core.system_tools.base.get_runtime") as mock_get_runtime:
         mock_get_runtime.return_value.context = mock_context
@@ -173,6 +176,7 @@ async def test_call_agent_not_in_allowed(mock_runtime):
 @pytest.mark.asyncio
 async def test_call_agent_success(mock_runtime):
     """Successful call returns (message, attachments)."""
+    _, mock_context = mock_runtime
     mock_resolved = MagicMock()
     mock_resolved.id = "target_id"
     mock_resolved.slug = "target_slug"
@@ -182,15 +186,12 @@ async def test_call_agent_success(mock_runtime):
     mock_msg.message = "Hello from agent"
     mock_msg.attachments = []
 
+    mock_context.execute_agent = AsyncMock(return_value=[mock_msg])
     tool = CallAgentTool()
     with (
         patch(
             "intentkit.core.agent.get_agent_by_id_or_slug",
             new=AsyncMock(return_value=mock_resolved),
-        ),
-        patch(
-            "intentkit.core.engine.execute_agent",
-            new=AsyncMock(return_value=[mock_msg]),
         ),
     ):
         result = await tool._arun(agent_id="target_id", message="hello")
@@ -203,6 +204,7 @@ async def test_call_agent_success(mock_runtime):
 @pytest.mark.asyncio
 async def test_call_agent_success_with_attachments(mock_runtime):
     """Successful call appends an attachments awareness block to the text."""
+    _, mock_context = mock_runtime
     mock_resolved = MagicMock()
     mock_resolved.id = "target_id"
     mock_resolved.slug = "target_slug"
@@ -232,15 +234,12 @@ async def test_call_agent_success_with_attachments(mock_runtime):
     mock_msg.message = "Done."
     mock_msg.attachments = attachments
 
+    mock_context.execute_agent = AsyncMock(return_value=[mock_msg])
     tool = CallAgentTool()
     with (
         patch(
             "intentkit.core.agent.get_agent_by_id_or_slug",
             new=AsyncMock(return_value=mock_resolved),
-        ),
-        patch(
-            "intentkit.core.engine.execute_agent",
-            new=AsyncMock(return_value=[mock_msg]),
         ),
     ):
         content, returned_attachments = await tool._arun(
@@ -281,21 +280,18 @@ async def test_call_agent_forwards_start_message_attachments(mock_runtime):
     mock_msg.message = "Done"
     mock_msg.attachments = []
 
+    mock_context.execute_agent = AsyncMock(return_value=[mock_msg])
     tool = CallAgentTool()
     with (
         patch(
             "intentkit.core.agent.get_agent_by_id_or_slug",
             new=AsyncMock(return_value=mock_resolved),
         ),
-        patch(
-            "intentkit.core.engine.execute_agent",
-            new=AsyncMock(return_value=[mock_msg]),
-        ) as mock_execute_agent,
     ):
         await tool._arun(agent_id="target_id", message="hello")
 
-    assert mock_execute_agent.await_args is not None
-    forwarded = mock_execute_agent.await_args.args[0]
+    assert mock_context.execute_agent.await_args is not None
+    forwarded = mock_context.execute_agent.await_args.args[0]
     assert forwarded.attachments == start_attachments
 
 
@@ -332,21 +328,18 @@ async def test_call_agent_forwards_billing_payer(
     mock_msg.message = "Done"
     mock_msg.attachments = []
 
+    mock_context.execute_agent = AsyncMock(return_value=[mock_msg])
     tool = CallAgentTool()
     with (
         patch(
             "intentkit.core.agent.get_agent_by_id_or_slug",
             new=AsyncMock(return_value=mock_resolved),
         ),
-        patch(
-            "intentkit.core.engine.execute_agent",
-            new=AsyncMock(return_value=[mock_msg]),
-        ) as mock_execute_agent,
     ):
         await tool._arun(agent_id="target_id", message="hello")
 
-    assert mock_execute_agent.await_args is not None
-    forwarded = mock_execute_agent.await_args.args[0]
+    assert mock_context.execute_agent.await_args is not None
+    forwarded = mock_context.execute_agent.await_args.args[0]
     assert forwarded.payer == expected
     # team_id is intentionally left untouched so the sub-agent's access context
     # (is_own_team) is unaffected by delegation.
@@ -369,21 +362,18 @@ async def test_call_agent_inherits_entrypoint(mock_runtime):
     mock_msg.message = "Done"
     mock_msg.attachments = []
 
+    mock_context.execute_agent = AsyncMock(return_value=[mock_msg])
     tool = CallAgentTool()
     with (
         patch(
             "intentkit.core.agent.get_agent_by_id_or_slug",
             new=AsyncMock(return_value=mock_resolved),
         ),
-        patch(
-            "intentkit.core.engine.execute_agent",
-            new=AsyncMock(return_value=[mock_msg]),
-        ) as mock_execute_agent,
     ):
         await tool._arun(agent_id="target_id", message="hello")
 
-    assert mock_execute_agent.await_args is not None
-    forwarded = mock_execute_agent.await_args.args[0]
+    assert mock_context.execute_agent.await_args is not None
+    forwarded = mock_context.execute_agent.await_args.args[0]
     assert forwarded.author_type == AuthorType.INTERNAL.value
     assert forwarded.thread_type == AuthorType.TELEGRAM.value
     assert forwarded.call_depth == 3
@@ -461,19 +451,17 @@ def test_render_attachments_awareness_choice_and_link():
 @pytest.mark.asyncio
 async def test_call_agent_no_response(mock_runtime):
     """Empty results raises ToolException."""
+    _, mock_context = mock_runtime
     mock_resolved = MagicMock()
     mock_resolved.id = "target_id"
     mock_resolved.slug = "target_slug"
 
+    mock_context.execute_agent = AsyncMock(return_value=[])
     tool = CallAgentTool()
     with (
         patch(
             "intentkit.core.agent.get_agent_by_id_or_slug",
             new=AsyncMock(return_value=mock_resolved),
-        ),
-        patch(
-            "intentkit.core.engine.execute_agent",
-            new=AsyncMock(return_value=[]),
         ),
     ):
         with pytest.raises(ToolException, match="No response received"):
