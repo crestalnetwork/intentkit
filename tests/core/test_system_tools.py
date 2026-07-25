@@ -992,7 +992,7 @@ def _patch_httpx_stream(
     """Patch httpx.AsyncClient.stream to return one fixed response for any URL."""
     response = _FakeStreamResponse(content, headers, status_code, chunk_size)
 
-    def fake_stream(self, method, url, **kwargs):  # noqa: ARG001
+    def fake_stream(self, method, url, **kwargs):
         return _FakeStreamCM(response)
 
     monkeypatch.setattr(httpx.AsyncClient, "stream", fake_stream)
@@ -1001,7 +1001,7 @@ def _patch_httpx_stream(
 def _patch_httpx_stream_routes(monkeypatch, routes: dict[str, _FakeStreamResponse]):
     """Patch httpx.AsyncClient.stream to route by URL (for redirect chains)."""
 
-    def fake_stream(self, method, url, **kwargs):  # noqa: ARG001
+    def fake_stream(self, method, url, **kwargs):
         url_str = str(url)
         response = routes.get(url_str)
         if response is None:

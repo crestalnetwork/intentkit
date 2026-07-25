@@ -4,6 +4,8 @@ from fastapi import APIRouter
 
 from intentkit.models.llm import LLMModelInfo, LLMProvider
 
+logger = logging.getLogger(__name__)
+
 # Create a readonly router for metadata endpoints
 metadata_router = APIRouter(tags=["Metadata"])
 
@@ -39,5 +41,5 @@ async def get_llms():
             )
         return result_models
     except Exception as e:
-        logging.error("Error getting LLM models: %s", e)
+        logger.error("Error getting LLM models: %s", e)
         raise

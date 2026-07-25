@@ -124,7 +124,7 @@ class TestShouldRetryModelFailure:
             try:
                 raise httpx.ConnectError("refused")
             except httpx.ConnectError:
-                raise RuntimeError("wrapped without from")  # noqa: B904
+                raise RuntimeError("wrapped without from")
         assert _should_retry_model_failure(exc_info.value)
 
     def test_suppressed_context_is_not_walked(self):

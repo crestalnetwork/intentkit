@@ -68,9 +68,7 @@ class WalletStats(PortfolioBaseTool):
                 method="GET", endpoint=endpoint, api_key=api_key, params=params
             )
         except Exception as e:
-            logger.error(
-                f"wallet_stats.py: Error fetching wallet stats: {e}", exc_info=True
-            )
+            logger.exception(f"wallet_stats.py: Error fetching wallet stats: {e}")
             return {
                 "error": "An error occurred while fetching wallet stats. Please try again later."
             }

@@ -195,7 +195,7 @@ def sort_pairs_by_criteria(
         sort_func = get_sort_function(sort_by, volume_timeframe)
         return sorted(pairs, key=sort_func, reverse=reverse)
     except Exception as e:
-        logger.error("Failed to sort pairs: %s", e, exc_info=True)
+        logger.exception("Failed to sort pairs: %s", e)
         return pairs  # Return original list if sorting fails
 
 
@@ -330,7 +330,9 @@ def handle_validation_error(
     if data_length:
         log_message += f". Raw data length: {data_length}"
 
-    logger.error(log_message, exc_info=True)
+    # Pass the exception explicitly rather than relying on sys.exc_info(): this
+    # helper is called from an `except` block today, but nothing enforces that.
+    logger.error(log_message, exc_info=error)
 
     return create_error_response(
         error_type="validation_error",

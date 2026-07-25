@@ -155,8 +155,9 @@ class GetTokenPairs(DexScreenerBaseTool):
         self, e: Exception, query_info: str
     ) -> str:
         """Formats unexpected runtime exception details into a JSON string."""
-        logger.exception(
-            f"An unexpected runtime error occurred in get_token_pairs tool _arun method for {query_info}: {e}"
+        logger.error(
+            f"An unexpected runtime error occurred in get_token_pairs tool _arun method for {query_info}: {e}",
+            exc_info=e,
         )
         return create_error_response(
             error_type="runtime_error",

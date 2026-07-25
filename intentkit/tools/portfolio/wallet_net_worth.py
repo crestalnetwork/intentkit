@@ -100,9 +100,8 @@ class WalletNetWorth(PortfolioBaseTool):
                 method="GET", endpoint=endpoint, api_key=api_key, params=params
             )
         except Exception as e:
-            logger.error(
-                f"wallet_net_worth.py: Error calculating wallet net worth: {e}",
-                exc_info=True,
+            logger.exception(
+                f"wallet_net_worth.py: Error calculating wallet net worth: {e}"
             )
             return {
                 "error": "An error occurred while calculating wallet net worth. Please try again later."

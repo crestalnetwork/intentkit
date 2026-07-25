@@ -597,7 +597,9 @@ class LLMModel(BaseModel):
         return model_info
 
     # This will be implemented by subclasses to return the appropriate LLM instance
-    async def create_instance(self, params: dict[str, Any] = {}) -> BaseChatModel:
+    async def create_instance(
+        self, params: dict[str, Any] | None = None
+    ) -> BaseChatModel:
         """Create and return the LLM instance based on the configuration."""
         _ = params
         raise NotImplementedError("Subclasses must implement create_instance")
@@ -621,7 +623,9 @@ class OpenAILLM(LLMModel):
     """OpenAI LLM configuration."""
 
     @override
-    async def create_instance(self, params: dict[str, Any] = {}) -> BaseChatModel:
+    async def create_instance(
+        self, params: dict[str, Any] | None = None
+    ) -> BaseChatModel:
         """Create and return a ChatOpenAI instance."""
         from langchain_openai import ChatOpenAI
 
@@ -641,7 +645,7 @@ class OpenAILLM(LLMModel):
             kwargs["reasoning_effort"] = effort
 
         # Update kwargs with params to allow overriding
-        kwargs.update(params)
+        kwargs.update(params or {})
 
         logger.debug("Creating ChatOpenAI instance with kwargs: %s", kwargs)
 
@@ -652,7 +656,9 @@ class DeepseekLLM(LLMModel):
     """Deepseek LLM configuration."""
 
     @override
-    async def create_instance(self, params: dict[str, Any] = {}) -> BaseChatModel:
+    async def create_instance(
+        self, params: dict[str, Any] | None = None
+    ) -> BaseChatModel:
         """Create and return a ChatDeepseek instance."""
 
         from langchain_deepseek import ChatDeepSeek
@@ -679,7 +685,7 @@ class DeepseekLLM(LLMModel):
             kwargs["extra_body"] = {"thinking": {"type": "disabled"}}
 
         # Update kwargs with params to allow overriding
-        kwargs.update(params)
+        kwargs.update(params or {})
 
         return ChatDeepSeek(**kwargs)
 
@@ -688,7 +694,9 @@ class XAILLM(LLMModel):
     """XAI (Grok) LLM configuration."""
 
     @override
-    async def create_instance(self, params: dict[str, Any] = {}) -> BaseChatModel:
+    async def create_instance(
+        self, params: dict[str, Any] | None = None
+    ) -> BaseChatModel:
         """Create and return a ChatOpenAI instance configured for xAI."""
         from langchain_openai import ChatOpenAI
 
@@ -710,7 +718,7 @@ class XAILLM(LLMModel):
             kwargs["reasoning_effort"] = effort
 
         # Update kwargs with params to allow overriding
-        kwargs.update(params)
+        kwargs.update(params or {})
 
         from langchain_core.utils.function_calling import convert_to_openai_tool
 
@@ -809,7 +817,9 @@ class OpenRouterLLM(LLMModel):
     """OpenRouter LLM configuration."""
 
     @override
-    async def create_instance(self, params: dict[str, Any] = {}) -> BaseChatModel:
+    async def create_instance(
+        self, params: dict[str, Any] | None = None
+    ) -> BaseChatModel:
         """Create and return a ChatOpenRouter instance."""
         from langchain_openrouter import ChatOpenRouter
 
@@ -844,7 +854,7 @@ class OpenRouterLLM(LLMModel):
             }
 
         # Update kwargs with params to allow overriding
-        kwargs.update(params)
+        kwargs.update(params or {})
 
         return ChatOpenRouter(**kwargs)
 
@@ -853,7 +863,9 @@ class GoogleLLM(LLMModel):
     """Google LLM configuration."""
 
     @override
-    async def create_instance(self, params: dict[str, Any] = {}) -> BaseChatModel:
+    async def create_instance(
+        self, params: dict[str, Any] | None = None
+    ) -> BaseChatModel:
         """Create and return a ChatGoogleGenerativeAI instance."""
         from langchain_google_genai import ChatGoogleGenerativeAI
 
@@ -878,7 +890,7 @@ class GoogleLLM(LLMModel):
             kwargs["thinking_level"] = effort
 
         # Update kwargs with params to allow overriding
-        kwargs.update(params)
+        kwargs.update(params or {})
 
         return ChatGoogleGenerativeAI(**kwargs)
 
@@ -887,7 +899,9 @@ class OllamaLLM(LLMModel):
     """Ollama LLM configuration."""
 
     @override
-    async def create_instance(self, params: dict[str, Any] = {}) -> BaseChatModel:
+    async def create_instance(
+        self, params: dict[str, Any] | None = None
+    ) -> BaseChatModel:
         """Create and return a ChatOllama instance."""
         from langchain_ollama import ChatOllama
 
@@ -901,7 +915,7 @@ class OllamaLLM(LLMModel):
         }
 
         # Update kwargs with params to allow overriding
-        kwargs.update(params)
+        kwargs.update(params or {})
 
         return ChatOllama(**kwargs)
 
@@ -910,7 +924,9 @@ class MiniMaxLLM(LLMModel):
     """MiniMax LLM configuration using Anthropic-compatible API."""
 
     @override
-    async def create_instance(self, params: dict[str, Any] = {}) -> BaseChatModel:
+    async def create_instance(
+        self, params: dict[str, Any] | None = None
+    ) -> BaseChatModel:
         """Create and return a ChatAnthropic instance for MiniMax."""
         from langchain_anthropic import ChatAnthropic
 
@@ -935,7 +951,7 @@ class MiniMaxLLM(LLMModel):
         }
 
         # Update kwargs with params to allow overriding
-        kwargs.update(params)
+        kwargs.update(params or {})
 
         return ChatAnthropic(**kwargs)
 
@@ -944,7 +960,9 @@ class MimoPlanLLM(LLMModel):
     """Xiaomi MiMo Token Plan LLM configuration (OpenAI-compatible API)."""
 
     @override
-    async def create_instance(self, params: dict[str, Any] = {}) -> BaseChatModel:
+    async def create_instance(
+        self, params: dict[str, Any] | None = None
+    ) -> BaseChatModel:
         """Create and return a ChatOpenAI instance configured for MiMo."""
         from langchain_openai import ChatOpenAI
 
@@ -967,7 +985,7 @@ class MimoPlanLLM(LLMModel):
             }
         }
 
-        kwargs.update(params)
+        kwargs.update(params or {})
 
         return ChatOpenAI(**kwargs)
 
@@ -976,7 +994,9 @@ class AnthropicCompatibleLLM(LLMModel):
     """Anthropic Compatible LLM configuration."""
 
     @override
-    async def create_instance(self, params: dict[str, Any] = {}) -> BaseChatModel:
+    async def create_instance(
+        self, params: dict[str, Any] | None = None
+    ) -> BaseChatModel:
         """Create and return a ChatAnthropic instance for Anthropic-compatible provider."""
         from langchain_anthropic import ChatAnthropic
 
@@ -991,7 +1011,7 @@ class AnthropicCompatibleLLM(LLMModel):
         }
 
         # Update kwargs with params to allow overriding
-        kwargs.update(params)
+        kwargs.update(params or {})
 
         return ChatAnthropic(**kwargs)
 
@@ -1000,7 +1020,9 @@ class OpenAICompatibleLLM(LLMModel):
     """OpenAI Compatible LLM configuration."""
 
     @override
-    async def create_instance(self, params: dict[str, Any] = {}) -> BaseChatModel:
+    async def create_instance(
+        self, params: dict[str, Any] | None = None
+    ) -> BaseChatModel:
         """Create and return a ChatOpenAI instance for OpenAI-compatible provider."""
         from langchain_openai import ChatOpenAI
 
@@ -1019,7 +1041,7 @@ class OpenAICompatibleLLM(LLMModel):
         if effort and effort != "none":
             kwargs["extra_body"] = {"thinking": {"type": "enabled"}}
 
-        kwargs.update(params)
+        kwargs.update(params or {})
 
         return ChatOpenAI(**kwargs)
 

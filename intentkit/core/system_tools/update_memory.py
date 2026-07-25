@@ -69,6 +69,6 @@ class UpdateMemoryTool(SystemTool):
         except ToolException:
             raise
         except Exception as e:
-            self.logger.error("update_memory failed: %s", e, exc_info=True)
+            self.logger.exception("update_memory failed: %s", e)
             raise ToolException(f"Failed to update memory: {e}") from e
         return f"{target.heading} updated successfully. Current content:\n{updated}"

@@ -140,7 +140,7 @@ class WalletHistory(PortfolioBaseTool):
             )
         except ToolException:
             raise
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             logger.error(
                 "wallet_history.py: Error fetching wallet history", exc_info=exc
             )

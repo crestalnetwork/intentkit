@@ -1,3 +1,4 @@
+import asyncio
 from datetime import UTC, datetime
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -288,9 +289,7 @@ async def test_agent_executor_caching(mock_agent):
 
         # Bump agent updated_at to force re-init; sleep so the new
         # timestamp is guaranteed to differ from the cached one.
-        import time
-
-        time.sleep(0.001)
+        await asyncio.sleep(0.001)
         mock_agent.updated_at = datetime.now()
 
         # Third call - should re-initialize
@@ -298,7 +297,7 @@ async def test_agent_executor_caching(mock_agent):
         assert mock_build_and_cache.call_count == 2
 
         # Fourth call - update only agent_data.updated_at to force re-init
-        time.sleep(0.001)
+        await asyncio.sleep(0.001)
         mock_agent_data.updated_at = datetime.now()
 
         _executor4, _cost4 = await agent_executor(mock_agent.id)

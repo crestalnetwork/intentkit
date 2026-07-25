@@ -198,9 +198,8 @@ class DappLookerTokenData(DappLookerBaseTool):
                 return self._format_token_data(data)  # pyright: ignore[reportArgumentType]
 
         except Exception as e:
-            logger.error(
-                f"dapplooker_token_data.py: Error retrieving token data: {e}",
-                exc_info=True,
+            logger.exception(
+                f"dapplooker_token_data.py: Error retrieving token data: {e}"
             )
             return (
                 "An error occurred while retrieving token data. Please try again later."

@@ -109,6 +109,6 @@ class HttpPost(HttpBaseTool):
             ) from exc
         except httpx.RequestError as exc:
             raise ToolException(f"Failed to connect to {url} - {str(exc)}") from exc
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             logger.error("Unexpected error in HTTP POST request", exc_info=exc)
             raise ToolException(f"Unexpected error occurred - {str(exc)}") from exc

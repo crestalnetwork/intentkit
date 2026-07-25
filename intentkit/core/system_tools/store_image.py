@@ -88,5 +88,5 @@ class StoreImageTool(SystemTool):
         except ToolException:
             raise
         except Exception as e:
-            logger.error("store_image failed: %s", e, exc_info=True)
+            logger.exception("store_image failed: %s", e)
             raise ToolException(f"Failed to store image: {e}") from e

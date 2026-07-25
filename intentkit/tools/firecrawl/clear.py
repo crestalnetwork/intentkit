@@ -73,8 +73,7 @@ class FirecrawlClearIndexedContent(FirecrawlBaseTool):
             return "Successfully cleared all Firecrawl indexed content. The vector store is now empty and ready for new content."
 
         except Exception as e:
-            logger.error(
-                f"firecrawl_clear: Error clearing indexed content for agent {agent_id}: {e}",
-                exc_info=True,
+            logger.exception(
+                f"firecrawl_clear: Error clearing indexed content for agent {agent_id}: {e}"
             )
             raise ToolException(f"Error clearing indexed content: {str(e)}")

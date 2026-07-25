@@ -60,7 +60,7 @@ async def _run(args: argparse.Namespace) -> None:
         print("Request payload:")
         print(json.dumps(payload, indent=2))
 
-    result = await tool._arun(  # noqa: SLF001  # pyright: ignore[reportPrivateUsage]
+    result = await tool._arun(  # pyright: ignore[reportPrivateUsage]
         method=args.method,
         url=args.url,
         headers=None,

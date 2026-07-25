@@ -203,11 +203,27 @@ include = [
 exclude = ["*.md"]
 
 [tool.ruff.lint]
-# Pinned to ruff's pre-0.16 default set (E4/E7/E9/F) plus isort. Ruff 0.16
-# widened its implicit default from 59 to 413 rules, which surfaces ~1650
-# diagnostics here; adopting them is a deliberate, separate cleanup, not a
-# side effect of a version bump.
-select = ["E4", "E7", "E9", "F", "I"]
+# Ruff 0.16 widened its implicit default from 59 to 413 rules (~1700 diagnostics
+# here), so selection is pinned explicitly rather than inherited. The baseline is
+# ruff's pre-0.16 default (E4/E7/E9/F) plus isort; anything beyond that is opted
+# into one rule at a time, never picked up as a side effect of a version bump.
+select = [
+    "E4", "E7", "E9", "F", "I",
+    # High-signal rules adopted from 0.16's wider set. Listed individually
+    # rather than as "ASYNC" to leave out ASYNC109, which targets trio-style
+    # cancel scopes and would flag our httpx tools' `timeout` parameter.
+    "ASYNC230", "ASYNC240", "ASYNC250", "ASYNC251",  # blocking calls in async defs
+    "B006",    # mutable argument default
+    "G201",    # logger.error(exc_info=True) should be logger.exception()
+    "LOG",     # logging API misuse
+    "RUF100",  # unused noqa
+]
+
+[tool.ruff.lint.per-file-ignores]
+# One-off ops/migration scripts run interactively from a shell; blocking I/O and
+# prompts on the event loop are fine there (scripts/ is likewise out of scope
+# for deptry and basedpyright).
+"scripts/*" = ["ASYNC", "LOG015"]
 
 [tool.ruff.lint.isort]
 force-single-line = false

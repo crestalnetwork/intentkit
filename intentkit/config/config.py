@@ -353,10 +353,10 @@ class Config:
         )
 
     @overload
-    def load(self, key: str) -> str | None: ...  # noqa: F811
+    def load(self, key: str) -> str | None: ...
 
     @overload
-    def load(self, key: str, default: str) -> str: ...  # noqa: F811
+    def load(self, key: str, default: str) -> str: ...
 
     def load(self, key: str, default: str | None = None) -> str | None:
         """Load a secret from the secrets map or env"""

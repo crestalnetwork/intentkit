@@ -4,6 +4,7 @@ import logging
 import signal
 from datetime import datetime
 from pathlib import Path
+from types import ModuleType
 
 import sentry_sdk
 from apscheduler.events import (
@@ -165,6 +166,25 @@ _legacy_migration_done = False
 _legacy_migration_alerted = False
 
 
+def _load_migration_module() -> ModuleType:
+    """Import the temporary migration script by path (scripts/ is not a package).
+
+    Runs in a worker thread: resolving the path and then compiling/executing the
+    module together with its transitive imports is all blocking work.
+    """
+    script = (
+        Path(__file__).resolve().parent.parent
+        / "scripts"
+        / "migrate_autonomous_to_team.py"
+    )
+    spec = importlib.util.spec_from_file_location("migrate_autonomous_to_team", script)
+    if spec is None or spec.loader is None:
+        raise ImportError(f"cannot load migration script at {script}")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
 async def run_legacy_autonomous_migration() -> bool:
     """Migrate legacy per-agent tasks into autonomous_tasks.
 
@@ -178,22 +198,11 @@ async def run_legacy_autonomous_migration() -> bool:
     """
     global _legacy_migration_alerted
     try:
-        script = (
-            Path(__file__).resolve().parent.parent
-            / "scripts"
-            / "migrate_autonomous_to_team.py"
-        )
-        spec = importlib.util.spec_from_file_location(
-            "migrate_autonomous_to_team", script
-        )
-        if spec is None or spec.loader is None:
-            raise ImportError(f"cannot load migration script at {script}")
-        module = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(module)
+        module = await asyncio.to_thread(_load_migration_module)
         _ = await module.migrate_if_table_empty()
         return True
     except Exception as e:
-        logger.error("Legacy autonomous migration failed: %s", e, exc_info=True)
+        logger.exception("Legacy autonomous migration failed: %s", e)
         if not _legacy_migration_alerted:
             _legacy_migration_alerted = True
             try:

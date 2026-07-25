@@ -49,7 +49,7 @@ async def fetch_image_as_bytes(image_url: HttpUrl) -> bytes:
                     return output.getvalue()
             except Exception as e:
                 msg = f"Failed to convert image ({detected_ext}) to PNG: {e}"
-                logger.error(msg, exc_info=True)
+                logger.exception(msg)
                 raise ToolException(msg) from e
 
     except httpx.HTTPStatusError as e:
@@ -62,7 +62,7 @@ async def fetch_image_as_bytes(image_url: HttpUrl) -> bytes:
         raise ToolException(msg) from e
     except Exception as e:
         msg = f"Unexpected error fetching image {image_url}: {e}"
-        logger.error(msg, exc_info=True)
+        logger.exception(msg)
         raise ToolException(msg) from e
 
 

@@ -56,7 +56,7 @@ def get_carv_tool(name: str) -> CarvBaseTool | None:
         _cache[name] = instance
         return instance
     except Exception as e:
-        logger.error("Failed to instantiate Carv tool '%s': %s", name, e, exc_info=True)
+        logger.exception("Failed to instantiate Carv tool '%s': %s", name, e)
         return None
 
 

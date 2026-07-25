@@ -390,5 +390,5 @@ class FirecrawlCrawl(FirecrawlBaseTool):
                 f"Timeout error: The request to crawl {url} took too long to complete."
             )
         except Exception as e:
-            logger.error("firecrawl_crawl: Error crawling URL: %s", e, exc_info=True)
+            logger.exception("firecrawl_crawl: Error crawling URL: %s", e)
             raise ToolException(f"An error occurred while crawling the URL: {e!s}")

@@ -95,5 +95,5 @@ class CreateActivityTool(SystemTool):
         except ToolException:
             raise
         except Exception as e:
-            self.logger.error("create_activity failed: %s", e, exc_info=True)
+            self.logger.exception("create_activity failed: %s", e)
             raise ToolException(f"Failed to create activity: {e}") from e

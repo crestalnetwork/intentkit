@@ -85,7 +85,7 @@ class WalletProfitability(PortfolioBaseTool):
             )
         except ToolException:
             raise
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             logger.error(
                 "wallet_profitability.py: Error fetching profitability breakdown",
                 exc_info=exc,

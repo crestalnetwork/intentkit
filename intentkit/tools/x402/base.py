@@ -704,4 +704,4 @@ class X402BaseTool(IntentKitOnChainTool):
 
         except Exception as e:
             # Don't fail the tool execution if order recording fails
-            logger.error("Failed to record x402 order: %s", e, exc_info=True)
+            logger.exception("Failed to record x402 order: %s", e)

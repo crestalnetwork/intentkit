@@ -88,7 +88,7 @@ class WalletApprovals(PortfolioBaseTool):
             )
         except ToolException:
             raise
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             logger.error(
                 "wallet_approvals.py: Error fetching wallet approvals", exc_info=exc
             )

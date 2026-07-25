@@ -78,7 +78,7 @@ async def make_venice_api_request(
         return {}, {"success": False, "error": error_msg}
     except Exception as e:
         error_msg = f"Unexpected error: {e}"
-        logger.error("[%s/%s] %s", category, tool_name, error_msg, exc_info=True)
+        logger.exception("[%s/%s] %s", category, tool_name, error_msg)
         return {}, {"success": False, "error": error_msg}
 
 
@@ -114,7 +114,7 @@ async def _handle_response(
 
         except Exception as e:
             error_msg = f"Error processing image response: {e}"
-            logger.error("[%s/%s] %s", category, tool_name, error_msg, exc_info=True)
+            logger.exception("[%s/%s] %s", category, tool_name, error_msg)
             return {}, {"success": False, "error": error_msg}
 
     elif response.status_code == 200:

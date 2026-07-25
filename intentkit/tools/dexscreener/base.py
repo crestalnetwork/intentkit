@@ -64,9 +64,8 @@ class DexScreenerBaseTool(IntentKitTool):
                 try:
                     response_data = response.json()
                 except json.JSONDecodeError as json_err:
-                    logger.error(
-                        f"Failed to parse JSON response from {url}. Status: {response.status_code}. Response text: {response.text}",
-                        exc_info=True,
+                    logger.exception(
+                        f"Failed to parse JSON response from {url}. Status: {response.status_code}. Response text: {response.text}"
                     )
                     error_details = {
                         "error": "Failed to parse DexScreener API response",
@@ -98,9 +97,7 @@ class DexScreenerBaseTool(IntentKitTool):
                     return None, error_details  # Return API error
 
         except httpx.RequestError as req_err:
-            logger.error(
-                f"Request error connecting to DexScreener API: {req_err}", exc_info=True
-            )
+            logger.exception(f"Request error connecting to DexScreener API: {req_err}")
             error_details = {
                 "error": "Failed to connect to DexScreener API",
                 "error_type": "connection_error",

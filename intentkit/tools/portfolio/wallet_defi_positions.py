@@ -65,9 +65,8 @@ class WalletDefiPositions(PortfolioBaseTool):
                 method="GET", endpoint=endpoint, api_key=api_key, params=params
             )
         except Exception as e:
-            logger.error(
-                f"wallet_defi_positions.py: Error fetching wallet DeFi positions: {e}",
-                exc_info=True,
+            logger.exception(
+                f"wallet_defi_positions.py: Error fetching wallet DeFi positions: {e}"
             )
             return {
                 "error": "An error occurred while fetching wallet DeFi positions. Please try again later."

@@ -410,5 +410,5 @@ class FirecrawlScrape(FirecrawlBaseTool):
         except ToolException:
             raise
         except Exception as e:
-            logger.error("firecrawl_scrape: Error scraping URL: %s", e, exc_info=True)
+            logger.exception("firecrawl_scrape: Error scraping URL: %s", e)
             raise ToolException(f"An error occurred while scraping the URL: {str(e)}")

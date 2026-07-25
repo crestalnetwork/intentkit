@@ -452,5 +452,5 @@ Extract the URLs now:"""
             except Exception:
                 pass
 
-            logger.error("[%s] Error in WebsiteIndexer: %s", agent_id, e, exc_info=True)
+            logger.exception("[%s] Error in WebsiteIndexer: %s", agent_id, e)
             raise type(e)(f"[agent:{agent_id}]: {e}") from e

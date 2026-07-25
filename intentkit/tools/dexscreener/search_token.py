@@ -168,8 +168,9 @@ class SearchToken(DexScreenerBaseTool):
 
     async def _handle_unexpected_runtime_error(self, e: Exception, query: str) -> str:
         """Formats unexpected runtime exception details into a JSON string."""
-        logger.exception(
-            f"An unexpected runtime error occurred in search_token tool _arun method for query '{query}': {e}"
+        logger.error(
+            f"An unexpected runtime error occurred in search_token tool _arun method for query '{query}': {e}",
+            exc_info=e,
         )
         return create_error_response(
             error_type="runtime_error",

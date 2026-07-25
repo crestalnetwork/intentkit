@@ -95,7 +95,5 @@ class CarvBaseTool(IntentKitTool):
         except ToolException:
             raise
         except Exception as e:
-            logger.error(
-                "Error calling CARV API to %s > %s: %s", method, url, e, exc_info=True
-            )
+            logger.exception("Error calling CARV API to %s > %s: %s", method, url, e)
             raise ToolException(f"CARV API request failed: {e!s}")

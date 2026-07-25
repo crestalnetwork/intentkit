@@ -61,7 +61,15 @@ async def _push_activity_to_teams(activity: AgentActivity, team_ids: list[str]) 
         )
         for tid, result in zip(targets, results):
             if isinstance(result, Exception):
-                logger.exception("Failed to push activity to team %s: %s", tid, result)
+                # Pass the exception explicitly: gather(return_exceptions=True)
+                # returns it instead of raising, so there is no active exception
+                # context for .exception()/exc_info=True to pick up.
+                logger.error(
+                    "Failed to push activity to team %s: %s",
+                    tid,
+                    result,
+                    exc_info=result,
+                )
     except Exception:
         logger.exception("Failed to push activity %s", activity.id)
 

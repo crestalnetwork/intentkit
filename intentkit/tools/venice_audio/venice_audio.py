@@ -235,9 +235,8 @@ class VeniceAudioTool(VeniceAudioBaseTool):
             details = str(e)  # The string representation of the exception
 
             # Log the error with full traceback for debugging
-            logger.error(
-                f"Venice Audio Tool Global Error ({error_type}): {message} | Details: {details}",
-                exc_info=True,
+            logger.exception(
+                f"Venice Audio Tool Global Error ({error_type}): {message} | Details: {details}"
             )
 
             return {

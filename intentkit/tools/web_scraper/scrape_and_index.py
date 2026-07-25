@@ -163,7 +163,7 @@ class ScrapeAndIndex(WebScraperBaseTool):
             except Exception:
                 pass
 
-            logger.error("[%s] Error in ScrapeAndIndex: %s", agent_id, e, exc_info=True)
+            logger.exception("[%s] Error in ScrapeAndIndex: %s", agent_id, e)
             raise type(e)(f"[agent:{agent_id}]: {e}") from e
 
 
@@ -265,7 +265,5 @@ class QueryIndexedContent(WebScraperBaseTool):
             except Exception:
                 pass
 
-            logger.error(
-                f"[{agent_id}] Error in QueryIndexedContent: {e}", exc_info=True
-            )
+            logger.exception(f"[{agent_id}] Error in QueryIndexedContent: {e}")
             raise type(e)(f"[agent:{agent_id}]: {e}") from e

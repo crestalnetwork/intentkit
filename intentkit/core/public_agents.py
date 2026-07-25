@@ -5,6 +5,7 @@ from the public_agents/ directory and upserts them into the database.
 Agents are only updated when their content hash changes.
 """
 
+import asyncio
 import logging
 from datetime import UTC, datetime
 from pathlib import Path
@@ -92,28 +93,29 @@ async def _warn_if_referenced(agent_id: str, slug: str | None) -> None:
         )
 
 
-async def sync_public_agents() -> None:
-    """Sync public agent YAML files to the database.
+# Each entry: (slug, AgentUpdate, hash, tags)
+_SyncEntry = tuple[str, AgentUpdate, str, list[str] | None]
 
-    For each YAML file in public_agents/:
-    - If the agent doesn't exist in DB, create it
-    - If the agent exists but content hash differs, update it
-    - If the agent exists and hash matches, skip it
+
+def _collect_agents_to_sync() -> list[_SyncEntry]:
+    """Scan public_agents/ and parse every YAML file into a sync entry.
+
+    Runs in a worker thread: the directory walk, the file reads and the pydantic
+    validation are all blocking. A file that fails to parse is logged and
+    skipped so one bad definition cannot abort the whole sync.
     """
     if not PUBLIC_AGENTS_DIR.exists():
         logger.info("No public_agents directory found, skipping sync")
-        return
+        return []
 
     yaml_files = sorted(PUBLIC_AGENTS_DIR.rglob("*.yaml"))
     if not yaml_files:
         logger.info("No YAML files found in public_agents/, skipping sync")
-        return
+        return []
 
     logger.info("Syncing %d public agent definitions...", len(yaml_files))
 
-    # Parse and validate all YAML files first
-    # Each entry: (slug, AgentUpdate, hash, tags)
-    agents_to_sync: list[tuple[str, AgentUpdate, str, list[str] | None]] = []
+    entries: list[_SyncEntry] = []
     for yaml_file in yaml_files:
         try:
             with open(yaml_file) as f:
@@ -127,9 +129,21 @@ async def sync_public_agents() -> None:
             new_hash = agent_update.hash()
             # Fields on AgentTable but not AgentUpdate, extract separately
             tags = data.get("tags")
-            agents_to_sync.append((slug, agent_update, new_hash, tags))
+            entries.append((slug, agent_update, new_hash, tags))
         except Exception:
             logger.exception("Failed to parse public agent from %s", yaml_file.name)
+    return entries
+
+
+async def sync_public_agents() -> None:
+    """Sync public agent YAML files to the database.
+
+    For each YAML file in public_agents/:
+    - If the agent doesn't exist in DB, create it
+    - If the agent exists but content hash differs, update it
+    - If the agent exists and hash matches, skip it
+    """
+    agents_to_sync = await asyncio.to_thread(_collect_agents_to_sync)
 
     if not agents_to_sync:
         return

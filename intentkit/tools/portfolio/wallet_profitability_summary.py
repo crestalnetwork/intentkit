@@ -77,9 +77,8 @@ class WalletProfitabilitySummary(PortfolioBaseTool):
                 method="GET", endpoint=endpoint, api_key=api_key, params=params
             )
         except Exception as e:
-            logger.error(
-                f"wallet_profitability_summary.py: Error fetching profitability summary: {e}",
-                exc_info=True,
+            logger.exception(
+                f"wallet_profitability_summary.py: Error fetching profitability summary: {e}"
             )
             return {
                 "error": "An error occurred while fetching profitability summary. Please try again later."
