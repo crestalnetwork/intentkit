@@ -35,7 +35,16 @@ class SystemTool(BaseTool, metaclass=ABCMeta):
     ) = lambda e: f"validation error: {e}"
     """Handle the content of the ValidationError thrown."""
 
-    logger: logging.Logger = logging.getLogger(__name__)
+    @property
+    def logger(self) -> logging.Logger:
+        """Logger named after the concrete tool's own module.
+
+        This used to be a class attribute, which stamped every tool's records
+        with ``intentkit.core.system_tools.base``. ``record.name`` is the only
+        per-tool identifier the JSON formatter emits (utils/logging.py), so a
+        shared logger erased which tool actually logged the line.
+        """
+        return logging.getLogger(type(self).__module__)
 
     team_only: bool = False
     """Tools that act with the agent's identity or assets (publishing,
