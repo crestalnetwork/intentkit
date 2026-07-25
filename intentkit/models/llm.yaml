@@ -328,23 +328,24 @@
   reasoning_levels: ["none", "low", "medium", "high", "xhigh", "max"]
   timeout: 300
 
-- id: "anthropic/claude-opus-4.8"
-  name: "Claude Opus 4.8"
+- id: "anthropic/claude-opus-5"
+  name: "Claude Opus 5"
   provider: openrouter
   origin_provider: "anthropic"   # lock OpenRouter upstream
+  legacy_ids: ["anthropic/claude-opus-4.8"]
   enabled: true
   input_price: "5"
   cached_input_price: "0.5"
   output_price: "25"
   price_level: 5
   context_length: 1000000
-  output_length: 8192
+  output_length: 128000
   intelligence: 5
   speed: 2
   supports_image_input: true
   supports_audio_input: false
   supports_video_input: false
-  supports_file_input: false
+  supports_file_input: true
   reasoning_effort: "high"
   reasoning_levels: ["none", "low", "medium", "high", "xhigh", "max"]
   timeout: 300

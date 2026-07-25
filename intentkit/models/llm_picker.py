@@ -131,7 +131,7 @@ def pick_lite_model() -> str:
 def pick_smartest_model() -> str:
     """Pick the highest-intelligence model for complex reasoning."""
     order: list[tuple[str, LLMProvider]] = [
-        ("anthropic/claude-opus-4.8", LLMProvider.OPENROUTER),
+        ("anthropic/claude-opus-5", LLMProvider.OPENROUTER),
         ("gemini-3.1-pro-preview-customtools", LLMProvider.GOOGLE),
         ("gpt-5.6-sol", LLMProvider.OPENAI),
         ("grok-4.5", LLMProvider.XAI),
@@ -202,7 +202,7 @@ def pick_chinese_writing_model() -> str:
 def pick_finance_model() -> str:
     """Pick the best model for financial/quantitative analysis."""
     order: list[tuple[str, LLMProvider]] = [
-        ("anthropic/claude-opus-4.8", LLMProvider.OPENROUTER),
+        ("anthropic/claude-opus-5", LLMProvider.OPENROUTER),
         ("deepseek-v4-pro", LLMProvider.DEEPSEEK),
         ("gemini-3.1-pro-preview-customtools", LLMProvider.GOOGLE),
         ("gpt-5.6-sol", LLMProvider.OPENAI),
@@ -230,7 +230,7 @@ def pick_search_model() -> str:
 def pick_broadest_knowledge_model() -> str:
     """Pick the model with the broadest world knowledge."""
     order: list[tuple[str, LLMProvider]] = [
-        ("anthropic/claude-opus-4.8", LLMProvider.OPENROUTER),
+        ("anthropic/claude-opus-5", LLMProvider.OPENROUTER),
         ("gemini-3.1-pro-preview-customtools", LLMProvider.GOOGLE),
         ("gpt-5.6-sol", LLMProvider.OPENAI),
         ("grok-4.5", LLMProvider.XAI),
