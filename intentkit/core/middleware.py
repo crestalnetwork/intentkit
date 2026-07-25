@@ -120,18 +120,15 @@ class ToolBindingMiddleware(AgentMiddleware[AgentState, AgentContext]):
     # Named all_tools: AgentMiddleware.tools has different semantics (tools a
     # middleware itself contributes to the graph).
     all_tools: list[BaseTool | dict[str, Any]]
-    extra_llm_params: dict[str, Any]
 
     def __init__(
         self,
         llm_model: LLMModel,
         all_tools: list[BaseTool | dict[str, Any]],
-        extra_llm_params: dict[str, Any] | None = None,
     ) -> None:
         super().__init__()
         self.llm_model = llm_model
         self.all_tools = all_tools
-        self.extra_llm_params = extra_llm_params or {}
         # Schema stand-ins keyed by tool name. Tools missing here keep their
         # original schema and their call args are never stripped.
         self._display_tools: dict[str, BaseTool] = {}
@@ -149,7 +146,6 @@ class ToolBindingMiddleware(AgentMiddleware[AgentState, AgentContext]):
     ) -> ModelResponse:
         context: AgentContext = request.runtime.context
 
-        llm_params: dict[str, Any] = {**self.extra_llm_params}
         # Tools are deduplicated at build time in executor.py. Tools marked
         # team_only (publishing, signing, spending) are hidden from guests of
         # a published agent; each such tool re-checks at execution time too.
@@ -173,11 +169,10 @@ class ToolBindingMiddleware(AgentMiddleware[AgentState, AgentContext]):
             and (memory_scope_active or not getattr(t, "requires_memory_scope", False))
         ]
 
-        model = await self.llm_model.create_instance(llm_params)
+        model = await self.llm_model.create_instance()
         updated_request = request.override(
             model=model,
             tools=tools,
-            model_settings=llm_params,
         )
         return await handler(updated_request)
 

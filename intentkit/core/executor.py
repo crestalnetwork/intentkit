@@ -263,7 +263,6 @@ async def build_executor(
     tools.append(update_memory)
 
     # search-related tools based on provider
-    extra_llm_params: dict[str, Any] = {}
     if agent.search_internet:
         if model_provider == LLMProvider.OPENAI:
             search_tools: list[dict[str, Any]] = [{"type": "web_search"}]
@@ -317,7 +316,7 @@ async def build_executor(
     base_model = await llm_model.create_instance()
 
     middleware: list[Any] = [
-        ToolBindingMiddleware(llm_model, tools, extra_llm_params),
+        ToolBindingMiddleware(llm_model, tools),
         DynamicPromptMiddleware(agent, agent_data),
         EmptyContentSafetyMiddleware(),
         MediaBlockSanitizerMiddleware(),
