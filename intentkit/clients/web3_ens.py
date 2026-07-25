@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+from typing import cast
 
 from ens import ENS
 from web3 import Web3
@@ -45,7 +46,9 @@ async def resolve_ens_to_address(name: str) -> str:
 
     cache_key = f"{_CACHE_PREFIX}{normalized}"
     redis_client = get_redis()
-    cached_address = await redis_client.get(cache_key)
+    # decode_responses=True, so values come back as str; redis-py 8's overloads
+    # widen this to `bytes | str` because they cannot see the flag.
+    cached_address = cast(str | None, await redis_client.get(cache_key))
     if cached_address:
         return cached_address
 

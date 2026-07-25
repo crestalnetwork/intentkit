@@ -25,12 +25,20 @@ _sync_redis_client: Redis | None = None
 RATE_LIMIT_KEY_PREFIX = "intentkit:alert:rate_limit"
 
 
+# Mirrors intentkit.config.redis; duplicated because utils sits below config in
+# the import layering and so cannot import it.
+ALERT_REDIS_SOCKET_TIMEOUT = 5.0
+ALERT_REDIS_CONNECT_TIMEOUT = 5.0
+
+
 def init_alert_redis(
     host: str,
     port: int = 6379,
     db: int = 0,
     password: str | None = None,
     ssl: bool = False,
+    socket_timeout: float = ALERT_REDIS_SOCKET_TIMEOUT,
+    socket_connect_timeout: float = ALERT_REDIS_CONNECT_TIMEOUT,
 ) -> Redis:
     """Initialize synchronous Redis client for alert handler.
 
@@ -40,6 +48,8 @@ def init_alert_redis(
         db: Redis database number (default: 0)
         password: Redis password (default: None)
         ssl: Whether to use SSL (default: False)
+        socket_timeout: Per-command socket timeout in seconds
+        socket_connect_timeout: Connection establishment timeout in seconds
 
     Returns:
         Redis: The initialized sync Redis client
@@ -56,6 +66,8 @@ def init_alert_redis(
         password=password,
         ssl=ssl,
         decode_responses=True,
+        socket_timeout=socket_timeout,
+        socket_connect_timeout=socket_connect_timeout,
     )
     # Test connection
     _ = _sync_redis_client.ping()

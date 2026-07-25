@@ -24,6 +24,8 @@ from sqlalchemy import select
 from intentkit.config.config import config
 from intentkit.config.db import get_session, init_db
 from intentkit.config.redis import (
+    REDIS_CONNECT_TIMEOUT,
+    REDIS_SOCKET_TIMEOUT,
     clean_heartbeat,
     get_redis,
     init_redis,
@@ -54,6 +56,10 @@ jobstores = {
         ssl=config.redis_ssl,
         jobs_key="intentkit:autonomous:jobs",
         run_times_key="intentkit:autonomous:run_times",
+        # RedisJobStore forwards extra kwargs to its own Redis client, which
+        # would otherwise pick up the library defaults instead of ours.
+        socket_timeout=REDIS_SOCKET_TIMEOUT,
+        socket_connect_timeout=REDIS_CONNECT_TIMEOUT,
     )
 }
 logger.info("autonomous scheduler use redis store: %s", config.redis_host)

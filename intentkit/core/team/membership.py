@@ -5,7 +5,7 @@ from __future__ import annotations
 import logging
 import re
 from datetime import UTC, datetime
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
 from sqlalchemy import or_, update
 
@@ -523,7 +523,9 @@ async def check_permission(team_id: str, user_id: str, required_role: TeamRole) 
     # Try cache first
     user_role_str: str | None = None
     try:
-        user_role_str = await redis.get(cache_key)
+        # decode_responses=True, so values come back as str; redis-py 8's
+        # overloads widen this to `bytes | str` because they cannot see the flag.
+        user_role_str = cast(str | None, await redis.get(cache_key))
     except Exception as e:
         logger.warning(
             "Redis cache read failed for role %s:%s: %s", team_id, user_id, e

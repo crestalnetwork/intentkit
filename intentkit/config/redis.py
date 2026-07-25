@@ -6,6 +6,15 @@ from redis.asyncio import Redis
 
 logger = logging.getLogger(__name__)
 
+# Socket timeouts are set explicitly rather than inherited. redis-py 7 defaults
+# both to None (block forever), redis-py 8 to 5s; pinning them here keeps the
+# behaviour identical across that bump and bounds a hung connection. Every
+# command this service issues is a small key read/write -- there are no blocking
+# commands (BLPOP/BRPOP/XREAD) anywhere in the codebase -- so 5s is far above
+# the worst legitimate round trip.
+REDIS_SOCKET_TIMEOUT = 5.0
+REDIS_CONNECT_TIMEOUT = 5.0
+
 # Global Redis client instance
 _redis_client: Redis | None = None
 
@@ -18,6 +27,8 @@ async def init_redis(
     ssl: bool = False,
     encoding: str = "utf-8",
     decode_responses: bool = True,
+    socket_timeout: float = REDIS_SOCKET_TIMEOUT,
+    socket_connect_timeout: float = REDIS_CONNECT_TIMEOUT,
 ) -> Redis:
     """Initialize the Redis client.
 
@@ -29,6 +40,8 @@ async def init_redis(
         ssl: Whether to use SSL (default: False)
         encoding: Response encoding (default: utf-8)
         decode_responses: Whether to decode responses (default: True)
+        socket_timeout: Per-command socket timeout in seconds
+        socket_connect_timeout: Connection establishment timeout in seconds
 
     Returns:
         Redis: The initialized Redis client
@@ -49,9 +62,11 @@ async def init_redis(
             ssl=ssl,
             encoding=encoding,
             decode_responses=decode_responses,
+            socket_timeout=socket_timeout,
+            socket_connect_timeout=socket_connect_timeout,
         )
         # Test the connection
-        await _redis_client.ping()  # pyright: ignore[reportGeneralTypeIssues]
+        await _redis_client.ping()
         logger.info("Redis client initialized successfully")
         return _redis_client
     except Exception as e:
