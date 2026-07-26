@@ -41,7 +41,7 @@ export const StringArrayField = ({
     const removeItem = useCallback(
         (index: number) => {
             const next = items.filter((_, i) => i !== index);
-            onChange(next.length > 0 ? next : undefined);
+            onChange(next);
         },
         [items, onChange],
     );

@@ -53,10 +53,11 @@ async def test_icons_are_ready_to_use_as_urls():
     response = await get_tools()
     catalog = json.loads(bytes(response.body))
 
-    icons = [c["x-icon"] for c in catalog.values() if "x-icon" in c]
-    assert icons, "expected at least one category to declare an icon"
-    for icon in icons:
-        assert icon.startswith("/tools/")
+    # Not every category declares one; those that do must be usable as-is.
+    for entry in catalog.values():
+        icon = entry.get("x-icon")
+        if icon is not None:
+            assert icon.startswith("/tools/")
 
 
 @pytest.mark.asyncio

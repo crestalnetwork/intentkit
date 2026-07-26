@@ -30,7 +30,7 @@ export default function NewAgentPage() {
         setIsSubmitting(true);
         setError(null);
         try {
-            const newAgent = await agentApi.create(cleanAgentPayload(values));
+            const newAgent = await agentApi.create(cleanAgentPayload(values, "create"));
             toast({
                 title: "Agent created",
                 description: "Your agent has been created successfully.",

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
@@ -142,10 +142,6 @@ export function validateAgentForm(
         }
     }
 
-    if (values.description && values.description.length > 2000) {
-        errors.description = "Must be at most 2000 characters";
-    }
-
     return errors;
 }
 
@@ -169,20 +165,9 @@ export function AgentForm({
     readOnlyFields = [],
     errors = {},
 }: AgentFormProps) {
-    const [toolCatalogError, setToolCatalogError] = useState<string | null>(null);
-
-    const { data: catalog } = useQuery<ToolCatalog>({
+    const { data: catalog, error: toolCatalogError } = useQuery<ToolCatalog>({
         queryKey: ["tool-catalog"],
-        queryFn: async () => {
-            try {
-                return (await metadataApi.getToolCatalog()) as ToolCatalog;
-            } catch (err) {
-                setToolCatalogError(
-                    err instanceof Error ? err.message : "Failed to load tools",
-                );
-                throw err;
-            }
-        },
+        queryFn: async () => (await metadataApi.getToolCatalog()) as ToolCatalog,
         staleTime: 60 * 60 * 1000,
     });
 
@@ -309,7 +294,8 @@ export function AgentForm({
             <Section title="Tools">
                 {toolCatalogError ? (
                     <p className="mb-4 text-sm text-destructive">
-                        Could not load the tool catalog: {toolCatalogError}
+                        Could not load the tool catalog:{" "}
+                        {(toolCatalogError as Error).message}
                     </p>
                 ) : (
                     <ToolsField

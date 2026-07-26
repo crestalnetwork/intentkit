@@ -61,7 +61,7 @@ export default function EditAgentPage() {
         setIsSubmitting(true);
         setError(null);
         try {
-            await agentApi.patch(resolvedId || agentId, cleanAgentPayload(values));
+            await agentApi.patch(resolvedId || agentId, cleanAgentPayload(values, "edit"));
             toast({
                 title: "Agent updated",
                 description: "Your agent has been updated successfully.",

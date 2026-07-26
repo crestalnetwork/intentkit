@@ -55,8 +55,9 @@ export function ToolsField({
     const selected = new Set(value || []);
 
     const setSelected = (next: Set<string>) => {
-        const names = Array.from(next);
-        onChange(names.length > 0 ? names : undefined);
+        // Always an array, never undefined: the edit payload needs an explicit
+        // empty list to clear the selection server-side.
+        onChange(Array.from(next));
     };
 
     const handleToolToggle = (toolKey: string, enabled: boolean) => {

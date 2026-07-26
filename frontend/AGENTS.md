@@ -5,7 +5,11 @@
 - **Next.js 16+** (App Router, SSR mode — NOT static export)
 - **Shadcn/ui** (components in `src/components/ui/`) + **Tailwind CSS**
 - **TanStack Query v5** for server state
-- **@rjsf** (React JSON Schema Form) for agent config forms
+- Agent config forms are hardcoded field-by-field (`src/app/agent/new/AgentForm.tsx`),
+  not generated from a backend schema. Field labels, help text and validation
+  live there; only the LLM list (`/metadata/llms`) and toolset catalog
+  (`/metadata/tools`) are fetched. Keep the constraints in step with
+  `AgentUpdate` in `intentkit/models/agent/user_input.py`.
 - **Lucide React** for icons
 - Native `fetch` as HTTP client
 - API communication: REST + SSE streaming for chat
