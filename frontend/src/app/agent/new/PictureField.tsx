@@ -60,7 +60,7 @@ export const PictureField = ({
     };
 
     return (
-        <div className="mb-4">
+        <div>
             <div className="flex items-center gap-4">
                 <Avatar className="h-20 w-20">
                     {imageUrl ? (

@@ -1,5 +1,4 @@
 "use client";
-import React from "react";
 import { useQuery } from "@tanstack/react-query";
 import { AdvancedSection } from "./AdvancedSection";
 import { ToolsetCard } from "./ToolsetCard";
@@ -22,8 +21,6 @@ interface ToolsetCatalogEntry {
 export type ToolCatalog = Record<string, ToolsetCatalogEntry>;
 
 interface ToolsFieldProps {
-    label: string;
-    description?: string;
     /** Flat list of enabled tool names -- the value stored on the agent. */
     value: string[] | undefined;
     onChange: (value: string[] | undefined) => void;
@@ -38,8 +35,6 @@ interface ToolsFieldProps {
  * categories and their tools comes from GET /metadata/tools.
  */
 export function ToolsField({
-    label,
-    description,
     value,
     onChange,
     catalog,
@@ -121,13 +116,6 @@ export function ToolsField({
 
     return (
         <div id="tools-field" className="space-y-4">
-            {/* Tools section header */}
-            <div className="mb-2">
-                <label className="block text-base font-bold mb-1">{label}</label>
-                {description && (
-                    <p className="text-xs font-normal text-muted-foreground">{description}</p>
-                )}
-            </div>
             {regularCategories.map(renderCategory)}
             {hasWallets && web3Categories.length > 0 && (
                 <AdvancedSection

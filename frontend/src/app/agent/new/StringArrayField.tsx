@@ -9,19 +9,15 @@ import { X } from "lucide-react";
 interface StringArrayFieldProps {
     id: string;
     value: string[] | undefined;
-    onChange: (value: string[] | undefined) => void;
-    placeholder?: string;
+    onChange: (value: string[]) => void;
     disabled?: boolean;
-    error?: string;
 }
 
 export const StringArrayField = ({
     id,
     value,
     onChange,
-    placeholder,
     disabled,
-    error,
 }: StringArrayFieldProps) => {
     // Memoised so the useCallback deps below keep a stable identity.
     const items = useMemo<string[]>(() => (Array.isArray(value) ? value : []), [value]);
@@ -75,10 +71,10 @@ export const StringArrayField = ({
     };
 
     return (
-        <div className="mb-4">
+        <div>
             <div
                 className={`flex flex-wrap items-center gap-1.5 min-h-[40px] w-full rounded-md border bg-background px-3 py-2 text-sm ring-offset-background focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 ${
-                    error ? "border-destructive" : "border-input"
+                    "border-input"
                 } ${disabled ? "opacity-50 cursor-not-allowed" : "cursor-text"}`}
                 onClick={() => inputRef.current?.focus()}
             >
@@ -108,7 +104,7 @@ export const StringArrayField = ({
                     type="text"
                     value={inputValue}
                     disabled={disabled}
-                    placeholder={items.length === 0 ? (placeholder || "Type and press Enter to add") : ""}
+                    placeholder={items.length === 0 ? "Type and press Enter to add" : ""}
                     className="flex-1 min-w-[120px] bg-transparent outline-hidden placeholder:text-muted-foreground"
                     onChange={(e) => setInputValue(e.target.value)}
                     onKeyDown={handleKeyDown}

@@ -199,10 +199,8 @@ export const ModelSelectField = ({
     setHoveredModel(null);
   };
 
-  const isDisabled = disabled;
-
   return (
-    <div className="mb-4 relative" ref={containerRef}>
+    <div className="relative" ref={containerRef}>
       {/* Trigger button styled like a select */}
       <button
         type="button"
@@ -210,9 +208,9 @@ export const ModelSelectField = ({
         className={`flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-hidden focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 ${
           error ? "border-destructive" : ""
         }`}
-        disabled={isDisabled}
+        disabled={disabled}
         onClick={() => {
-          if (!isDisabled) setIsOpen(!isOpen);
+          if (!disabled) setIsOpen(!isOpen);
         }}
         aria-expanded={isOpen}
         aria-haspopup="listbox"

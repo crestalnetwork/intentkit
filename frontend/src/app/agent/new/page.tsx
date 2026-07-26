@@ -6,7 +6,6 @@ import { agentApi } from "@/lib/api";
 import { ArrowLeft } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import {
-    AGENT_FORM_DEFAULTS,
     AgentForm,
     AgentFormValues,
     validateAgentForm,
@@ -15,7 +14,7 @@ import { cleanAgentPayload } from "./formUtils";
 
 export default function NewAgentPage() {
     const router = useRouter();
-    const [values, setValues] = useState<AgentFormValues>(AGENT_FORM_DEFAULTS);
+    const [values, setValues] = useState<AgentFormValues>({});
     const [errors, setErrors] = useState<
         Partial<Record<keyof AgentFormValues, string>>
     >({});

@@ -1,6 +1,5 @@
 "use client";
 
-import React from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
@@ -51,29 +50,26 @@ export interface AgentFormValues {
     sub_agent_prompt?: string;
 }
 
-/** Fields the create form starts from; the server applies its own defaults. */
-export const AGENT_FORM_DEFAULTS: AgentFormValues = {
-    search_internet: true,
-    enable_activity: true,
-    enable_post: true,
-};
-
-/** Keys this form owns, used to project an API agent onto form state. */
-const FORM_KEYS: (keyof AgentFormValues)[] = [
-    "name",
-    "slug",
-    "picture",
-    "description",
-    "model",
-    "reasoning_effort",
-    "system_prompt",
-    "search_internet",
-    "enable_activity",
-    "enable_post",
-    "tools",
-    "sub_agents",
-    "sub_agent_prompt",
-];
+/** Keys this form owns, used to project an API agent onto form state.
+ *
+ * `satisfies` makes this exhaustive: adding a field to AgentFormValues without
+ * listing it here is a type error, rather than a field the edit form silently
+ * drops. */
+const FORM_KEYS = Object.keys({
+    name: 0,
+    slug: 0,
+    picture: 0,
+    description: 0,
+    model: 0,
+    reasoning_effort: 0,
+    system_prompt: 0,
+    search_internet: 0,
+    enable_activity: 0,
+    enable_post: 0,
+    tools: 0,
+    sub_agents: 0,
+    sub_agent_prompt: 0,
+} satisfies Record<keyof AgentFormValues, unknown>) as (keyof AgentFormValues)[];
 
 /** Reasoning levels are clamped per model server-side (see llm.yaml). */
 const REASONING_EFFORTS = [
@@ -234,14 +230,12 @@ export function AgentForm({
                     id="model"
                     label="AI Model"
                     description="Select the LLM for your agent. Note that each LLM has its specific advantages, behaviour and cost."
-                    error={errors.model}
                 >
                     <ModelSelectField
                         id="model"
                         value={values.model}
                         onChange={(v) => set("model", v)}
                         disabled={isSubmitting}
-                        error={errors.model}
                     />
                 </FieldShell>
                 <SelectField
@@ -298,13 +292,17 @@ export function AgentForm({
                         {(toolCatalogError as Error).message}
                     </p>
                 ) : (
-                    <ToolsField
+                    <FieldShell
+                        id="tools-field"
                         label="Tools"
                         description="List of enabled tool names. Please choose the Agent's tools carefully. Excessive tools will pollute the context and reduce the Agent's intelligence. Only select the necessary tools, and it is best not to exceed 10."
-                        value={values.tools}
-                        onChange={(v) => set("tools", v)}
-                        catalog={catalog ?? {}}
-                    />
+                    >
+                        <ToolsField
+                            value={values.tools}
+                            onChange={(v) => set("tools", v)}
+                            catalog={catalog ?? {}}
+                        />
+                    </FieldShell>
                 )}
                 <FieldShell
                     id="sub_agents"
