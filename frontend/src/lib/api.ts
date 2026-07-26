@@ -48,20 +48,6 @@ export const agentApi = {
   },
 
   /**
-   * Get agent schema for form generation
-   */
-  async getSchema(): Promise<Record<string, unknown>> {
-    const response = await fetch(`${API_BASE}/schema/agent`);
-    if (!response.ok) {
-      throw new Error(`Failed to fetch agent schema: ${response.statusText}`);
-    }
-    const schema = await response.json();
-    // Remove $schema field as AJV doesn't support draft-2020-12
-    delete schema.$schema;
-    return schema;
-  },
-
-  /**
    * Create a new agent
    */
   async create(data: Record<string, unknown>): Promise<AgentResponse> {
@@ -215,6 +201,18 @@ export const metadataApi = {
     const response = await fetch(`${API_BASE}/metadata/llms`);
     if (!response.ok) {
       throw new Error(`Failed to fetch LLM models: ${response.statusText}`);
+    }
+    return response.json();
+  },
+
+  /**
+   * Get the toolset catalog for the agent form's tool picker
+   * GET /metadata/tools
+   */
+  async getToolCatalog(): Promise<Record<string, unknown>> {
+    const response = await fetch(`${API_BASE}/metadata/tools`);
+    if (!response.ok) {
+      throw new Error(`Failed to fetch tool catalog: ${response.statusText}`);
     }
     return response.json();
   },

@@ -1,6 +1,5 @@
 "use client";
 import React from "react";
-import { FieldProps } from "@rjsf/utils";
 import { useQuery } from "@tanstack/react-query";
 import { AdvancedSection } from "./AdvancedSection";
 import { ToolsetCard } from "./ToolsetCard";
@@ -20,14 +19,31 @@ interface ToolsetCatalogEntry {
     tools?: Record<string, ToolInfo>;
 }
 
+export type ToolCatalog = Record<string, ToolsetCatalogEntry>;
+
+interface ToolsFieldProps {
+    label: string;
+    description?: string;
+    /** Flat list of enabled tool names -- the value stored on the agent. */
+    value: string[] | undefined;
+    onChange: (value: string[] | undefined) => void;
+    /** Toolset catalog from GET /metadata/tools. */
+    catalog: ToolCatalog;
+}
+
 /**
- * Custom field for the agent tools list.
+ * Tool picker for the agent form.
  *
- * The form value is a flat list of enabled tool names; the toolset catalog
- * (categories with their tools) comes from the schema's `x-catalog`.
+ * The form value is a flat list of enabled tool names; the catalog of
+ * categories and their tools comes from GET /metadata/tools.
  */
-export function ToolsField(props: FieldProps<string[]>) {
-    const { schema, formData, onChange, idSchema, fieldPathId } = props;
+export function ToolsField({
+    label,
+    description,
+    value,
+    onChange,
+    catalog,
+}: ToolsFieldProps) {
 
     // Web3 toolsets are only selectable when the team owns at least one wallet.
     const { data: wallets } = useQuery({
@@ -36,12 +52,11 @@ export function ToolsField(props: FieldProps<string[]>) {
     });
     const hasWallets = (wallets?.length ?? 0) > 0;
 
-    const catalog = ((schema as Record<string, unknown>)["x-catalog"] ||
-        {}) as Record<string, ToolsetCatalogEntry>;
-    const selected = new Set(formData || []);
+    const selected = new Set(value || []);
 
     const setSelected = (next: Set<string>) => {
-        onChange(Array.from(next), fieldPathId.path);
+        const names = Array.from(next);
+        onChange(names.length > 0 ? names : undefined);
     };
 
     const handleToolToggle = (toolKey: string, enabled: boolean) => {
@@ -104,14 +119,12 @@ export function ToolsField(props: FieldProps<string[]>) {
     };
 
     return (
-        <div id={idSchema?.$id || "tools-field"} className="space-y-4">
+        <div id="tools-field" className="space-y-4">
             {/* Tools section header */}
             <div className="mb-2">
-                {schema.title && (
-                    <label className="block text-base font-bold mb-1">{schema.title}</label>
-                )}
-                {schema.description && (
-                    <p className="text-xs font-normal text-muted-foreground">{schema.description}</p>
+                <label className="block text-base font-bold mb-1">{label}</label>
+                {description && (
+                    <p className="text-xs font-normal text-muted-foreground">{description}</p>
                 )}
             </div>
             {regularCategories.map(renderCategory)}

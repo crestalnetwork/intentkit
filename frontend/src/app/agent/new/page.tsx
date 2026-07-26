@@ -1,47 +1,36 @@
 "use client";
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { useQuery } from "@tanstack/react-query";
-import Form, { IChangeEvent } from "@rjsf/core";
-import { RJSFSchema } from "@rjsf/utils";
 import { agentApi } from "@/lib/api";
-import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
-import { widgets, BaseInputTemplate } from "./widgets";
-import { templates } from "./templates";
-import {
-    SCHEMA_STALE_TIME,
-    validator,
-    fields,
-    onFormError,
-    generateUiSchema,
-    createTransformErrors,
-    cleanToolsData,
-} from "./formUtils";
 import { toast } from "@/hooks/use-toast";
+import {
+    AGENT_FORM_DEFAULTS,
+    AgentForm,
+    AgentFormValues,
+    validateAgentForm,
+} from "./AgentForm";
+import { cleanAgentPayload } from "./formUtils";
 
 export default function NewAgentPage() {
     const router = useRouter();
-    const [formData, setFormData] = useState({});
+    const [values, setValues] = useState<AgentFormValues>(AGENT_FORM_DEFAULTS);
+    const [errors, setErrors] = useState<
+        Partial<Record<keyof AgentFormValues, string>>
+    >({});
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
-    const { data: schema, isLoading: isSchemaLoading, error: schemaError } = useQuery({
-        queryKey: ["agent-schema"],
-        queryFn: agentApi.getSchema,
-        staleTime: SCHEMA_STALE_TIME,
-    });
+    const handleSubmit = async () => {
+        const found = validateAgentForm(values);
+        setErrors(found);
+        if (Object.keys(found).length > 0) return;
 
-    const uiSchema = useMemo(() => generateUiSchema(schema), [schema]);
-
-    const handleSubmit = async ({ formData }: IChangeEvent<Record<string, unknown>>) => {
-        if (!formData) return;
         setIsSubmitting(true);
         setError(null);
         try {
-            const cleanedData = cleanToolsData(formData);
-            const newAgent = await agentApi.create(cleanedData);
+            const newAgent = await agentApi.create(cleanAgentPayload(values));
             toast({
                 title: "Agent created",
                 description: "Your agent has been created successfully.",
@@ -55,31 +44,6 @@ export default function NewAgentPage() {
             setIsSubmitting(false);
         }
     };
-
-    const transformErrors = useMemo(
-        () => createTransformErrors(formData as Record<string, unknown>, schema),
-        [formData, schema]
-    );
-
-    if (isSchemaLoading) {
-        return (
-            <div className="container py-10">
-                <div className="flex justify-center">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900" />
-                </div>
-            </div>
-        );
-    }
-
-    if (schemaError) {
-        return (
-            <div className="container py-10">
-                <div className="text-red-500">
-                    Error loading schema: {(schemaError as Error).message}
-                </div>
-            </div>
-        );
-    }
 
     return (
         <div className="container py-10 max-w-3xl">
@@ -103,26 +67,14 @@ export default function NewAgentPage() {
                         {error}
                     </div>
                 )}
-                <Form
-                    schema={schema as RJSFSchema}
-                    uiSchema={uiSchema}
-                    validator={validator}
-                    formData={formData}
-                    onChange={(e) => setFormData(e.formData || {})}
+                <AgentForm
+                    values={values}
+                    onChange={setValues}
                     onSubmit={handleSubmit}
-                    onError={onFormError}
-                    transformErrors={transformErrors}
-                    className="space-y-6"
-                    widgets={widgets}
-                    fields={fields}
-                    templates={{ ...templates, BaseInputTemplate }}
-                >
-                    <div className="flex justify-end pt-4">
-                        <Button type="submit" disabled={isSubmitting}>
-                            {isSubmitting ? "Creating..." : "Create Agent"}
-                        </Button>
-                    </div>
-                </Form>
+                    isSubmitting={isSubmitting}
+                    submitLabel={isSubmitting ? "Creating..." : "Create Agent"}
+                    errors={errors}
+                />
             </div>
         </div>
     );

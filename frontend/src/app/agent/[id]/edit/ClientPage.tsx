@@ -1,25 +1,17 @@
 "use client";
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
-import Form, { IChangeEvent } from "@rjsf/core";
-import { RJSFSchema } from "@rjsf/utils";
 import { agentApi } from "@/lib/api";
-import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
-import { widgets, BaseInputTemplate } from "../../new/widgets";
-import { templates } from "../../new/templates";
 import {
-    SCHEMA_STALE_TIME,
-    validator,
-    fields,
-    onFormError,
-    generateUiSchema,
-    createTransformErrors,
-    cleanToolsData,
-    filterBySchema,
-} from "../../new/formUtils";
+    AgentForm,
+    AgentFormValues,
+    projectAgentToForm,
+    validateAgentForm,
+} from "../../new/AgentForm";
+import { cleanAgentPayload } from "../../new/formUtils";
 import { toast } from "@/hooks/use-toast";
 import { useAgentSlugRewrite } from "@/hooks/useAgentSlugRewrite";
 
@@ -30,14 +22,15 @@ export default function EditAgentPage() {
 
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [errors, setErrors] = useState<
+        Partial<Record<keyof AgentFormValues, string>>
+    >({});
 
-    const { data: schema, isLoading: isSchemaLoading, error: schemaError } = useQuery({
-        queryKey: ["agent-schema"],
-        queryFn: agentApi.getSchema,
-        staleTime: SCHEMA_STALE_TIME,
-    });
-
-    const { data: agent, isLoading: isAgentLoading, error: agentError } = useQuery({
+    const {
+        data: agent,
+        isLoading: isAgentLoading,
+        error: agentError,
+    } = useQuery({
         queryKey: ["agent-editable", agentId],
         queryFn: () => agentApi.getEditableById(agentId),
         enabled: !!agentId,
@@ -47,33 +40,28 @@ export default function EditAgentPage() {
 
     const resolvedId = agent?.id;
 
-    const [formData, setFormData] = useState<Record<string, unknown>>({});
+    const [values, setValues] = useState<AgentFormValues>({});
 
-    // Populate formData once agent data and schema have loaded (and again if
-    // either reloads). Syncing during render — guarded by the last applied
-    // source — avoids an effect's extra commit + cascading render.
-    const [loadedSource, setLoadedSource] = useState<{
-        agent: unknown;
-        schema: unknown;
-    }>({ agent: undefined, schema: undefined });
-    if (loadedSource.agent !== agent || loadedSource.schema !== schema) {
-        setLoadedSource({ agent, schema });
-        if (agent && schema) {
-            setFormData(
-                filterBySchema(agent, schema)
-            );
+    // Seed form state once the agent has loaded (and again if it reloads).
+    // Syncing during render — guarded by the last applied source — avoids an
+    // effect's extra commit + cascading render.
+    const [loadedAgent, setLoadedAgent] = useState<unknown>(undefined);
+    if (loadedAgent !== agent) {
+        setLoadedAgent(agent);
+        if (agent) {
+            setValues(projectAgentToForm(agent));
         }
     }
 
-    const uiSchema = useMemo(() => generateUiSchema(schema, ["id", "slug"]), [schema]);
+    const handleSubmit = async () => {
+        const found = validateAgentForm(values);
+        setErrors(found);
+        if (Object.keys(found).length > 0) return;
 
-    const handleSubmit = async ({ formData }: IChangeEvent<Record<string, unknown>>) => {
-        if (!formData) return;
         setIsSubmitting(true);
         setError(null);
         try {
-            const cleanedData = cleanToolsData(formData, schema);
-            await agentApi.patch(resolvedId || agentId, cleanedData);
+            await agentApi.patch(resolvedId || agentId, cleanAgentPayload(values));
             toast({
                 title: "Agent updated",
                 description: "Your agent has been updated successfully.",
@@ -88,12 +76,7 @@ export default function EditAgentPage() {
         }
     };
 
-    const transformErrors = useMemo(
-        () => createTransformErrors(formData, schema),
-        [formData, schema]
-    );
-
-    if (isSchemaLoading || isAgentLoading) {
+    if (isAgentLoading) {
         return (
             <div className="container py-10">
                 <div className="flex justify-center">
@@ -103,11 +86,11 @@ export default function EditAgentPage() {
         );
     }
 
-    if (schemaError || agentError) {
+    if (agentError) {
         return (
             <div className="container py-10">
                 <div className="text-red-500">
-                    Error loading data: {(schemaError as Error)?.message || (agentError as Error)?.message}
+                    Error loading data: {(agentError as Error)?.message}
                 </div>
             </div>
         );
@@ -135,26 +118,15 @@ export default function EditAgentPage() {
                         {error}
                     </div>
                 )}
-                <Form
-                    schema={schema as RJSFSchema}
-                    uiSchema={uiSchema}
-                    validator={validator}
-                    formData={formData}
-                    onChange={(e) => setFormData(e.formData || {})}
+                <AgentForm
+                    values={values}
+                    onChange={setValues}
                     onSubmit={handleSubmit}
-                    onError={onFormError}
-                    transformErrors={transformErrors}
-                    className="space-y-6"
-                    widgets={widgets}
-                    fields={fields}
-                    templates={{ ...templates, BaseInputTemplate }}
-                >
-                    <div className="flex justify-end pt-4">
-                        <Button type="submit" disabled={isSubmitting}>
-                            {isSubmitting ? "Saving..." : "Save Changes"}
-                        </Button>
-                    </div>
-                </Form>
+                    isSubmitting={isSubmitting}
+                    submitLabel={isSubmitting ? "Saving..." : "Save Changes"}
+                    readOnlyFields={["slug"]}
+                    errors={errors}
+                />
             </div>
         </div>
     );

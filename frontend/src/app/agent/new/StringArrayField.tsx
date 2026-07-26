@@ -1,5 +1,4 @@
-import React, { useState, useRef, useCallback } from "react";
-import { WidgetProps } from "@rjsf/utils";
+import React, { useState, useRef, useCallback, useMemo } from "react";
 import { X } from "lucide-react";
 
 /**
@@ -7,18 +6,25 @@ import { X } from "lucide-react";
  * Users can type a value and press Enter or comma to add it.
  * Each item is displayed as a removable tag.
  */
-export const StringArrayWidget = (props: WidgetProps) => {
-    const {
-        id,
-        value,
-        disabled,
-        readonly,
-        placeholder,
-        onChange,
-        rawErrors = [],
-    } = props;
+interface StringArrayFieldProps {
+    id: string;
+    value: string[] | undefined;
+    onChange: (value: string[] | undefined) => void;
+    placeholder?: string;
+    disabled?: boolean;
+    error?: string;
+}
 
-    const items: string[] = Array.isArray(value) ? value : [];
+export const StringArrayField = ({
+    id,
+    value,
+    onChange,
+    placeholder,
+    disabled,
+    error,
+}: StringArrayFieldProps) => {
+    // Memoised so the useCallback deps below keep a stable identity.
+    const items = useMemo<string[]>(() => (Array.isArray(value) ? value : []), [value]);
     const [inputValue, setInputValue] = useState("");
     const inputRef = useRef<HTMLInputElement>(null);
 
@@ -72,8 +78,8 @@ export const StringArrayWidget = (props: WidgetProps) => {
         <div className="mb-4">
             <div
                 className={`flex flex-wrap items-center gap-1.5 min-h-[40px] w-full rounded-md border bg-background px-3 py-2 text-sm ring-offset-background focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 ${
-                    rawErrors.length > 0 ? "border-destructive" : "border-input"
-                } ${disabled || readonly ? "opacity-50 cursor-not-allowed" : "cursor-text"}`}
+                    error ? "border-destructive" : "border-input"
+                } ${disabled ? "opacity-50 cursor-not-allowed" : "cursor-text"}`}
                 onClick={() => inputRef.current?.focus()}
             >
                 {items.map((item, index) => (
@@ -82,7 +88,7 @@ export const StringArrayWidget = (props: WidgetProps) => {
                         className="inline-flex items-center gap-1 rounded-md bg-secondary px-2 py-0.5 text-sm text-secondary-foreground"
                     >
                         {item}
-                        {!disabled && !readonly && (
+                        {!disabled && (
                             <button
                                 type="button"
                                 onClick={(e) => {
@@ -101,7 +107,7 @@ export const StringArrayWidget = (props: WidgetProps) => {
                     id={id}
                     type="text"
                     value={inputValue}
-                    disabled={disabled || readonly}
+                    disabled={disabled}
                     placeholder={items.length === 0 ? (placeholder || "Type and press Enter to add") : ""}
                     className="flex-1 min-w-[120px] bg-transparent outline-hidden placeholder:text-muted-foreground"
                     onChange={(e) => setInputValue(e.target.value)}

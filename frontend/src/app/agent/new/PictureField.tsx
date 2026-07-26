@@ -1,13 +1,23 @@
 import React, { useRef, useState } from "react";
-import { WidgetProps } from "@rjsf/utils";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { ImagePlus, Trash2, Loader2 } from "lucide-react";
 import { agentApi } from "@/lib/api";
 import { getImageUrl } from "@/lib/utils";
 
-export const PictureWidget = (props: WidgetProps) => {
-    const { id, value, onChange, disabled, readonly } = props;
+interface PictureFieldProps {
+    id: string;
+    value: string;
+    onChange: (value: string) => void;
+    disabled?: boolean;
+}
+
+export const PictureField = ({
+    id,
+    value,
+    onChange,
+    disabled,
+}: PictureFieldProps) => {
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [isUploading, setIsUploading] = useState(false);
     const [uploadError, setUploadError] = useState<string | null>(null);
@@ -67,7 +77,7 @@ export const PictureWidget = (props: WidgetProps) => {
                             type="button"
                             variant="outline"
                             size="sm"
-                            disabled={disabled || readonly || isUploading}
+                            disabled={disabled || isUploading}
                             onClick={() => fileInputRef.current?.click()}
                         >
                             {isUploading ? (
@@ -87,7 +97,7 @@ export const PictureWidget = (props: WidgetProps) => {
                                 type="button"
                                 variant="ghost"
                                 size="sm"
-                                disabled={disabled || readonly || isUploading}
+                                disabled={disabled || isUploading}
                                 onClick={handleRemove}
                             >
                                 <Trash2 className="mr-2 h-4 w-4" />
@@ -112,7 +122,7 @@ export const PictureWidget = (props: WidgetProps) => {
                 accept="image/jpeg,image/png,image/gif,image/webp"
                 className="hidden"
                 onChange={handleFileSelect}
-                disabled={disabled || readonly}
+                disabled={disabled}
             />
         </div>
     );

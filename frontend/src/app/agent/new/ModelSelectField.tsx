@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState, useRef, useCallback, useEffect, useMemo } from "react";
-import { WidgetProps } from "@rjsf/utils";
 import { useQuery } from "@tanstack/react-query";
 import { metadataApi, LLMModelInfo } from "@/lib/api";
 
@@ -94,18 +93,21 @@ function InfoPanel({ model }: { model: LLMModelInfo }) {
   );
 }
 
-export const ModelSelectWidget = (props: WidgetProps) => {
-  const {
-    id,
-    value,
-    required,
-    disabled,
-    readonly,
-    onChange,
-    onBlur,
-    onFocus,
-    rawErrors = [],
-  } = props;
+interface ModelSelectFieldProps {
+  id: string;
+  value: string | undefined;
+  onChange: (value: string | undefined) => void;
+  disabled?: boolean;
+  error?: string;
+}
+
+export const ModelSelectField = ({
+  id,
+  value,
+  onChange,
+  disabled,
+  error,
+}: ModelSelectFieldProps) => {
 
   const [isOpen, setIsOpen] = useState(false);
   const [hoveredModel, setHoveredModel] = useState<LLMModelInfo | null>(null);
@@ -197,7 +199,7 @@ export const ModelSelectWidget = (props: WidgetProps) => {
     setHoveredModel(null);
   };
 
-  const isDisabled = disabled || readonly;
+  const isDisabled = disabled;
 
   return (
     <div className="mb-4 relative" ref={containerRef}>
@@ -206,15 +208,12 @@ export const ModelSelectWidget = (props: WidgetProps) => {
         type="button"
         id={id}
         className={`flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-hidden focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 ${
-          rawErrors.length > 0 ? "border-destructive" : ""
+          error ? "border-destructive" : ""
         }`}
         disabled={isDisabled}
         onClick={() => {
           if (!isDisabled) setIsOpen(!isOpen);
         }}
-        onFocus={() => onFocus && onFocus(id, value)}
-        onBlur={() => onBlur && onBlur(id, value)}
-        aria-required={required}
         aria-expanded={isOpen}
         aria-haspopup="listbox"
       >
