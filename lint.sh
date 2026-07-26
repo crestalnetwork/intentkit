@@ -25,12 +25,3 @@ uv run lint-imports
 
 echo "Checking dependency declarations..."
 uv run deptry .
-
-echo "Validating the agent JSON schema..."
-# The tool catalog now lives in code (ToolsetMeta + tool classes); the agent
-# model schema is the only JSON schema file left.
-if ! uv run python -c "import json, jsonschema; schema = json.load(open('intentkit/models/agent/schema.json')); jsonschema.Draft7Validator.check_schema(schema)"; then
-    echo "Error: intentkit/models/agent/schema.json is not a valid JSON schema"
-    exit 1
-fi
-echo "Agent JSON schema is valid!"

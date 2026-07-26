@@ -66,7 +66,6 @@ dependencies = [
     "cron-validator>=1.0.8,<2.0.0",
     "epyxid>=0.3.3",
     "filetype>=1.2.0,<2.0.0",
-    "jsonref>=1.1.0",
     "pillow>=11.1.0,<13.0.0",
     "pydantic>=2.10.6",
     "python-dotenv>=1.0.1",
@@ -141,7 +140,6 @@ dev = [
     "deptry>=0.23.0",
     # Local LLM testing
     "langchain-ollama>=1.1,<2",
-    "jsonschema>=4.26.0",
     "basedpyright>=1.39.7",
     "import-linter>=2.11",
 ]

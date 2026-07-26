@@ -1,9 +1,5 @@
 """Tests for the merged system_prompt field validation on AgentUpdate."""
 
-import json
-import re
-from pathlib import Path
-
 import pytest
 from pydantic import ValidationError
 
@@ -51,18 +47,12 @@ class TestSystemPromptValidation:
             )
 
 
-class TestSchemaPatternConsistency:
-    """The hand-written schema.json pattern must agree with the Pydantic
-    validator on representative inputs, so client- and server-side validation
-    don't drift."""
+class TestHeadingRuleCases:
+    """Representative heading shapes the validator must accept or reject.
 
-    @pytest.fixture(scope="class")
-    def schema_pattern(self) -> re.Pattern[str]:
-        schema_path = (
-            Path(__file__).parents[2] / "intentkit" / "models" / "agent" / "schema.json"
-        )
-        schema = json.loads(schema_path.read_text())
-        return re.compile(schema["properties"]["system_prompt"]["pattern"])
+    The frontends hardcode a mirror of this rule (see AgentForm.tsx), so these
+    cases double as the contract that mirror is written against.
+    """
 
     @pytest.mark.parametrize(
         ("text", "allowed"),
@@ -75,11 +65,9 @@ class TestSchemaPatternConsistency:
             ("intro\n# Mid Heading\nbody", False),
         ],
     )
-    def test_pattern_matches_validator(
-        self, schema_pattern: re.Pattern[str], text: str, allowed: bool
+    def test_validator_accepts_only_level2_and_deeper(
+        self, text: str, allowed: bool
     ) -> None:
-        assert bool(schema_pattern.fullmatch(text)) is allowed
-
         if allowed:
             agent = AgentUpdate(name="T", model="gpt-4o-mini", system_prompt=text)
             assert agent.system_prompt == text

@@ -5,8 +5,7 @@ from fastapi import APIRouter
 from fastapi import Path as PathParam
 from fastapi.responses import FileResponse, JSONResponse
 
-from intentkit.core.agent.tool_registry import get_tool_catalog
-from intentkit.models.agent import AGENT_TAG_CATEGORIES, Agent, AgentPublicInfo
+from intentkit.models.agent import AGENT_TAG_CATEGORIES
 from intentkit.utils.error import IntentKitAPIError
 
 _AGENT_PUBLIC_TAGS_PAYLOAD = [
@@ -22,56 +21,6 @@ schema_router = APIRouter()
 
 # Get the project root directory
 PROJECT_ROOT = Path(__file__).parent.parent.parent
-
-
-@schema_router.get("/schema/agent", tags=["Metadata"], operation_id="get_agent_schema")
-async def get_agent_schema() -> JSONResponse:
-    """Get the JSON schema for Agent model with all $ref references resolved.
-
-    This function applies additional adaptations:
-    - Populates the model enum from the in-memory LLM catalog (enabled models only)
-    - Attaches the toolset catalog (x-catalog) filtered to what is available
-      in the current deployment
-    - Removes telegram-related fields
-
-    **Returns:**
-    * `JSONResponse` - The complete JSON schema for the Agent model with application/json content type
-    """
-    schema = await Agent.get_json_schema()
-    properties = schema.get("properties", {})
-
-    # Remove telegram-related fields
-    properties.pop("telegram_entrypoint_enabled", None)
-    properties.pop("telegram_entrypoint_prompt", None)
-    properties.pop("telegram_config", None)
-
-    # Attach the toolset catalog so UIs can render a picker; the config
-    # value itself is just a flat list of tool names.
-    tools_property = properties.get("tools")
-    if tools_property is not None:
-        tools_property["x-catalog"] = get_tool_catalog(available_only=True)
-
-    return JSONResponse(
-        content=schema,
-        media_type="application/json",
-    )
-
-
-@schema_router.get(
-    "/schema/agent-public-info",
-    tags=["Metadata"],
-    operation_id="get_agent_public_info_schema",
-)
-async def get_agent_public_info_schema() -> JSONResponse:
-    """Get the JSON schema for the AgentPublicInfo model.
-
-    Used by team frontends when collecting public info as part of publishing
-    an agent.
-    """
-    return JSONResponse(
-        content=AgentPublicInfo.model_json_schema(),
-        media_type="application/json",
-    )
 
 
 @schema_router.get(

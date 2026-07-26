@@ -1,15 +1,12 @@
 from __future__ import annotations
 
-import asyncio
 import logging
 import textwrap
 import warnings
 from datetime import datetime
 from decimal import Decimal
-from pathlib import Path
 from typing import Annotated, Any, ClassVar
 
-import jsonref
 import yaml
 from pydantic import ConfigDict
 from pydantic import Field as PydanticField
@@ -256,58 +253,3 @@ class Agent(AgentCreate, AgentPublicInfo):
             if item is None:
                 return None
             return cls.model_validate(item)
-
-    @classmethod
-    async def get_json_schema(cls) -> dict[str, Any]:
-        """Get the JSON schema for Agent model with all $ref references resolved.
-
-        Returns:
-            Dict containing the complete JSON schema for the Agent model
-        """
-        # Get the schema file path relative to this file
-        current_dir = Path(__file__).parent
-        agent_schema_path = current_dir / "schema.json"
-
-        base_uri = f"file://{agent_schema_path}"
-
-        # Keep the blocking read off the event loop; lazy_load=False fully
-        # materializes the document so the result is a plain dict.
-        schema: dict[str, Any] = jsonref.loads(  # pyright: ignore[reportAssignmentType]
-            await asyncio.to_thread(agent_schema_path.read_text),
-            base_uri=base_uri,
-            proxies=False,
-            lazy_load=False,
-        )
-
-        # Get the model property from the schema
-        model_property = schema.get("properties", {}).get("model", {})
-
-        # Populate the model enum from the in-memory LLM catalog
-        if model_property:
-            new_enum = []
-
-            for model_info in await LLMModelInfo.get_all():
-                if not model_info.enabled:
-                    continue
-                new_enum.append(model_info.id)
-
-            model_property["enum"] = new_enum
-
-            if new_enum:
-                from intentkit.models.llm_picker import pick_default_model
-
-                try:
-                    default_model = pick_default_model()
-                except RuntimeError:
-                    default_model = new_enum[0]
-                current_default = model_property.get("default")
-                if not current_default or current_default not in new_enum:
-                    if default_model in new_enum:
-                        model_property["default"] = default_model
-                    else:
-                        model_property["default"] = new_enum[0]
-
-        # The toolset catalog (x-catalog on the tools property) is attached
-        # by the API layer (app/common/schema.py): the models layer must
-        # not import intentkit.tools, where the catalog now lives in code.
-        return schema
