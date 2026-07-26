@@ -2,58 +2,49 @@
 
 Frontends hardcode their own form fields, so this endpoint (plus
 ``/metadata/llms``) is the only runtime data they need to render one.
+
+The catalog's *shape* is covered by tests/core/test_tool_registry.py; what is
+specific to the endpoint is that it serves the availability-filtered view, its
+icons are usable as URLs, and it is cacheable.
 """
 
 import json
+from unittest.mock import patch
 
 import pytest
 
 from app.common.metadata import get_tools
 
 
-@pytest.mark.asyncio
-async def test_categories_carry_their_display_metadata():
+async def _catalog() -> dict:
     response = await get_tools()
-    catalog = json.loads(bytes(response.body))
-
-    assert "erc20" in catalog
-    erc20 = catalog["erc20"]
-    assert erc20["title"] == "ERC20"
-    assert erc20["description"]
-    assert isinstance(erc20["x-tags"], list)
+    return json.loads(bytes(response.body))
 
 
 @pytest.mark.asyncio
-async def test_tools_are_listed_with_titles():
-    response = await get_tools()
-    catalog = json.loads(bytes(response.body))
+async def test_serves_the_availability_filtered_catalog():
+    """The endpoint must serve available_only=True, not the full catalog.
 
-    erc20 = catalog["erc20"]
-    assert "erc20_get_balance" in erc20["tools"]
-    assert "erc20_transfer" in erc20["tools"]
-    assert erc20["tools"]["erc20_transfer"]["title"]
+    Patching the registry call is the only way to tell the two apart: in a dev
+    checkout every toolset happens to be available, so comparing live output
+    against get_tool_catalog() would pass either way.
+    """
+    sentinel = {"only_when_filtered": {"title": "X", "description": "", "tools": {}}}
+    with patch(
+        "app.common.metadata.get_tool_catalog", return_value=sentinel
+    ) as mock_catalog:
+        body = await _catalog()
 
-
-@pytest.mark.asyncio
-async def test_web3_flag_is_present_only_where_it_applies():
-    """Pickers group on this flag, so it must reach the frontend."""
-    response = await get_tools()
-    catalog = json.loads(bytes(response.body))
-
-    assert catalog["erc20"]["x-web3"] is True
-    # Web3-themed data toolsets carry the flag too (no wallet semantics).
-    assert catalog["dexscreener"]["x-web3"] is True
-    # Non-web3 categories must not carry the flag at all.
-    assert "x-web3" not in catalog["http"]
+    mock_catalog.assert_called_once_with(available_only=True)
+    assert body == sentinel
 
 
 @pytest.mark.asyncio
 async def test_icons_are_ready_to_use_as_urls():
     """`x-icon` is served as-is by GET /tools/{category}/{name}.{ext}."""
-    response = await get_tools()
-    catalog = json.loads(bytes(response.body))
+    catalog = await _catalog()
 
-    # Not every category declares one; those that do must be usable as-is.
+    # Not every category declares one; those that do must be usable unchanged.
     for entry in catalog.values():
         icon = entry.get("x-icon")
         if icon is not None:
@@ -62,16 +53,7 @@ async def test_icons_are_ready_to_use_as_urls():
 
 @pytest.mark.asyncio
 async def test_response_is_cacheable():
-    """The catalog is fixed for the deployment's lifetime."""
+    """The catalog is built from code and lru_cached, so it is fixed for the
+    lifetime of the deployment."""
     response = await get_tools()
-    assert "max-age" in response.headers["cache-control"]
-
-
-@pytest.mark.asyncio
-async def test_retired_toolsets_are_absent():
-    """Only what this deployment can actually run is offered."""
-    response = await get_tools()
-    catalog = json.loads(bytes(response.body))
-
-    for category, entry in catalog.items():
-        assert entry["tools"], f"{category} was included with no usable tools"
+    assert "max-age=3600" in response.headers["cache-control"]

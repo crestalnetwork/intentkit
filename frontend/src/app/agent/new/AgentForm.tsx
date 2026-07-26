@@ -40,7 +40,7 @@ export interface AgentFormValues {
     picture?: string;
     description?: string;
     model?: string;
-    reasoning_effort?: string;
+    reasoning_effort?: string | null;
     system_prompt?: string;
     search_internet?: boolean;
     enable_activity?: boolean;
@@ -82,10 +82,13 @@ const REASONING_EFFORTS = [
     "max",
 ] as const;
 
-// Level 1 headings are reserved for our own prompt assembly. Mirrors the
-// validators on AgentUpdate.system_prompt / .sub_agent_prompt.
-const NO_H1 = /^(([^#].*)|#[^# ].*|#{2,}[ ].*|$)(\n(([^#].*)|#[^# ].*|#{2,}[ ].*|$))*$/;
-const NO_H1_H2 = /^(([^#].*)|#[^# ].*|#{3,}[ ].*|$)(\n(([^#].*)|#[^# ].*|#{3,}[ ].*|$))*$/;
+// Level 1 (and, for sub-agent prompts, level 2) headings are reserved for our
+// own prompt assembly. Direct ports of _LEVEL1_HEADING / _LEVEL1_LEVEL2_HEADING
+// in intentkit/models/agent/user_input.py -- keep them literally identical. A
+// bare "#" with no trailing space is a legal line, which is why the space is
+// part of the pattern.
+const LEVEL1_HEADING = /^# /m;
+const LEVEL1_LEVEL2_HEADING = /^(# |## )/m;
 
 const SLUG_PATTERN = /^[a-z]([a-z0-9-]*[a-z0-9])?$/;
 
@@ -123,7 +126,7 @@ export function validateAgentForm(
     if (values.system_prompt) {
         if (values.system_prompt.length > 200000) {
             errors.system_prompt = "Must be at most 200000 characters";
-        } else if (!NO_H1.test(values.system_prompt)) {
+        } else if (LEVEL1_HEADING.test(values.system_prompt)) {
             errors.system_prompt =
                 "Level 1 headings (#) are not allowed. Use level 2+ headings (##, ###) instead.";
         }
@@ -132,7 +135,7 @@ export function validateAgentForm(
     if (values.sub_agent_prompt) {
         if (values.sub_agent_prompt.length > 20000) {
             errors.sub_agent_prompt = "Must be at most 20000 characters";
-        } else if (!NO_H1_H2.test(values.sub_agent_prompt)) {
+        } else if (LEVEL1_LEVEL2_HEADING.test(values.sub_agent_prompt)) {
             errors.sub_agent_prompt =
                 "Level 1 and 2 headings (# and ##) are not allowed. Use level 3+ headings (###, ####) instead.";
         }
@@ -243,7 +246,7 @@ export function AgentForm({
                     label="Reasoning Effort"
                     description="How much thinking the model does before answering. Leave unset to use the model's recommended default; the value is automatically adapted to the levels the selected model supports. Higher effort improves hard-task quality but costs more and responds slower."
                     value={values.reasoning_effort ?? ""}
-                    onChange={(v) => set("reasoning_effort", v || undefined)}
+                    onChange={(v) => set("reasoning_effort", v || null)}
                     options={REASONING_EFFORTS.map((e) => ({ value: e, label: e }))}
                     placeholder="Model default"
                     disabled={isSubmitting}
@@ -301,6 +304,7 @@ export function AgentForm({
                             value={values.tools}
                             onChange={(v) => set("tools", v)}
                             catalog={catalog ?? {}}
+                            disabled={isSubmitting}
                         />
                     </FieldShell>
                 )}

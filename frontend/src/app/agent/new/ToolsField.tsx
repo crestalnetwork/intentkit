@@ -26,6 +26,7 @@ interface ToolsFieldProps {
     onChange: (value: string[] | undefined) => void;
     /** Toolset catalog from GET /metadata/tools. */
     catalog: ToolCatalog;
+    disabled?: boolean;
 }
 
 /**
@@ -38,6 +39,7 @@ export function ToolsField({
     value,
     onChange,
     catalog,
+    disabled,
 }: ToolsFieldProps) {
 
     // Web3 toolsets are only selectable when the team owns at least one wallet.
@@ -91,7 +93,7 @@ export function ToolsField({
                 description: toolInfo.description,
                 enabled: selected.has(toolKey),
                 onToggle: (enabled: boolean) =>
-                    handleToolToggle(toolKey, enabled),
+                    disabled ? undefined : handleToolToggle(toolKey, enabled),
             })
         );
 
