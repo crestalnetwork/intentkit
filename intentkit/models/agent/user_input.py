@@ -65,9 +65,6 @@ class AgentUserInput(AgentCore):
         PydanticField(
             default=False,
             description="Whether the agent can play discord bot",
-            json_schema_extra={
-                "x-group": "entrypoint",
-            },
         ),
     ] = False
     discord_config: Annotated[
@@ -75,9 +72,6 @@ class AgentUserInput(AgentCore):
         PydanticField(
             default=None,
             description="Discord integration configuration settings including token, whitelists, and behavior settings",
-            json_schema_extra={
-                "x-group": "entrypoint",
-            },
         ),
     ] = None
     xmtp_entrypoint_prompt: Annotated[
@@ -122,9 +116,6 @@ class AgentUpdate(AgentUserInput):
         PydanticField(
             default=None,
             description="Additional data store for upstream use",
-            json_schema_extra={
-                "x-group": "internal",
-            },
         ),
     ] = None
     extra_prompt: Annotated[

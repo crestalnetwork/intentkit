@@ -1,13 +1,10 @@
 from __future__ import annotations
 
 import logging
-import textwrap
 import warnings
 from datetime import datetime
-from decimal import Decimal
 from typing import Annotated, Any, ClassVar
 
-import yaml
 from pydantic import ConfigDict
 from pydantic import Field as PydanticField
 from sqlalchemy import func, select
@@ -15,7 +12,7 @@ from sqlalchemy import func, select
 from intentkit.config.db import get_session
 from intentkit.models.agent.db import AgentTable
 from intentkit.models.agent.public_info import AgentPublicInfo
-from intentkit.models.agent.user_input import AgentCreate, AgentUpdate
+from intentkit.models.agent.user_input import AgentCreate
 from intentkit.models.credit import CreditAccount
 from intentkit.models.llm import LLMModelInfo
 
@@ -72,15 +69,11 @@ class Agent(AgentCreate, AgentPublicInfo):
     # auto timestamp
     created_at: Annotated[
         datetime,
-        PydanticField(
-            description="Timestamp when the agent was created, will ignore when importing"
-        ),
+        PydanticField(description="Timestamp when the agent was created"),
     ]
     updated_at: Annotated[
         datetime,
-        PydanticField(
-            description="Timestamp when the agent was last updated, will ignore when importing"
-        ),
+        PydanticField(description="Timestamp when the agent was last updated"),
     ]
 
     async def is_model_support_image(self) -> bool:
@@ -89,145 +82,6 @@ class Agent(AgentCreate, AgentPublicInfo):
             return model.supports_image_input
         except Exception:
             return False
-
-    def to_yaml(self) -> str:
-        """
-        Dump the agent model to YAML format with field descriptions as comments.
-        The comments are extracted from the field descriptions in the model.
-        Fields annotated with SkipJsonSchema will be excluded from the output.
-        Only fields from AgentUpdate model are included.
-        Deprecated fields with None or empty values are skipped.
-
-        Returns:
-            str: YAML representation of the agent with field descriptions as comments
-        """
-        data = {}
-        yaml_lines = []
-
-        def wrap_text(text: str, width: int = 80, prefix: str = "# ") -> list[str]:
-            """Wrap text to specified width, preserving existing line breaks."""
-            lines = []
-            for paragraph in text.split("\\n"):
-                if not paragraph:
-                    lines.append(prefix.rstrip())
-                    continue
-                # Use textwrap to wrap each paragraph
-                wrapped = textwrap.wrap(paragraph, width=width - len(prefix))
-                lines.extend(prefix + line for line in wrapped)
-            return lines
-
-        # Get the field names from AgentUpdate model for filtering
-        agent_update_fields = set(AgentUpdate.model_fields.keys())
-
-        for field_name, field in type(self).model_fields.items():
-            logger.debug("Processing field %s with type %s", field_name, field.metadata)
-            # Skip fields that are not in AgentUpdate model
-            if field_name not in agent_update_fields:
-                continue
-
-            # Skip fields with SkipJsonSchema annotation
-            if any(type(item).__name__ == "SkipJsonSchema" for item in field.metadata):
-                continue
-
-            value = getattr(self, field_name)
-
-            # Skip deprecated fields with None or empty values
-            is_deprecated = hasattr(field, "deprecated") and field.deprecated
-            if is_deprecated and not value:
-                continue
-
-            data[field_name] = value
-            # Add comment from field description if available
-            description = field.description
-            if description:
-                if len(yaml_lines) > 0:  # Add blank line between fields
-                    yaml_lines.append("")
-                # Split and wrap description into multiple lines
-                yaml_lines.extend(wrap_text(description))
-
-            # Check if the field is deprecated and add deprecation notice
-            if is_deprecated:
-                # Add deprecation message
-                if hasattr(field, "deprecation_message") and field.deprecation_message:
-                    yaml_lines.extend(
-                        wrap_text(f"Deprecated: {field.deprecation_message}")
-                    )
-                else:
-                    yaml_lines.append("# Deprecated")
-
-            # Check if the field is experimental and add experimental notice
-            if (
-                hasattr(field, "json_schema_extra")
-                and isinstance(field.json_schema_extra, dict)
-                and field.json_schema_extra.get("x-group") == "experimental"
-            ):
-                yaml_lines.append("# Experimental")
-
-            # Format the value based on its type
-            if value is None:
-                yaml_lines.append(f"{field_name}: null")
-            elif isinstance(value, str):
-                if "\\n" in value or len(value) > 60:
-                    # Use block literal style (|) for multiline strings
-                    # Remove any existing escaped newlines and use actual line breaks
-                    value = value.replace("\\\\n", "\\n")
-                    yaml_value = f"{field_name}: |-\\n"
-                    # Indent each line with 2 spaces
-                    yaml_value += "\\n".join(f"  {line}" for line in value.split("\\n"))
-                    yaml_lines.append(yaml_value)
-                else:
-                    # Use flow style for short strings
-                    yaml_value = yaml.dump(
-                        {field_name: value},
-                        default_flow_style=False,
-                        allow_unicode=True,  # This ensures emojis are preserved
-                    )
-                    yaml_lines.append(yaml_value.rstrip())
-            elif isinstance(value, list) and value and hasattr(value[0], "model_dump"):
-                # Handle list of Pydantic models
-                yaml_lines.append(f"{field_name}:")
-                # Convert each Pydantic model to dict
-                model_dicts = [
-                    item.model_dump(exclude_none=True)
-                    for item in value
-                    if hasattr(item, "model_dump")
-                ]
-                # Dump the list of dicts
-                yaml_value = yaml.dump(
-                    model_dicts, default_flow_style=False, allow_unicode=True
-                )
-                # Indent all lines and append to yaml_lines
-                indented_yaml = "\\n".join(
-                    f"  {line}" for line in yaml_value.split("\\n")
-                )
-                yaml_lines.append(indented_yaml.rstrip())
-            elif hasattr(value, "model_dump"):
-                # Handle individual Pydantic model
-                yaml_lines.append(f"{field_name}:")
-                model_dump_func = getattr(value, "model_dump")
-                yaml_value = yaml.dump(
-                    model_dump_func(exclude_none=True),
-                    default_flow_style=False,
-                    allow_unicode=True,
-                )
-                # Indent all lines and append to yaml_lines
-                indented_yaml = "\\n".join(
-                    f"  {line}" for line in yaml_value.split("\\n") if line.strip()
-                )
-                yaml_lines.append(indented_yaml)
-            else:
-                # Handle Decimal and other types
-                if isinstance(value, Decimal):
-                    yaml_lines.append(f"{field_name}: {str(value)}")
-                else:
-                    yaml_value = yaml.dump(
-                        {field_name: value},
-                        default_flow_style=False,
-                        allow_unicode=True,
-                    )
-                    yaml_lines.append(yaml_value.rstrip())
-
-        return "\\n".join(yaml_lines) + "\\n"
 
     @staticmethod
     async def count() -> int:

@@ -12,8 +12,6 @@ from fastapi import (
     Response,
     UploadFile,
 )
-from fastapi.responses import PlainTextResponse
-from pydantic import ValidationError
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -44,7 +42,6 @@ from intentkit.models.agent import (
 )
 from intentkit.models.agent_data import AgentData, AgentDataTable
 from intentkit.utils.error import IntentKitAPIError
-from intentkit.utils.yaml import safe_load
 
 from app.common.upload import validate_and_store_image
 
@@ -323,91 +320,6 @@ async def get_agent_editable(
         content=editable_agent.model_dump_json(),
         media_type="application/json",
     )
-
-
-@agent_router.get(
-    "/agents/{agent_id}/export",
-    tags=["Agent"],
-    operation_id="export_agent",
-)
-async def export_agent(
-    agent_id: str = Path(..., description="ID of the agent to export"),
-) -> Response:
-    """Export agent configuration as YAML.
-
-    **Path Parameters:**
-    * `agent_id` - ID of the agent to export
-
-    **Returns:**
-    * `str` - YAML configuration of the agent
-
-    **Raises:**
-    * `IntentKitAPIError`:
-        - 404: Agent not found
-    """
-    agent = await get_agent_by_id(agent_id)
-    if not agent:
-        raise IntentKitAPIError(
-            status_code=404, key="NotFound", message="Agent not found"
-        )
-    yaml_content = agent.to_yaml()
-    return Response(
-        content=yaml_content,
-        media_type="application/x-yaml",
-        headers={"Content-Disposition": f'attachment; filename="{agent_id}.yaml"'},
-    )
-
-
-@agent_router.put(
-    "/agents/{agent_id}/import",
-    tags=["Agent"],
-    operation_id="import_agent",
-    response_class=PlainTextResponse,
-)
-async def import_agent(
-    agent_id: str = Path(...),
-    file: UploadFile = File(
-        ..., description="YAML file containing agent configuration"
-    ),
-) -> str:
-    """Import agent configuration from YAML file.
-    Only updates existing agents, will not create new ones.
-
-    **Path Parameters:**
-    * `agent_id` - ID of the agent to update
-
-    **Request Body:**
-    * `file` - YAML file containing agent configuration
-
-    **Returns:**
-    * `str` - Success message
-
-    **Raises:**
-    * `IntentKitAPIError`:
-        - 400: Invalid YAML or agent configuration
-        - 404: Agent not found
-        - 500: Server error
-    """
-    # Read and parse YAML
-    content = await file.read()
-    try:
-        yaml_data = safe_load(content)
-    except Exception as e:
-        raise IntentKitAPIError(
-            status_code=400, key="BadRequest", message=f"Invalid YAML format: {e}"
-        )
-
-    # Create Agent instance from YAML
-    try:
-        agent = AgentUpdate.model_validate(yaml_data)
-    except ValidationError as e:
-        raise IntentKitAPIError(400, "BadRequest", f"Invalid agent configuration: {e}")
-
-    # Update-only: override_agent 404s when the agent doesn't exist
-    # (override semantics: unspecified fields reset).
-    _ = await override_agent(agent_id, agent, "admin")
-
-    return "Agent import successful"
 
 
 @agent_router.post(
