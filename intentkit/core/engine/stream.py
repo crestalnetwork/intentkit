@@ -62,7 +62,7 @@ from intentkit.models.chat import (
 from intentkit.models.credit import CreditAccount, OwnerType
 from intentkit.models.llm import LLMModelInfo
 from intentkit.models.user import User
-from intentkit.utils.error import IntentKitAPIError
+from intentkit.utils.error import IntentKitAPIError, describe_provider_error
 
 logger = logging.getLogger(__name__)
 
@@ -642,7 +642,7 @@ async def stream_agent_raw(
     except Exception as e:
         error_traceback = traceback.format_exc()
         logger.error(
-            f"failed to execute agent: {str(e)}\n{error_traceback}",
+            f"failed to execute agent: {str(e)}{describe_provider_error(e)}\n{error_traceback}",
             extra={"thread_id": thread_id, "agent_id": user_message.agent_id},
         )
         yield await _create_system_error_response(

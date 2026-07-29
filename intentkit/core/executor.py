@@ -36,7 +36,11 @@ from intentkit.models.agent_data import AgentData
 from intentkit.models.llm import LLMProvider, create_llm_model
 from intentkit.models.llm_picker import pick_summarize_model
 from intentkit.tools.base import IntentKitTool
-from intentkit.utils.error import IntentKitAPIError
+from intentkit.utils.error import (
+    IntentKitAPIError,
+    http_status_candidates,
+    iter_exception_chain,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -68,22 +72,13 @@ def _should_retry_model_failure(exc: Exception) -> bool:
     retrying; permanent errors (auth, invalid request, context overflow,
     content policy) are not — they propagate to the engine's error handling.
 
-    The exception chain is walked (explicit ``__cause__``, falling back to
-    implicit ``__context__``) because SDKs wrap the telling error: openai/
-    anthropic ``APIConnectionError`` carries the httpx error as ``__cause__``,
-    and langchain-google-genai wraps 4xx ``ClientError`` (429 included) into a
-    ``ChatGoogleGenerativeAIError`` whose status code only survives on the
-    cause. ``status_code``/``code``/``response.status_code`` are duck-typed
-    for the same reason — one filter must cover the openai, anthropic, and
-    google exception families. OpenRouter needs the explicit
-    ``ResponseValidationError`` case below on top of that: a stream truncated
-    mid-body surfaces as a would-be parse failure that status alone cannot
-    tell apart from a genuine, permanent schema mismatch.
+    The chain walk and status duck-typing live in ``utils.error`` (shared
+    with the engine's error logging). OpenRouter needs the explicit
+    ``ResponseValidationError`` case below on top of the status filter: a
+    stream truncated mid-body surfaces as a would-be parse failure that
+    status alone cannot tell apart from a genuine, permanent schema mismatch.
     """
-    cause: BaseException | None = exc
-    seen: set[int] = set()
-    while cause is not None and id(cause) not in seen:
-        seen.add(id(cause))
+    for cause in iter_exception_chain(exc):
         if isinstance(
             cause,
             (
@@ -108,20 +103,11 @@ def _should_retry_model_failure(exc: Exception) -> bool:
                 cause.__cause__, (ValidationError, ValidationErrorV1)
             ):
                 return True
-        candidates = (
-            getattr(cause, "status_code", None),
-            getattr(cause, "code", None),
-            getattr(getattr(cause, "response", None), "status_code", None),
-        )
-        for status in candidates:
+        for status in http_status_candidates(cause):
             if isinstance(status, str) and status.isdigit():
                 status = int(status)
             if isinstance(status, int) and (status in (408, 429) or status >= 500):
                 return True
-        nxt = cause.__cause__
-        if nxt is None and not cause.__suppress_context__:
-            nxt = cause.__context__
-        cause = nxt
     return False
 
 

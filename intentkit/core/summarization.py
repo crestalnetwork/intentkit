@@ -49,6 +49,7 @@ from langgraph.runtime import Runtime
 
 from intentkit.abstracts.graph import AgentContext, AgentState
 from intentkit.models.llm import LLMModelInfo
+from intentkit.utils.error import describe_provider_error
 
 logger = logging.getLogger(__name__)
 
@@ -337,10 +338,11 @@ class SummarizationMiddleware(AgentMiddleware[AgentState, AgentContext]):
                     chunk = [_summary_message(summary), *chunk]
                 summary = await self._summarize_once(chunk)
             return summary
-        except Exception:
+        except Exception as exc:
             logger.exception(
-                "History summarization failed for model %s; keeping full history",
+                "History summarization failed for model %s%s; keeping full history",
                 self.model_info.id,
+                describe_provider_error(exc),
             )
             return None
 
