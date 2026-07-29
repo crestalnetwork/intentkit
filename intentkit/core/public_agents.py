@@ -1,8 +1,27 @@
-"""Sync public agents from YAML files to database on startup.
+"""Sync public agents from Markdown files to database on startup.
 
 This module provides a one-way sync mechanism that reads agent definitions
 from the public_agents/ directory and upserts them into the database.
 Agents are only updated when their content hash changes.
+
+Each definition is a Markdown file with YAML frontmatter: the frontmatter holds
+the agent's configuration, and everything after it is the system prompt. The
+prompt is the overwhelming majority of every file, so it gets to be plain
+Markdown rather than a quoted YAML block scalar.
+
+    ---
+    name: Translator
+    slug: translator
+    ---
+
+    ## Purpose
+
+    ...
+
+Unknown frontmatter keys are rejected rather than ignored: ``AgentUpdate``
+silently drops extras, which is how a removed field (``temperature``) once sat
+in these files unnoticed, and how a typo like ``slugg:`` would quietly fall back
+to the filename.
 """
 
 import asyncio
@@ -96,9 +115,65 @@ async def _warn_if_referenced(agent_id: str, slug: str | None) -> None:
 # Each entry: (slug, AgentUpdate, hash, tags)
 _SyncEntry = tuple[str, AgentUpdate, str, list[str] | None]
 
+# Frontmatter keys that are not AgentUpdate fields but are still ours to read.
+# `tags` lives on AgentTable; the sync applies it separately.
+_EXTRA_FRONTMATTER_KEYS = frozenset({"tags"})
+
+_FRONTMATTER_DELIMITER = "---"
+
+
+def parse_agent_markdown(text: str, *, source: str) -> dict:
+    """Parse one agent definition into a dict of agent fields.
+
+    The document is YAML frontmatter followed by the system prompt::
+
+        ---
+        name: Translator
+        ---
+
+        ## Purpose
+        ...
+
+    Raises ``ValueError`` on anything malformed. Unknown frontmatter keys are an
+    error, not a silent drop -- that is the whole point of parsing strictly here
+    rather than handing the dict straight to ``AgentUpdate``.
+    """
+    lines = text.lstrip("﻿").splitlines()
+    if not lines or lines[0].strip() != _FRONTMATTER_DELIMITER:
+        raise ValueError(f"{source}: must start with a '---' frontmatter block")
+
+    try:
+        closing = next(
+            i
+            for i in range(1, len(lines))
+            if lines[i].strip() == _FRONTMATTER_DELIMITER
+        )
+    except StopIteration:
+        raise ValueError(f"{source}: frontmatter block is never closed") from None
+
+    frontmatter = safe_load("\n".join(lines[1:closing])) or {}
+    if not isinstance(frontmatter, dict):
+        raise ValueError(f"{source}: frontmatter must be a mapping")
+
+    allowed = set(AgentUpdate.model_fields) | _EXTRA_FRONTMATTER_KEYS
+    unknown = sorted(set(frontmatter) - allowed)
+    if unknown:
+        raise ValueError(f"{source}: unknown frontmatter keys: {', '.join(unknown)}")
+    if "system_prompt" in frontmatter:
+        raise ValueError(
+            f"{source}: system_prompt comes from the document body, "
+            "it must not be set in the frontmatter"
+        )
+
+    system_prompt = "\n".join(lines[closing + 1 :]).strip()
+    if not system_prompt:
+        raise ValueError(f"{source}: the body (system prompt) is empty")
+
+    return {**frontmatter, "system_prompt": system_prompt}
+
 
 def _collect_agents_to_sync() -> list[_SyncEntry]:
-    """Scan public_agents/ and parse every YAML file into a sync entry.
+    """Scan public_agents/ and parse every definition into a sync entry.
 
     Runs in a worker thread: the directory walk, the file reads and the pydantic
     validation are all blocking. A file that fails to parse is logged and
@@ -108,22 +183,18 @@ def _collect_agents_to_sync() -> list[_SyncEntry]:
         logger.info("No public_agents directory found, skipping sync")
         return []
 
-    yaml_files = sorted(PUBLIC_AGENTS_DIR.rglob("*.yaml"))
-    if not yaml_files:
-        logger.info("No YAML files found in public_agents/, skipping sync")
+    agent_files = sorted(PUBLIC_AGENTS_DIR.rglob("*.md"))
+    if not agent_files:
+        logger.info("No agent definitions found in public_agents/, skipping sync")
         return []
 
-    logger.info("Syncing %d public agent definitions...", len(yaml_files))
+    logger.info("Syncing %d public agent definitions...", len(agent_files))
 
     entries: list[_SyncEntry] = []
-    for yaml_file in yaml_files:
+    for agent_file in agent_files:
         try:
-            with open(yaml_file) as f:
-                data = safe_load(f)
-            if not data:
-                logger.warning("Empty YAML file: %s", yaml_file.name)
-                continue
-            slug = data.get("slug") or yaml_file.stem
+            data = parse_agent_markdown(agent_file.read_text(), source=agent_file.name)
+            slug = data.get("slug") or agent_file.stem
             agent_update = AgentUpdate.model_validate(data)
             # Hash from validated model ensures consistency with what gets written
             new_hash = agent_update.hash()
@@ -131,14 +202,14 @@ def _collect_agents_to_sync() -> list[_SyncEntry]:
             tags = data.get("tags")
             entries.append((slug, agent_update, new_hash, tags))
         except Exception:
-            logger.exception("Failed to parse public agent from %s", yaml_file.name)
+            logger.exception("Failed to parse public agent from %s", agent_file.name)
     return entries
 
 
 async def sync_public_agents() -> None:
-    """Sync public agent YAML files to the database.
+    """Sync public agent definitions to the database.
 
-    For each YAML file in public_agents/:
+    For each Markdown file in public_agents/:
     - If the agent doesn't exist in DB, create it
     - If the agent exists but content hash differs, update it
     - If the agent exists and hash matches, skip it
@@ -192,7 +263,7 @@ async def sync_public_agents() -> None:
             if not model_available:
                 if existing and existing.archived_at is None:
                     # System-curated agents are exempt from the visibility
-                    # invariants (they define their own YAML world), but
+                    # invariants (they define their own world), but
                     # archiving one may strand user agents that reference it.
                     await _warn_if_referenced(existing.id, existing.slug)
                     existing.archived_at = datetime.now(UTC)
@@ -252,7 +323,7 @@ async def sync_public_agents() -> None:
                 created += 1
                 logger.info("Created public agent: %s (id=%s)", slug, agent_id)
 
-        # Archive predefined agents whose slug is no longer in YAML files
+        # Archive predefined agents whose slug no longer has a definition file
         for agent in all_predefined.values():
             if agent.slug and agent.slug not in syncing_slugs:
                 if agent.archived_at is None:
