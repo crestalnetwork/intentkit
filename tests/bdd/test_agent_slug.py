@@ -275,3 +275,61 @@ async def test_get_agent_by_slug_not_found():
     """
     agent = await get_agent_by_id_or_slug("nonexistent-slug")
     assert agent is None
+
+
+@pytest.mark.bdd
+async def test_patch_endpoint_accepts_a_slug():
+    """
+    Scenario: Saving from a Slug URL
+
+    Given an agent whose edit page has rewritten the address bar to its slug
+    When the frontend PATCHes against that slug
+    Then the update is applied to the right agent
+
+    The endpoint resolves the slug itself: ``patch_agent`` looks up by id only,
+    so passing the path parameter straight through 404s once the URL carries a
+    slug. GET /agents/{agent_id}/editable has always accepted either form.
+    """
+    from fastapi import BackgroundTasks
+
+    from app.local.agent import patch_agent_endpoint
+
+    await create_agent(
+        AgentCreate(
+            id="slug-patch-id",
+            name="Before",
+            model="gpt-4o-mini",
+            slug="patch-by-slug",
+        )
+    )
+
+    await patch_agent_endpoint(
+        BackgroundTasks(),
+        agent_id="patch-by-slug",
+        agent=AgentUpdate(name="After", model="gpt-4o-mini"),
+    )
+
+    agent = await get_agent_by_id_or_slug("slug-patch-id")
+    assert agent is not None
+    assert agent.name == "After"
+
+
+@pytest.mark.bdd
+async def test_patch_endpoint_404s_on_an_unknown_slug():
+    """
+    Scenario: Unknown Slug
+
+    When the frontend PATCHes against a slug that resolves to nothing
+    Then a 404 is raised rather than the request silently doing nothing
+    """
+    from fastapi import BackgroundTasks
+
+    from app.local.agent import patch_agent_endpoint
+
+    with pytest.raises(IntentKitAPIError) as exc:
+        await patch_agent_endpoint(
+            BackgroundTasks(),
+            agent_id="no-such-slug",
+            agent=AgentUpdate(name="X", model="gpt-4o-mini"),
+        )
+    assert exc.value.status_code == 404

@@ -268,10 +268,12 @@ async def patch_agent_endpoint(
     picture_explicitly_set = "picture" in update_fields
     should_backfill_avatar = not picture_explicitly_set and not existing_agent.picture
 
-    latest_agent, agent_data = await patch_agent(agent_id, agent)
+    # get_team_agent accepts a slug; patch_agent and backfill_agent_avatar are
+    # id-only, so hand them the resolved id rather than the path parameter.
+    latest_agent, agent_data = await patch_agent(existing_agent.id, agent)
 
     if should_backfill_avatar:
-        background_tasks.add_task(backfill_agent_avatar, agent_id)
+        background_tasks.add_task(backfill_agent_avatar, existing_agent.id)
 
     agent_response = await AgentResponse.from_agent(latest_agent, agent_data)
     return Response(

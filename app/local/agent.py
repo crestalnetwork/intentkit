@@ -155,7 +155,7 @@ async def override_agent_endpoint(
 )
 async def patch_agent_endpoint(
     background_tasks: BackgroundTasks,
-    agent_id: str = Path(..., description="ID of the agent to patch"),
+    agent_id: str = Path(..., description="ID or slug of the agent to patch"),
     agent: AgentUpdate = Body(AgentUpdate, description="Agent patch configuration"),
 ) -> Response:
     """Patch an existing agent with partial updates.
@@ -164,7 +164,7 @@ async def patch_agent_endpoint(
     other fields will remain unchanged.
 
     **Path Parameters:**
-    * `agent_id` - ID of the agent to patch
+    * `agent_id` - ID or slug of the agent to patch
 
     **Request Body:**
     * `agent` - Agent patch configuration (only include fields to update)
@@ -181,13 +181,20 @@ async def patch_agent_endpoint(
     update_fields = agent.model_dump(exclude_unset=True)
     picture_explicitly_set = "picture" in update_fields
 
-    latest_agent, agent_data = await patch_agent(agent_id, agent)
+    # Accept a slug like the paired GET /agents/{agent_id}/editable does. The
+    # frontend rewrites the address bar to the slug, so after a reload the edit
+    # page saves against one; patch_agent and backfill_agent_avatar are id-only.
+    existing_agent = await get_agent_by_id_or_slug(agent_id)
+    if not existing_agent:
+        raise IntentKitAPIError(404, "NotFound", "Agent not found")
+
+    latest_agent, agent_data = await patch_agent(existing_agent.id, agent)
 
     # backfill_agent_avatar re-reads the row and short-circuits if picture is
     # already set, so we can schedule unconditionally whenever the caller
     # didn't hand us one and skip a hot-path DB round-trip here.
     if not picture_explicitly_set:
-        background_tasks.add_task(backfill_agent_avatar, agent_id)
+        background_tasks.add_task(backfill_agent_avatar, existing_agent.id)
 
     agent_response = await AgentResponse.from_agent(latest_agent, agent_data)
 
