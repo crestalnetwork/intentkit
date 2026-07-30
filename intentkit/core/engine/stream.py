@@ -6,8 +6,6 @@ handlers in ``intentkit.core.engine.chunks``; error handling and checkpoint
 recovery live in ``intentkit.core.engine.recovery``.
 """
 
-# pyright: reportImportCycles=false
-
 import asyncio
 import logging
 import re

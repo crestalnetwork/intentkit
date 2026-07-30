@@ -6,8 +6,6 @@ This module handles:
 - Agent executor lifecycle management
 """
 
-# pyright: reportImportCycles=false
-
 import asyncio
 import importlib
 import logging

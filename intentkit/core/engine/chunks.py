@@ -1,7 +1,5 @@
 """Stream chunk handlers: persist model/tool messages and record expenses."""
 
-# pyright: reportImportCycles=false
-
 import logging
 import textwrap
 from datetime import datetime, timezone
