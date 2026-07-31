@@ -126,24 +126,6 @@
                 }
             }
         ],
-        "./intentkit/models/agent/response.py": [
-            {
-                "code": "reportIncompatibleMethodOverride",
-                "range": {
-                    "startColumn": 8,
-                    "endColumn": 18,
-                    "lineCount": 1
-                }
-            },
-            {
-                "code": "reportIncompatibleMethodOverride",
-                "range": {
-                    "startColumn": 8,
-                    "endColumn": 23,
-                    "lineCount": 1
-                }
-            }
-        ],
         "./intentkit/tools/__init__.py": [
             {
                 "code": "reportUnsupportedDunderAll",

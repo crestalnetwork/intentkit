@@ -41,9 +41,12 @@ dependencies = [
     "langchain-google-genai>=4.2,<5",
     "langchain-anthropic>=1.4,<2",
     "langchain-openrouter>=0.2.5,<1",
-    # >=0.10.8: ChatUsage declares cost/cost_details natively, so the SDK
-    # round-trips OpenRouter usage cost without patching
-    "openrouter>=0.10.8",
+    # Used directly for image generation (tools/image, core/avatar) and for its
+    # typed error classes; chat and usage accounting go through
+    # langchain-openrouter. Deliberately uncapped: langchain-openrouter already
+    # caps it at <1.0.0, so lifting that cap upstream lets us follow the 1.x
+    # line without editing this line.
+    "openrouter>=0.11.46",
     "google-genai>=2.8.0",
     "langgraph>=1.2,<2",
     "langgraph-checkpoint>=4.1,<5",
@@ -75,9 +78,16 @@ dependencies = [
     "apscheduler>=3.11.0",
     # Utilities (direct imports of pydantic/web3 companions)
     "cryptography>=48.0.0",
-    "pydantic-core>=2.46.4",
+    # Declared only because tools/base.py imports PydanticUndefined directly
+    # (deptry DEP003). pydantic pins pydantic-core exactly, so a tight floor
+    # here silently becomes a floor on pydantic itself and can outrank an AI
+    # SDK's own pydantic ceiling — keep it as loose as the API we use allows.
+    "pydantic-core>=2.33.1",
     # MCP (Model Context Protocol)
-    "mcp>=1.0.0",
+    # Capped at <2: the 2026-07-28 spec revision drops the SSE transport and
+    # swaps httpx for httpx2, and clients/mcp/client.py still uses sse_client.
+    # Lift once that client is migrated.
+    "mcp>=1.0.0,<2",
     # Chinese A-share market data (cn_stock tool)
     "akshare>=1.16.0",
     "langfuse>=4.7,<5",
