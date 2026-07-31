@@ -64,7 +64,7 @@ def pick_summarize_model() -> str:
     """Pick the best available summarize model based on configured API keys."""
     order: list[tuple[str, LLMProvider]] = [
         ("gemini-3.5-flash-lite", LLMProvider.GOOGLE),
-        ("deepseek/deepseek-v4-flash", LLMProvider.OPENROUTER),
+        ("deepseek/deepseek-v4-flash-0731", LLMProvider.OPENROUTER),
         ("gpt-5.6-luna", LLMProvider.OPENAI),
         ("grok-4.5", LLMProvider.XAI),
         ("deepseek-v4-flash", LLMProvider.DEEPSEEK),
@@ -117,7 +117,7 @@ def pick_lite_model() -> str:
         ("gemini-3.5-flash-lite", LLMProvider.GOOGLE),
         ("z-ai/glm-4.7-flash", LLMProvider.OPENROUTER),
         ("deepseek-v4-flash", LLMProvider.DEEPSEEK),
-        # Luna is OpenAI's cheapest tier now; pricier than the entries above.
+        # Luna is OpenAI's cheapest tier; glm/deepseek above are still cheaper.
         ("gpt-5.6-luna", LLMProvider.OPENAI),
         ("grok-4.5", LLMProvider.XAI),
         ("MiniMax-M3", LLMProvider.MINIMAX),
@@ -249,7 +249,7 @@ def pick_long_context_model() -> str:
     # Priority order based on cost (cheapest first), one per provider:
     order: list[tuple[str, LLMProvider]] = [
         ("gemini-3.5-flash-lite", LLMProvider.GOOGLE),
-        ("deepseek/deepseek-v4-flash", LLMProvider.OPENROUTER),
+        ("deepseek/deepseek-v4-flash-0731", LLMProvider.OPENROUTER),
         ("deepseek-v4-flash", LLMProvider.DEEPSEEK),
         ("gpt-5.6-luna", LLMProvider.OPENAI),
         ("MiniMax-M3", LLMProvider.MINIMAX),

@@ -195,13 +195,18 @@ def test_csv_loads_cached_input_price_for_claude():
 
 
 def test_csv_cached_input_price_for_deepseek():
-    """DeepSeek V4 Flash (deepseek provider) ships with cache-hit pricing of 0.0028/1M tokens."""
+    """DeepSeek V4 Flash cache-hit pricing is 0.0028/1M on both providers.
+
+    The pinned DeepSeek endpoint on OpenRouter bills the same 0.0028 as the
+    direct API; the catalog once wrongly recorded 0.028 there (a third-party
+    endpoint's rate). Pin both so neither regresses.
+    """
     with patch("intentkit.models.llm.config") as mock_config:
         mock_config.openai_api_key = None
         mock_config.google_api_key = None
         mock_config.deepseek_api_key = "ds-test-key"
         mock_config.xai_api_key = None
-        mock_config.openrouter_api_key = None
+        mock_config.openrouter_api_key = "or-test-key"
         mock_config.minimax_plan_api_key = None
         mock_config.openai_compatible_api_key = None
         mock_config.openai_compatible_base_url = None
@@ -216,6 +221,11 @@ def test_csv_cached_input_price_for_deepseek():
     assert deepseek is not None
     assert deepseek.cached_input_price == Decimal("0.0028")
     assert deepseek.input_price == Decimal("0.14")
+
+    deepseek_or = models.get("openrouter:deepseek/deepseek-v4-flash-0731")
+    assert deepseek_or is not None
+    assert deepseek_or.cached_input_price == Decimal("0.0028")
+    assert deepseek_or.input_price == Decimal("0.14")
 
 
 def test_csv_cached_input_price_for_grok4():
