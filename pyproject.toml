@@ -18,6 +18,10 @@ dependencies = [
     "fastapi>=0.115.8",
     "starlette>=0.47.1",
     "httpx>=0.28.1",
+    # Only for the MCP transports: mcp 2.x is built on httpx2, so the client we
+    # hand to streamable_http_client has to be an httpx2 one. Everything else in
+    # the codebase stays on httpx.
+    "httpx2>=2.5.0",
     "httpcore>=1.0.9",
     "aiohttp>=3.14.0",
     # Database
@@ -84,10 +88,12 @@ dependencies = [
     # SDK's own pydantic ceiling — keep it as loose as the API we use allows.
     "pydantic-core>=2.33.1",
     # MCP (Model Context Protocol)
-    # Capped at <2: the 2026-07-28 spec revision drops the SSE transport and
-    # swaps httpx for httpx2, and clients/mcp/client.py still uses sse_client.
-    # Lift once that client is migrated.
-    "mcp>=1.0.0,<2",
+    # 2.x carries the 2026-07-28 spec revision, but keeps the pre-revision
+    # protocols alongside it (SUPPORTED_PROTOCOL_VERSIONS still spans
+    # 2024-11-05..2026-07-28) and keeps the SSE transport. ClientSession.
+    # initialize() deliberately negotiates LATEST_HANDSHAKE_VERSION, so our
+    # clients stay on the legacy handshake and old servers keep working.
+    "mcp>=2.0.0",
     # Chinese A-share market data (cn_stock tool)
     "akshare>=1.16.0",
     "langfuse>=4.7,<5",

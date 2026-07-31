@@ -6,7 +6,9 @@ from contextlib import asynccontextmanager
 from dataclasses import dataclass
 from typing import Any
 
-import httpx
+# mcp 2.x is built on httpx2, so the client handed to streamable_http_client
+# must be an httpx2 one. The rest of the codebase is on httpx.
+import httpx2
 from mcp import ClientSession
 from mcp.client.sse import sse_client
 from mcp.client.streamable_http import streamable_http_client
@@ -69,7 +71,7 @@ async def _connect(
         # creates itself; a caller-provided one (needed for headers) must be
         # closed by us or its connection pool leaks on every call.
         async with (
-            httpx.AsyncClient(headers=headers, timeout=60) as http_client,
+            httpx2.AsyncClient(headers=headers, timeout=60) as http_client,
             streamable_http_client(url, http_client=http_client) as transport_streams,
             _session_from_streams(transport_streams) as session,
         ):
@@ -89,7 +91,7 @@ async def list_mcp_tools_at(
             McpToolInfo(
                 name=tool.name,
                 description=tool.description or "",
-                input_schema=tool.inputSchema if tool.inputSchema else {},
+                input_schema=tool.input_schema if tool.input_schema else {},
             )
             for tool in result.tools
         ]
@@ -115,7 +117,7 @@ async def call_mcp_tool_at(
         await session.initialize()
         result = await session.call_tool(tool_name, arguments)
 
-        if result.isError:
+        if result.is_error:
             error_text = "\n".join(
                 c.text for c in result.content if isinstance(c, TextContent)
             )
