@@ -229,7 +229,7 @@ def test_csv_cached_input_price_for_deepseek():
 
 
 def test_csv_cached_input_price_for_grok4():
-    """Grok 4.5 should have cached_input_price=0.5."""
+    """Grok 4.5 should have cached_input_price=0.3 (xAI endpoint rate)."""
     with patch("intentkit.models.llm.config") as mock_config:
         mock_config.openai_api_key = None
         mock_config.google_api_key = None
@@ -248,4 +248,4 @@ def test_csv_cached_input_price_for_grok4():
 
     grok4 = models.get("xai:grok-4.5")
     assert grok4 is not None
-    assert grok4.cached_input_price == Decimal("0.5")
+    assert grok4.cached_input_price == Decimal("0.3")

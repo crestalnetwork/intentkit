@@ -146,7 +146,7 @@ def pick_fastest_model() -> str:
     """Pick the lowest-latency model for snappy, simple interactions."""
     order: list[tuple[str, LLMProvider]] = [
         ("gemini-3.5-flash-lite", LLMProvider.GOOGLE),
-        ("qwen/qwen3.6-flash", LLMProvider.OPENROUTER),
+        ("qwen/qwen3.7-flash", LLMProvider.OPENROUTER),
         ("gpt-5.6-luna", LLMProvider.OPENAI),
         ("grok-4.5", LLMProvider.XAI),
         ("deepseek-v4-flash", LLMProvider.DEEPSEEK),

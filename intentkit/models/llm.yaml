@@ -75,10 +75,10 @@
   provider: openrouter
   origin_provider: "alibaba"   # lock OpenRouter upstream
   enabled: true
-  input_price: "2.5"
-  cached_input_price: "0.5"
-  output_price: "7.5"
-  price_level: 4
+  input_price: "1.475"
+  cached_input_price: "0.295"
+  output_price: "4.425"
+  price_level: 3
   context_length: 1000000
   output_length: 131072
   intelligence: 5
@@ -119,9 +119,9 @@
   origin_provider: "minimax/fp8"   # lock OpenRouter upstream
   legacy_ids: ["minimax/minimax-m2-her"]
   enabled: true
-  input_price: "0.6"
-  cached_input_price: "0.12"
-  output_price: "2.4"
+  input_price: "0.3"
+  cached_input_price: "0.06"
+  output_price: "1.2"
   price_level: 2
   context_length: 524288
   output_length: 512000
@@ -140,10 +140,10 @@
   provider: openrouter
   origin_provider: "xiaomi/fp8"   # lock OpenRouter upstream
   enabled: true
-  input_price: "1"
-  cached_input_price: "0.2"
-  output_price: "3"
-  price_level: 3
+  input_price: "0.435"
+  cached_input_price: "0.0036"
+  output_price: "0.87"
+  price_level: 2
   context_length: 1048576
   output_length: 131072
   intelligence: 5
@@ -161,10 +161,10 @@
   provider: openrouter
   origin_provider: "xiaomi/fp8"   # lock OpenRouter upstream
   enabled: true
-  input_price: "0.4"
-  cached_input_price: "0.08"
-  output_price: "2"
-  price_level: 2
+  input_price: "0.14"
+  cached_input_price: "0.0028"
+  output_price: "0.28"
+  price_level: 1
   context_length: 1048576
   output_length: 131072
   intelligence: 4
@@ -181,10 +181,10 @@
   name: "MiMo V2.5 Pro"
   provider: mimo_plan
   enabled: true
-  input_price: "1"
-  cached_input_price: "0.2"
-  output_price: "3"
-  price_level: 3
+  input_price: "0.435"
+  cached_input_price: "0.0036"
+  output_price: "0.87"
+  price_level: 2
   context_length: 1048576
   output_length: 131072
   intelligence: 5
@@ -201,10 +201,10 @@
   name: "MiMo V2.5"
   provider: mimo_plan
   enabled: true
-  input_price: "0.4"
-  cached_input_price: "0.08"
-  output_price: "2"
-  price_level: 2
+  input_price: "0.14"
+  cached_input_price: "0.0028"
+  output_price: "0.28"
+  price_level: 1
   context_length: 1048576
   output_length: 131072
   intelligence: 4
@@ -222,7 +222,9 @@
 - id: "moonshotai/kimi-k3"
   name: "Moonshot Kimi K3"
   provider: openrouter
-  origin_provider: "moonshotai/int4"   # lock OpenRouter upstream
+  # No quantization pin: Moonshot retired its int4 endpoint for mxfp4, and a
+  # stale quant slug with allow_fallbacks=false would fail to route at all.
+  origin_provider: "moonshotai"   # lock OpenRouter upstream
   legacy_ids: ["moonshotai/kimi-k2.6", "moonshotai/kimi-k2.7-code"]
   enabled: true
   input_price: "3"
@@ -241,15 +243,16 @@
   reasoning_levels: ["max"]
   timeout: 300
 
-- id: "qwen/qwen3.6-flash"
-  name: "Qwen3.6 Flash"
+- id: "qwen/qwen3.7-flash"
+  name: "Qwen3.7 Flash"
   provider: openrouter
   origin_provider: "alibaba"   # lock OpenRouter upstream
+  legacy_ids: ["qwen/qwen3.6-flash"]
   enabled: true
-  input_price: "0.25"
-  cached_input_price: null
-  output_price: "1.5"
-  price_level: 2
+  input_price: "0.03"
+  cached_input_price: "0.006"
+  output_price: "0.13"
+  price_level: 1
   context_length: 1000000
   output_length: 65536
   intelligence: 4
@@ -290,9 +293,9 @@
   origin_provider: "z-ai/fp8"   # lock OpenRouter upstream
   legacy_ids: ["z-ai/glm-5.1"]
   enabled: true
-  input_price: "0.84"
-  cached_input_price: "0.156"
-  output_price: "2.64"
+  input_price: "1.4"
+  cached_input_price: "0.26"
+  output_price: "4.4"
   price_level: 3
   context_length: 1048576
   output_length: 131072
@@ -701,7 +704,7 @@
   legacy_ids: ["grok-4.3", "grok-4.20-non-reasoning"]
   enabled: true
   input_price: "2"
-  cached_input_price: "0.5"
+  cached_input_price: "0.3"
   output_price: "6"
   price_level: 3
   context_length: 500000
@@ -724,7 +727,7 @@
   legacy_ids: ["x-ai/grok-4.3", "x-ai/grok-4.20"]
   enabled: true
   input_price: "2"
-  cached_input_price: "0.5"
+  cached_input_price: "0.3"
   output_price: "6"
   price_level: 3
   context_length: 500000
@@ -743,9 +746,9 @@
   name: "MiniMax M3"
   provider: minimax
   enabled: true
-  input_price: "0.6"
-  cached_input_price: "0.12"
-  output_price: "2.4"
+  input_price: "0.3"
+  cached_input_price: "0.06"
+  output_price: "1.2"
   price_level: 2
   context_length: 524288
   output_length: 512000
