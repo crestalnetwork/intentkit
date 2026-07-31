@@ -276,11 +276,8 @@ exclude = ["scripts", "tests", "frontend", "docs", "\\.venv", "\\.claude"]
 
 [tool.deptry.per_rule_ignores]
 # asyncpg/aiosqlite are loaded dynamically by SQLAlchemy as DB drivers;
-# pymdown-extensions is loaded by name through the markdown extension registry;
-# psycopg is never imported directly but is the runtime driver behind
-# psycopg-pool, langgraph's AsyncPostgresSaver, and the postgresql+psycopg://
-# migration URL in config/db.py
-DEP002 = ["asyncpg", "aiosqlite", "pymdown-extensions", "psycopg"]
+# pymdown-extensions is loaded by name through the markdown extension registry
+DEP002 = ["asyncpg", "aiosqlite", "pymdown-extensions"]
 # app/ legitimately uses the app dependency group (deptry treats groups as dev)
 DEP004 = ["sentry_sdk", "jwt"]
 

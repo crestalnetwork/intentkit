@@ -3,6 +3,10 @@
 import logging
 
 from redis.asyncio import Redis
+from redis.exceptions import ConnectionError as RedisConnectionError
+from redis.exceptions import TimeoutError as RedisTimeoutError
+
+from intentkit.utils.readiness import wait_until_ready
 
 logger = logging.getLogger(__name__)
 
@@ -54,7 +58,7 @@ async def init_redis(
 
     try:
         logger.info("Initializing Redis client at %s:%s", host, port)
-        _redis_client = Redis(
+        client = Redis(
             host=host,
             port=port,
             db=db,
@@ -65,10 +69,15 @@ async def init_redis(
             socket_timeout=socket_timeout,
             socket_connect_timeout=socket_connect_timeout,
         )
-        # Test the connection
-        await _redis_client.ping()
+
+        # Test the connection. Services restart in arbitrary order, so Redis
+        # may still be booting; retry instead of failing the start.
+        await wait_until_ready(
+            "Redis", client.ping, (RedisConnectionError, RedisTimeoutError)
+        )
+        _redis_client = client
         logger.info("Redis client initialized successfully")
-        return _redis_client
+        return client
     except Exception as e:
         logger.error("Failed to initialize Redis client: %s", e)
         raise
@@ -119,13 +128,18 @@ async def check_heartbeat(redis_client: Redis, name: str) -> bool:
 
     key = f"intentkit:heartbeat:{name}"
     retries = 3
+    last_exc: Exception | None = None
 
     for attempt in range(retries):
         try:
             exists = await redis_client.exists(key)
             return bool(exists)
         except Exception as e:
-            logger.error(
+            # WARNING per attempt: transient blips must not reach the alert
+            # channel (which forwards ERROR+); only exhausting all retries is
+            # worth an alert.
+            last_exc = e
+            logger.warning(
                 "Error checking heartbeat for %s (attempt %s/%s): %s",
                 name,
                 attempt + 1,
@@ -135,6 +149,9 @@ async def check_heartbeat(redis_client: Redis, name: str) -> bool:
             if attempt < retries - 1:  # Don't sleep on the last attempt
                 await asyncio.sleep(5)  # Wait 5 seconds before retrying
 
+    logger.error(
+        "Heartbeat check for %s failed after %s attempts: %s", name, retries, last_exc
+    )
     return False
 
 

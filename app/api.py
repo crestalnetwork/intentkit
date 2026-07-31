@@ -88,8 +88,9 @@ async def lifespan(app: FastAPI):
     )
 
     # Initialize S3 bucket (Create & Set Public Policy if needed)
-    # This is synchronous but fast enough for startup
-    ensure_bucket_exists_and_public()
+    # Synchronous and may sleep while waiting for the object store to come
+    # up, so run it off the event loop.
+    await asyncio.to_thread(ensure_bucket_exists_and_public)
 
     await ensure_system_user_and_team()
 

@@ -15,9 +15,12 @@ from threading import Thread
 from typing import override
 
 from redis import Redis
+from redis.exceptions import ConnectionError as RedisConnectionError
+from redis.exceptions import TimeoutError as RedisTimeoutError
 
 from intentkit.utils.alert import is_alert_enabled, send_alert
 from intentkit.utils.logging import ContextFilter
+from intentkit.utils.readiness import wait_until_ready_sync
 
 # Global sync Redis client for alert handler
 _sync_redis_client: Redis | None = None
@@ -70,8 +73,14 @@ def init_alert_redis(
         socket_timeout=socket_timeout,
         socket_connect_timeout=socket_connect_timeout,
     )
-    # Test connection
-    _ = _sync_redis_client.ping()
+    # Test the connection. This runs at config-import time — earlier than any
+    # lifespan init — so it is the first Redis touch in every process; wait
+    # for Redis to come up instead of crash-looping on a restart.
+    wait_until_ready_sync(
+        "Redis (alert)",
+        _sync_redis_client.ping,
+        (RedisConnectionError, RedisTimeoutError),
+    )
     return _sync_redis_client
 
 

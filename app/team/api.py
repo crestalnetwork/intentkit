@@ -75,7 +75,9 @@ async def lifespan(app: FastAPI):
         ssl=config.redis_ssl,
     )
 
-    ensure_bucket_exists_and_public()
+    # Synchronous and may sleep while waiting for the object store to come
+    # up, so run it off the event loop.
+    await asyncio.to_thread(ensure_bucket_exists_and_public)
 
     await ensure_system_user_and_team()
 
