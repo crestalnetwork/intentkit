@@ -97,7 +97,7 @@ class DexScreenerBaseTool(IntentKitTool):
                     return None, error_details  # Return API error
 
         except httpx.RequestError as req_err:
-            logger.exception(f"Request error connecting to DexScreener API: {req_err}")
+            logger.exception("Request error connecting to DexScreener API")
             error_details = {
                 "error": "Failed to connect to DexScreener API",
                 "error_type": "connection_error",
@@ -109,7 +109,7 @@ class DexScreenerBaseTool(IntentKitTool):
         except Exception as e:
             # Catch any other unexpected errors during the process
             logger.exception(
-                f"An unexpected error occurred during DexScreener API GET call: {e}"
+                "An unexpected error occurred during DexScreener API GET call"
             )
             status_code = response.status_code if response else None
             error_details = {

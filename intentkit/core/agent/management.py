@@ -212,7 +212,7 @@ async def override_agent(
 
         # update
         update_data = agent.model_dump()
-        if "tools" in update_data and update_data["tools"]:
+        if update_data.get("tools"):
             update_data["tools"] = sanitize_tools(update_data["tools"])
         for key, value in update_data.items():
             setattr(db_agent, key, value)
@@ -264,7 +264,7 @@ async def patch_agent(
 
     # Validate sub-agents if present in update
     update_fields = agent.model_dump(exclude_unset=True)
-    if "sub_agents" in update_fields and update_fields["sub_agents"]:
+    if update_fields.get("sub_agents"):
         await _validate_sub_agents(update_fields["sub_agents"])
 
     # Slug immutability check
@@ -307,7 +307,7 @@ async def patch_agent(
 
         # update
         update_data = update_fields
-        if "tools" in update_data and update_data["tools"]:
+        if update_data.get("tools"):
             update_data["tools"] = sanitize_tools(update_data["tools"])
         for key, value in update_data.items():
             setattr(db_agent, key, value)

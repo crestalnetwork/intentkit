@@ -144,7 +144,7 @@ class ChainLookup(ChainlistBaseTool):
         }
 
         # Add explorers if available
-        if "explorers" in chain and chain["explorers"]:
+        if chain.get("explorers"):
             formatted_chain["explorers"] = [
                 {"name": explorer.get("name", ""), "url": explorer.get("url", "")}
                 for explorer in chain["explorers"][:2]  # Limit to 2 explorers
@@ -203,4 +203,4 @@ class ChainLookup(ChainlistBaseTool):
             }
         except Exception as e:
             logger.error("Error fetching chain data: %s", e)
-            return {"error": f"An error occurred while fetching chain data: {str(e)}"}
+            return {"error": f"An error occurred while fetching chain data: {e!s}"}

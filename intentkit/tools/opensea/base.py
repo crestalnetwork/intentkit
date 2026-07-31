@@ -93,7 +93,7 @@ class OpenSeaApiMixin:
                 "details": str(e),
             }
         except Exception as e:
-            logger.exception("Unexpected error during OpenSea API call: %s", e)
+            logger.exception("Unexpected error during OpenSea API call")
             return None, {
                 "error": "Unexpected error during OpenSea API call",
                 "error_type": "unexpected_error",
@@ -160,7 +160,7 @@ class OpenSeaApiMixin:
                 "details": str(e),
             }
         except Exception as e:
-            logger.exception("Unexpected error during OpenSea API call: %s", e)
+            logger.exception("Unexpected error during OpenSea API call")
             return None, {
                 "error": "Unexpected error during OpenSea API call",
                 "error_type": "unexpected_error",

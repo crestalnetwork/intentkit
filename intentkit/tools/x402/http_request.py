@@ -142,7 +142,7 @@ class X402HttpRequest(X402BaseTool):
                 f"HTTP {exc.response.status_code} - {exc.response.text}"
             ) from exc
         except httpx.RequestError as exc:
-            raise ToolException(f"Failed to connect to {url} - {str(exc)}") from exc
+            raise ToolException(f"Failed to connect to {url} - {exc!s}") from exc
         except (TimeExhausted, Web3RPCError) as exc:
             if isinstance(exc, Web3RPCError):
                 self.alert_prefund_paymaster_gas_shortage(
@@ -160,4 +160,4 @@ class X402HttpRequest(X402BaseTool):
         except ToolException:
             raise
         except Exception as exc:
-            raise ToolException(f"Unexpected error occurred - {str(exc)}") from exc
+            raise ToolException(f"Unexpected error occurred - {exc!s}") from exc

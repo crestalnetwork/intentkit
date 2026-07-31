@@ -17,7 +17,8 @@ Create Date: 2026-07-05 00:00:00.000000
 
 import json
 import logging
-from typing import Any, Sequence, Union
+from collections.abc import Sequence
+from typing import Any
 
 import sqlalchemy as sa
 from alembic import op
@@ -26,9 +27,9 @@ logger = logging.getLogger(__name__)
 
 # revision identifiers, used by Alembic.
 revision: str = "c4e8a1f6d2b9"
-down_revision: Union[str, Sequence[str], None] = "b7f2c9d4a1e8"
-branch_labels: Union[str, Sequence[str], None] = None
-depends_on: Union[str, Sequence[str], None] = None
+down_revision: str | Sequence[str] | None = "b7f2c9d4a1e8"
+branch_labels: str | Sequence[str] | None = None
+depends_on: str | Sequence[str] | None = None
 
 
 # Categories whose legacy state keys differ from the canonical tool names.

@@ -6,7 +6,7 @@ As an IntentKit operator, I want to manage autonomous tasks on a team
 so that the team can execute scheduled actions independently.
 """
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import pytest
 
@@ -140,7 +140,7 @@ async def test_update_autonomous_task_status():
         AutonomousCreateRequest(cron="0 9 * * *", prompt="x"),
     )
 
-    next_run = datetime(2030, 1, 1, tzinfo=timezone.utc)
+    next_run = datetime(2030, 1, 1, tzinfo=UTC)
     updated = await update_autonomous_task_status(
         "auto-team-7", created.id, AutonomousTaskStatus.RUNNING, next_run
     )

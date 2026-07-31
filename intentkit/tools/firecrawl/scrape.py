@@ -307,10 +307,10 @@ class FirecrawlScrape(FirecrawlBaseTool):
                                         formatted_result += "\n## Content Replacement\n"
                                         formatted_result += f"Replaced existing content for URL: {url}\n"
                                         num_preserved_urls = len(
-                                            set(
+                                            {
                                                 doc.metadata.get("source", "")
                                                 for doc in preserved_docs
-                                            )
+                                            }
                                         )
                                         formatted_result += f"Preserved content from {num_preserved_urls} other URLs\n"
                                     else:
@@ -398,7 +398,7 @@ class FirecrawlScrape(FirecrawlBaseTool):
                             f"firecrawl_scrape: Error indexing content: {index_error}"
                         )
                         formatted_result += "\n## Content Indexing\n"
-                        formatted_result += f"Warning: Failed to index content for later querying: {str(index_error)}\n"
+                        formatted_result += f"Warning: Failed to index content for later querying: {index_error!s}\n"
 
                 return formatted_result.strip()
 
@@ -410,5 +410,5 @@ class FirecrawlScrape(FirecrawlBaseTool):
         except ToolException:
             raise
         except Exception as e:
-            logger.exception("firecrawl_scrape: Error scraping URL: %s", e)
-            raise ToolException(f"An error occurred while scraping the URL: {str(e)}")
+            logger.exception("firecrawl_scrape: Error scraping URL")
+            raise ToolException(f"An error occurred while scraping the URL: {e!s}")

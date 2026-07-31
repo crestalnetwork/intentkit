@@ -99,11 +99,11 @@ class IntentKitTool(BaseTool, metaclass=ABCMeta):
                 "AgentContext not available, skipping rate limit for %s",
                 key,
             )
-            return None
+            return
 
         user_identifier = context.user_id or context.agent_id
         if not user_identifier:
-            return None  # No rate limiting when no identifier is available
+            return  # No rate limiting when no identifier is available
 
         try:
             max_requests = int(limit)
@@ -115,10 +115,10 @@ class IntentKitTool(BaseTool, metaclass=ABCMeta):
                 limit,
                 seconds,
             )
-            return None
+            return
 
         if window_seconds <= 0 or max_requests <= 0:
-            return None
+            return
 
         redis = get_redis()
         # Create a unique key for this rate limit and user
@@ -135,7 +135,7 @@ class IntentKitTool(BaseTool, metaclass=ABCMeta):
         if count > max_requests:
             raise RateLimitExceeded(f"Rate limit exceeded for {key}")
 
-        return None
+        return
 
     async def user_rate_limit_by_tool(self, limit: int, seconds: int) -> None:
         """Check if a user has exceeded the rate limit for this specific tool.
@@ -190,10 +190,10 @@ class IntentKitTool(BaseTool, metaclass=ABCMeta):
                 limit,
                 seconds,
             )
-            return None
+            return
 
         if window_seconds <= 0 or max_requests <= 0:
-            return None
+            return
 
         redis = get_redis()
         rate_limit_key = f"rate_limit:{key}"
@@ -206,7 +206,7 @@ class IntentKitTool(BaseTool, metaclass=ABCMeta):
         if count > max_requests:
             raise RateLimitExceeded(f"Global rate limit exceeded for {key}")
 
-        return None
+        return
 
     async def global_rate_limit_by_tool(self, limit: int, seconds: int) -> None:
         """Apply a global rate limit scoped to this specific tool."""

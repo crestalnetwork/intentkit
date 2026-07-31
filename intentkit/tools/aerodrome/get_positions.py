@@ -111,7 +111,7 @@ class AerodromeGetPositions(AerodromeBaseTool):
                         )
                         if entry:
                             positions.append(entry)
-                    except Exception:
+                    except Exception:  # noqa: S112 - expected miss while probing candidates
                         continue
 
             if not positions:

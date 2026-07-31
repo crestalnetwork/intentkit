@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from langchain_core.tools import BaseTool
 
@@ -28,7 +28,7 @@ def get_content_manager_tools() -> Sequence[BaseTool]:
 
 def build_content_manager(team_id: str) -> Agent:
     """Build an in-memory Content Manager sub-agent."""
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
 
     system_prompt = compose_system_prompt(
         purpose="Read and review team activities and posts.",

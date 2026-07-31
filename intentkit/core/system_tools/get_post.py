@@ -50,5 +50,5 @@ class GetPostTool(SystemTool):
         except ToolException:
             raise
         except Exception as e:
-            self.logger.exception("get_post failed: %s", e)
+            self.logger.exception("get_post failed")
             raise ToolException(f"Failed to retrieve post: {e}") from e

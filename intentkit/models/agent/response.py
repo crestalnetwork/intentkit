@@ -82,7 +82,7 @@ class AgentResponse(Agent):
     @classmethod
     async def from_agent(
         cls, agent: Agent, agent_data: AgentData | None = None
-    ) -> "AgentResponse":
+    ) -> AgentResponse:
         """Create an AgentResponse from an Agent instance.
 
         Args:
@@ -99,10 +99,9 @@ class AgentResponse(Agent):
         has_telegram_self_key = bool(
             telegram_config and "token" in telegram_config and telegram_config["token"]
         )
-        if telegram_config and "token" in telegram_config:
-            if agent_data:
-                linked_telegram_username = agent_data.telegram_username
-                linked_telegram_name = agent_data.telegram_name
+        if telegram_config and "token" in telegram_config and agent_data:
+            linked_telegram_username = agent_data.telegram_username
+            linked_telegram_name = agent_data.telegram_name
 
         accept_image_input = await agent.is_model_support_image()
 
@@ -166,7 +165,7 @@ class AgentResponse(Agent):
             data.pop(field, None)
 
         # Convert examples to AgentExample instances if they're dictionaries
-        if "examples" in data and data["examples"]:
+        if data.get("examples"):
             converted_examples = []
             for example in data["examples"]:
                 if isinstance(example, dict):

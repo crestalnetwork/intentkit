@@ -1,3 +1,5 @@
+from typing import Self
+
 import pytest
 
 import intentkit.utils.chain as chain_utils
@@ -43,7 +45,7 @@ class DummyClient:
     def __init__(self, payload: dict[str, list[dict[str, str]]]):
         self._payload = payload
 
-    def __enter__(self) -> "DummyClient":
+    def __enter__(self) -> Self:
         return self
 
     def __exit__(self, exc_type, exc, traceback) -> None:

@@ -6,7 +6,6 @@ from typing import Annotated
 from urllib.parse import quote_plus
 
 from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
-from psycopg import OperationalError
 from psycopg_pool import AsyncConnectionPool
 from pydantic import Field
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, create_async_engine
@@ -59,11 +58,9 @@ async def check_connection(conn):
     Pre-ping function to validate connection health before returning to application.
     This helps handle database restarts and failovers gracefully.
     """
-    try:
-        await conn.execute("SELECT 1")
-    except OperationalError:
-        # Re-raise the exception to let the connection pool know this connection is broken
-        raise
+    # An OperationalError here propagates to the connection pool, which is how
+    # it learns the connection is broken.
+    await conn.execute("SELECT 1")
 
 
 # NOTE: Two separate connection pools are intentionally used here.
@@ -172,14 +169,14 @@ async def init_db(
             )
 
 
-async def get_db() -> AsyncGenerator[AsyncSession, None]:
+async def get_db() -> AsyncGenerator[AsyncSession]:
     assert engine is not None, "Database engine not initialized. Call init_db first."
     async with AsyncSession(engine) as session:
         yield session
 
 
 @asynccontextmanager
-async def get_session() -> AsyncGenerator[AsyncSession, None]:
+async def get_session() -> AsyncGenerator[AsyncSession]:
     """Get a database session using an async context manager.
 
     This function is designed to be used with the 'async with' statement,

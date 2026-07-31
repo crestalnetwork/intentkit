@@ -108,5 +108,5 @@ class FirecrawlQueryIndexedContent(FirecrawlBaseTool):
         except ToolException:
             raise
         except Exception as e:
-            logger.exception("Error in FirecrawlQueryIndexedContent: %s", e)
+            logger.exception("Error in FirecrawlQueryIndexedContent")
             raise ToolException(f"Failed to query indexed content: {e!s}")

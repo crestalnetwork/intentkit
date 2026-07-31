@@ -73,15 +73,15 @@ class ImageUpscale(VeniceImageUpscaleBaseTool):
             if error:
                 raise ToolException(f"Venice Image Upscale API error: {error}")
             return result
-        except ToolException as e:
-            raise e
+        except ToolException:
+            raise
         except Exception as e:
             logger.error("Error in %s: %s", self.name, e)
             raise ToolException(
                 str(
                     {
                         "success": False,
-                        "error": f"An unexpected error occurred: {str(e)}",
+                        "error": f"An unexpected error occurred: {e!s}",
                     }
                 )
             )

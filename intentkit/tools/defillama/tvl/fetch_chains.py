@@ -30,8 +30,6 @@ class FetchChainsInput(BaseModel):
     TVL data for all chains.
     """
 
-    pass
-
 
 class FetchChainsResponse(BaseModel):
     """Response schema for all chains' TVL data."""

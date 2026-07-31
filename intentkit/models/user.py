@@ -25,8 +25,8 @@ class UserRegistry:
     """Registry for extended model classes."""
 
     def __init__(self):
-        self._user_table_class: type["UserTable"] | None = None
-        self._user_model_class: type["User"] | None = None
+        self._user_table_class: type[UserTable] | None = None
+        self._user_model_class: type[User] | None = None
 
     def register_user_table(self, user_table_class: type["UserTable"]) -> None:
         """Register extended UserTable class.

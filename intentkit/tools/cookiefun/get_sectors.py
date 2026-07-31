@@ -13,8 +13,6 @@ from intentkit.tools.cookiefun.constants import DEFAULT_HEADERS, ENDPOINTS
 class GetSectorsInput(BaseModel):
     """Input for GetSectors tool."""
 
-    pass
-
 
 class GetSectors(CookieFunBaseTool):
     """Tool to get all available sectors from the CookieFun API."""

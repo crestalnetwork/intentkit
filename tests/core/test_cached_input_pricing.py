@@ -69,21 +69,21 @@ def test_extract_cached_object_without_attribute():
 def _make_model_info(**overrides: Any) -> LLMModelInfo:
     from datetime import UTC, datetime
 
-    defaults: dict[str, Any] = dict(
-        id="test-model",
-        name="Test Model",
-        provider=LLMProvider.OPENAI,
-        enabled=True,
-        input_price=Decimal("3"),  # $3 per 1M tokens
-        cached_input_price=Decimal("0.3"),  # $0.3 per 1M tokens
-        output_price=Decimal("15"),  # $15 per 1M tokens
-        context_length=100000,
-        output_length=4096,
-        intelligence=5,
-        speed=3,
-        created_at=datetime.now(UTC),
-        updated_at=datetime.now(UTC),
-    )
+    defaults: dict[str, Any] = {
+        "id": "test-model",
+        "name": "Test Model",
+        "provider": LLMProvider.OPENAI,
+        "enabled": True,
+        "input_price": Decimal("3"),  # $3 per 1M tokens
+        "cached_input_price": Decimal("0.3"),  # $0.3 per 1M tokens
+        "output_price": Decimal("15"),  # $15 per 1M tokens
+        "context_length": 100000,
+        "output_length": 4096,
+        "intelligence": 5,
+        "speed": 3,
+        "created_at": datetime.now(UTC),
+        "updated_at": datetime.now(UTC),
+    }
     defaults.update(overrides)
     return LLMModelInfo(**defaults)
 

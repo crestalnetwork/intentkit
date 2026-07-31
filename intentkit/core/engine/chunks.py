@@ -2,7 +2,7 @@
 
 import logging
 import textwrap
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 from epyxid import XID
@@ -72,7 +72,7 @@ def _build_pending_tool_message(
         message="",
         tool_calls=[_lift_tool_call(call) for call in tool_calls],
         pending=True,
-        created_at=datetime.now(timezone.utc),
+        created_at=datetime.now(UTC),
     )
 
 

@@ -599,7 +599,7 @@ async def scrape_and_index_urls(
                         url,
                         fallback_error,
                     )
-                    raise fallback_error
+                    raise
 
             if not documents:
                 logger.warning("[%s] No content extracted from %s", agent_id, url)
@@ -703,7 +703,7 @@ def handle_tool_errors(operation_name: str):
                 return await func(*args, **kwargs)
             except Exception as e:
                 logger.error("Error in %s: %s", operation_name, e)
-                raise ToolException(f"Error {operation_name}: {str(e)}")
+                raise ToolException(f"Error {operation_name}: {e!s}")
 
         return wrapper
 

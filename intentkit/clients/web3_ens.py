@@ -77,7 +77,7 @@ def _networks_for_name(name: str) -> tuple[str, ...]:
     for suffix, networks in _NETWORKS_BY_SUFFIX.items():
         if name.endswith(suffix):
             return networks
-    return tuple()
+    return ()
 
 
 def _requires_poa_middleware(network: str) -> bool:

@@ -214,7 +214,11 @@ async def push_to_team(team_id: str, text: str) -> bool:
                 try:
                     wx_data = WechatChannelData.model_validate(channel_data.data)
                 except Exception:
-                    pass
+                    logger.debug(
+                        "Invalid WeChat channel data for team %s",
+                        team_id,
+                        exc_info=True,
+                    )
             if not wx_data or not wx_data.context_token:
                 logger.warning(
                     "No WeChat context_token for team %s (no messages received yet?)",

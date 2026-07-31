@@ -1,7 +1,7 @@
 """Time utility functions."""
 
 import calendar
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 
 def add_month(dt: datetime) -> datetime:
@@ -18,5 +18,5 @@ def add_month(dt: datetime) -> datetime:
     # Day doesn't exist in next month — go to 1st of month after next
     year2 = year + (month // 12)
     month2 = month % 12 + 1
-    tz = dt.tzinfo or timezone.utc
+    tz = dt.tzinfo or UTC
     return datetime(year2, month2, 1, 0, 0, 0, tzinfo=tz)

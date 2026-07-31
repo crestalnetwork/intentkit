@@ -103,7 +103,7 @@ class ReadWebpageCloudflareTool(SystemTool):
         except ToolException:
             raise
         except Exception as e:
-            logger.exception("read_webpage failed: %s", e)
+            logger.exception("read_webpage failed")
             raise ToolException(f"Failed to read webpage: {e}") from e
 
     async def _fetch_markdown(self, account_id: str, api_token: str, url: str) -> str:

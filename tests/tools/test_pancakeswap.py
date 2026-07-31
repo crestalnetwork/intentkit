@@ -77,13 +77,13 @@ class TestPancakeSwapQuote:
             nonlocal call_count
             call_count += 1
             if call_count == 1:  # fee 100
-                raise Exception("no liquidity")
+                raise RuntimeError("no liquidity")
             elif call_count == 2:  # fee 500
                 return _quoter_call_result(900 * 10**18)
             elif call_count == 3:  # fee 2500
                 return _quoter_call_result(1000 * 10**18)
             else:  # fee 10000
-                raise Exception("no liquidity")
+                raise RuntimeError("no liquidity")
 
         mock_quoter_fn = MagicMock()
         mock_quoter_fn.return_value.call = AsyncMock(side_effect=mock_quote_call)
@@ -852,7 +852,7 @@ class TestPancakeSwapAddLiquidity:
             if receipt_count <= 1:
                 return mint_receipt
             # Staking attempt fails
-            raise Exception("not eligible for farm")
+            raise RuntimeError("not eligible for farm")
 
         wallet.wait_for_receipt = AsyncMock(side_effect=mock_receipt)
 

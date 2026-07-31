@@ -15,6 +15,7 @@ from intentkit.utils.error import IntentKitAPIError
 logger = logging.getLogger(__name__)
 
 _bearer_optional = HTTPBearer(auto_error=False)
+_bearer_required = HTTPBearer()
 
 # Cached JWKS client — reuses fetched keys until they expire
 _jwks_client: PyJWKClient | None = None
@@ -45,7 +46,7 @@ def _get_jwks_client() -> PyJWKClient:
 
 
 async def get_current_user(
-    credentials: HTTPAuthorizationCredentials = Depends(HTTPBearer()),
+    credentials: HTTPAuthorizationCredentials = Depends(_bearer_required),
 ) -> str:
     """Verify Supabase JWT and return the user ID (sub claim).
 

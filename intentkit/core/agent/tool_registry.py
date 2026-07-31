@@ -59,7 +59,7 @@ def _load_catalog() -> dict[str, _CategoryEntry]:
     for module_name in tools_pkg.__all__:
         try:
             module = importlib.import_module(f"intentkit.tools.{module_name}")
-        except Exception:  # already logged by collect_tool_classes' import walk
+        except Exception:  # noqa: S112 - already logged by collect_tool_classes' import walk
             continue
         meta = getattr(module, "toolset", None)
         if isinstance(meta, ToolsetMeta):

@@ -1,5 +1,5 @@
 import logging
-from typing import TYPE_CHECKING, Any, TypeAlias
+from typing import TYPE_CHECKING, Any
 
 from intentkit.models.wallet import TeamWallet, wallet_owner_team
 from intentkit.utils.error import IntentKitAPIError
@@ -32,9 +32,7 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
-WalletProviderType: TypeAlias = (
-    "CdpWalletProvider | NativeWalletProvider | SafeWalletProvider"
-)
+type WalletProviderType = CdpWalletProvider | NativeWalletProvider | SafeWalletProvider
 WalletSignerType = (
     Any  # Can be EvmLocalAccount, NativeWalletSigner, or PrivyWalletSigner
 )

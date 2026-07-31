@@ -3,6 +3,7 @@ from datetime import datetime
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+from pydantic import ValidationError
 
 from intentkit.core.system_tools.create_post import (
     CreatePostInput,
@@ -160,7 +161,7 @@ def test_create_post_input_validation():
     )
 
     # Test invalid slug (bad chars)
-    with pytest.raises(Exception):
+    with pytest.raises(ValidationError):
         CreatePostInput(
             title="Valid Title",
             markdown="Content",
@@ -170,7 +171,7 @@ def test_create_post_input_validation():
         )
 
     # Test invalid excerpt (too long)
-    with pytest.raises(Exception):
+    with pytest.raises(ValidationError):
         CreatePostInput(
             title="Valid Title",
             markdown="Content",
@@ -180,7 +181,7 @@ def test_create_post_input_validation():
         )
 
     # Test invalid tags (too many)
-    with pytest.raises(Exception):
+    with pytest.raises(ValidationError):
         CreatePostInput(
             title="Valid Title",
             markdown="Content",

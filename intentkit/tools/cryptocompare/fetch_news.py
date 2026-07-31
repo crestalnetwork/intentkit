@@ -60,7 +60,7 @@ class CryptoCompareFetchNews(CryptoCompareBaseTool):
 
             # Convert to list of CryptoNews objects
             result = []
-            if "Data" in news_data and news_data["Data"]:
+            if news_data.get("Data"):
                 for article in news_data["Data"]:
                     result.append(
                         CryptoNews(

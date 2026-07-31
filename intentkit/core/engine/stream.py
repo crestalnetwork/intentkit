@@ -603,7 +603,7 @@ async def stream_agent_raw(
             )
         )
         return
-    except (httpx.TimeoutException, httpcore.ReadTimeout, asyncio.TimeoutError):
+    except (TimeoutError, httpx.TimeoutException, httpcore.ReadTimeout):
         logger.error(
             f"Agent request timed out for {user_message.agent_id}",
             extra={"thread_id": thread_id},
@@ -617,7 +617,7 @@ async def stream_agent_raw(
     except SQLAlchemyError as e:
         error_traceback = traceback.format_exc()
         logger.error(
-            f"failed to execute agent: {str(e)}\n{error_traceback}",
+            f"failed to execute agent: {e!s}\n{error_traceback}",
             extra={"thread_id": thread_id},
         )
         yield await _create_system_error_response(
@@ -640,7 +640,7 @@ async def stream_agent_raw(
     except Exception as e:
         error_traceback = traceback.format_exc()
         logger.error(
-            f"failed to execute agent: {str(e)}{describe_provider_error(e)}\n{error_traceback}",
+            f"failed to execute agent: {e!s}{describe_provider_error(e)}\n{error_traceback}",
             extra={"thread_id": thread_id, "agent_id": user_message.agent_id},
         )
         yield await _create_system_error_response(

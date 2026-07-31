@@ -9,6 +9,16 @@ class WebScraperBaseTool(IntentKitTool):
 
     category: str = "web_scraper"
 
+    def agent_id_for_log(self) -> str:
+        """Best-effort agent id for error-log labels; falls back to UNKNOWN."""
+        try:
+            context = self.get_context()
+            if context and context.agent_id:
+                return context.agent_id
+        except Exception:  # noqa: S110 - label lookup must never mask the real error
+            pass
+        return "UNKNOWN"
+
     def get_openai_api_key(self) -> str:
         """Retrieve the OpenAI API key for embedding operations."""
         if not config.openai_api_key:

@@ -1,10 +1,10 @@
 import logging
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from datetime import UTC, datetime
 from decimal import ROUND_HALF_UP, Decimal
 from enum import Enum
 from pathlib import Path
-from typing import Annotated, Any, Callable, ClassVar, Literal, get_args
+from typing import Annotated, Any, ClassVar, Literal, get_args, override
 
 from langchain_core.language_models import LanguageModelInput
 from langchain_core.language_models.chat_models import BaseChatModel
@@ -13,7 +13,6 @@ from langchain_core.outputs import ChatResult
 from langchain_core.runnables import Runnable
 from langchain_core.tools import BaseTool
 from pydantic import BaseModel, ConfigDict, Field, field_serializer
-from typing_extensions import override
 
 from intentkit.config.config import config
 from intentkit.models.app_setting import AppSetting
@@ -750,12 +749,8 @@ class XAILLM(LLMModel):
                             }
                         ]
                         # if no tools left, reset finish_reason
-                        if not message.tool_calls:
-                            if (
-                                hasattr(generation, "generation_info")
-                                and generation.generation_info
-                            ):
-                                generation.generation_info["finish_reason"] = "stop"
+                        if not message.tool_calls and generation.generation_info:
+                            generation.generation_info["finish_reason"] = "stop"
                 return result
 
             @override
@@ -784,12 +779,8 @@ class XAILLM(LLMModel):
                             }
                         ]
                         # if no tools left, reset finish_reason
-                        if not message.tool_calls:
-                            if (
-                                hasattr(generation, "generation_info")
-                                and generation.generation_info
-                            ):
-                                generation.generation_info["finish_reason"] = "stop"
+                        if not message.tool_calls and generation.generation_info:
+                            generation.generation_info["finish_reason"] = "stop"
                 return result
 
         return ChatXAIAdapter(**kwargs)
@@ -1085,4 +1076,4 @@ try:
 
     set_generation_cost_resolver(_resolve_generation_cost)
 except Exception:  # pragma: no cover - tracing is optional
-    pass
+    logger.debug("Tracing unavailable; generation cost resolver not registered")

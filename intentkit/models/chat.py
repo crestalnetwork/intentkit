@@ -391,7 +391,7 @@ class ChatMessageCreate(BaseModel):
         """
         return self.thread_type or self.author_type
 
-    async def save_in_session(self, db: AsyncSession) -> "ChatMessage":
+    async def save_in_session(self, db: AsyncSession) -> ChatMessage:
         """Save the chat message to the database.
 
         Returns:
@@ -406,7 +406,7 @@ class ChatMessageCreate(BaseModel):
         await db.refresh(message_record)
         return ChatMessage.model_validate(message_record)
 
-    async def save(self) -> "ChatMessage":
+    async def save(self) -> ChatMessage:
         """Save the chat message to the database.
 
         Returns:
@@ -428,7 +428,7 @@ class ChatMessageCreate(BaseModel):
         thread_type: AuthorType,
         reply_to: str,
         time_cost: float = 0.0,
-    ) -> "ChatMessageCreate":
+    ) -> ChatMessageCreate:
         """Create a system message.
 
         Returns:
@@ -541,7 +541,7 @@ class ChatMessage(ChatMessageCreate):
 
         return resp
 
-    def sanitize_privacy(self) -> "ChatMessage":
+    def sanitize_privacy(self) -> ChatMessage:
         """Remove sensitive information from the chat message.
 
         This method clears the tool parameters and response
@@ -651,7 +651,7 @@ class ChatCreate(BaseModel):
     summary: Annotated[str, Field("", description="Summary of the chat")]
     rounds: Annotated[int, Field(0, description="Number of rounds in the chat")]
 
-    async def save(self) -> "Chat":
+    async def save(self) -> Chat:
         """Create a new chat in the database.
 
         Returns:
@@ -733,7 +733,7 @@ class Chat(ChatCreate):
             # Update local object
             self.rounds += 1
 
-    async def update_summary(self, summary: str) -> "Chat":
+    async def update_summary(self, summary: str) -> Chat:
         """Update the chat summary in the database.
 
         Uses a direct SQL UPDATE statement to set the summary field.
@@ -756,7 +756,7 @@ class Chat(ChatCreate):
             return self
 
     @classmethod
-    async def get_by_agent_user(cls, agent_id: str, user_id: str) -> list["Chat"]:
+    async def get_by_agent_user(cls, agent_id: str, user_id: str) -> list[Chat]:
         """Get all chats for a specific agent and user.
 
         Args:

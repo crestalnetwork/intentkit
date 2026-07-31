@@ -1,6 +1,6 @@
 """Unit tests for the team-scoped autonomous core service."""
 
-from datetime import UTC, datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from decimal import Decimal
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock, patch
@@ -31,48 +31,48 @@ from intentkit.utils.error import IntentKitAPIError
 
 
 def _fake_row(**overrides):
-    base = dict(
-        id="task-1",
-        team_id="team-1",
-        target_agent_id=None,
-        created_by=None,
-        name=None,
-        description=None,
-        cron="*/5 * * * *",
-        prompt="p",
-        enabled=True,
-        status="waiting",
-        next_run_time=None,
-        created_at=None,
-        updated_at=None,
-    )
+    base = {
+        "id": "task-1",
+        "team_id": "team-1",
+        "target_agent_id": None,
+        "created_by": None,
+        "name": None,
+        "description": None,
+        "cron": "*/5 * * * *",
+        "prompt": "p",
+        "enabled": True,
+        "status": "waiting",
+        "next_run_time": None,
+        "created_at": None,
+        "updated_at": None,
+    }
     base.update(overrides)
     return SimpleNamespace(**base)
 
 
 def _fake_execution_row(**overrides):
-    base = dict(
-        id="exec-1",
-        task_id="task-1",
-        team_id="team-1",
-        agent_id="agent-x",
-        target_agent_id="agent-x",
-        chat_id="autonomous-task-1",
-        message_id="msg-1",
-        trigger="cron",
-        triggered_by=None,
-        status="running",
-        error=None,
-        result=None,
-        input_tokens=0,
-        output_tokens=0,
-        cached_input_tokens=0,
-        credit_cost=None,
-        message_count=0,
-        cold_start_cost=0.0,
-        started_at=datetime.now(UTC),
-        finished_at=None,
-    )
+    base = {
+        "id": "exec-1",
+        "task_id": "task-1",
+        "team_id": "team-1",
+        "agent_id": "agent-x",
+        "target_agent_id": "agent-x",
+        "chat_id": "autonomous-task-1",
+        "message_id": "msg-1",
+        "trigger": "cron",
+        "triggered_by": None,
+        "status": "running",
+        "error": None,
+        "result": None,
+        "input_tokens": 0,
+        "output_tokens": 0,
+        "cached_input_tokens": 0,
+        "credit_cost": None,
+        "message_count": 0,
+        "cold_start_cost": 0.0,
+        "started_at": datetime.now(UTC),
+        "finished_at": None,
+    }
     base.update(overrides)
     return SimpleNamespace(**base)
 
@@ -249,7 +249,7 @@ async def test_update_status_single_row():
     try:
         row = _fake_row(team_id="team-1")
         session.get = AsyncMock(return_value=row)
-        ts = datetime(2026, 1, 1, tzinfo=timezone.utc)
+        ts = datetime(2026, 1, 1, tzinfo=UTC)
         result = await update_autonomous_task_status(
             "team-1", "task-1", AutonomousTaskStatus.RUNNING, ts
         )
@@ -304,15 +304,15 @@ async def test_delete_task_removes_execution_history():
 
 
 def _new_execution(**overrides):
-    base = dict(
-        id="exec-1",
-        task_id="task-1",
-        team_id="team-1",
-        agent_id="agent-x",
-        target_agent_id="agent-x",
-        chat_id="autonomous-task-1",
-        message_id="msg-1",
-    )
+    base = {
+        "id": "exec-1",
+        "task_id": "task-1",
+        "team_id": "team-1",
+        "agent_id": "agent-x",
+        "target_agent_id": "agent-x",
+        "chat_id": "autonomous-task-1",
+        "message_id": "msg-1",
+    }
     base.update(overrides)
     return AutonomousExecution.model_validate(base)
 

@@ -55,8 +55,8 @@ def get_carv_tool(name: str) -> CarvBaseTool | None:
         instance = tool_class()  # pyright: ignore[reportCallIssue]
         _cache[name] = instance
         return instance
-    except Exception as e:
-        logger.exception("Failed to instantiate Carv tool '%s': %s", name, e)
+    except Exception:
+        logger.exception("Failed to instantiate Carv tool '%s'", name)
         return None
 
 

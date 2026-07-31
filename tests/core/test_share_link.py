@@ -77,7 +77,7 @@ async def test_create_share_link_reuses_fresh_link(monkeypatch):
 @pytest.mark.asyncio
 async def test_create_share_link_creates_new_when_below_half_ttl(monkeypatch):
     # No row past the reuse_threshold -> scalar_one_or_none returns None
-    session, refreshed = _install_session(monkeypatch, existing_row=None)
+    session, _refreshed = _install_session(monkeypatch, existing_row=None)
 
     link = await create_share_link(
         ShareLinkTargetType.POST,

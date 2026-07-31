@@ -83,8 +83,6 @@ class AgentPostBase(BaseModel):
 class AgentPostCreate(AgentPostBase):
     """Model for creating an AgentPost."""
 
-    pass
-
 
 class AgentPost(AgentPostBase):
     """Model for a full AgentPost."""
@@ -195,7 +193,7 @@ class AgentPostBrief(BaseModel):
     ]
 
     @classmethod
-    def from_table(cls, table: "AgentPostTable") -> "AgentPostBrief":
+    def from_table(cls, table: AgentPostTable) -> AgentPostBrief:
         """Create a brief post from a table row, truncating markdown to 500 chars."""
         excerpt = table.excerpt
         if excerpt is None:

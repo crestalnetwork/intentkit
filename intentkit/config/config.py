@@ -2,7 +2,7 @@ import json
 import logging
 import os
 from decimal import Decimal, InvalidOperation
-from typing import TypeAlias, TypedDict, overload
+from typing import TypedDict, overload
 
 from dotenv import load_dotenv
 
@@ -11,7 +11,7 @@ from intentkit.utils.alert_handler import setup_alert_handler
 from intentkit.utils.chain import ChainProvider, QuicknodeChainProvider
 from intentkit.utils.logging import setup_logging
 
-SecretsMap: TypeAlias = dict[str, str | int]
+type SecretsMap = dict[str, str | int]
 
 
 class DatabaseConfig(TypedDict):

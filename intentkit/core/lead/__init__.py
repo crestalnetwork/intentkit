@@ -16,10 +16,10 @@ from intentkit.core.lead.service import (
 __all__ = [
     "execute_lead",
     "get_lead_agent",
-    "invalidate_lead_cache",
-    "stream_lead",
     "get_team_agents",
     "get_team_with_members",
+    "invalidate_lead_cache",
+    "stream_lead",
     "verify_agent_in_team",
     "verify_team_membership",
 ]

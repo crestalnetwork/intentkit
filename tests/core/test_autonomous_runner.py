@@ -18,16 +18,16 @@ MODULE = "app.entrypoints.autonomous"
 
 
 def _msg(author_type=AuthorType.AGENT, message="done", **overrides):
-    base = dict(
-        author_type=author_type,
-        message=message,
-        credit_cost=None,
-        tool_calls=None,
-        input_tokens=0,
-        output_tokens=0,
-        cached_input_tokens=0,
-        cold_start_cost=0.0,
-    )
+    base = {
+        "author_type": author_type,
+        "message": message,
+        "credit_cost": None,
+        "tool_calls": None,
+        "input_tokens": 0,
+        "output_tokens": 0,
+        "cached_input_tokens": 0,
+        "cold_start_cost": 0.0,
+    }
     base.update(overrides)
     return SimpleNamespace(**base)
 

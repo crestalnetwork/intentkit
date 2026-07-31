@@ -4,6 +4,7 @@ import os
 
 import pytest
 import pytest_asyncio
+from langchain_core.tools.base import ToolException
 from web3 import AsyncWeb3
 
 from intentkit.tools.aerodrome.constants import (
@@ -77,7 +78,7 @@ def test_convert_amount():
 
 def test_convert_amount_rejects_zero():
     """convert_amount should reject zero or negative amounts."""
-    with pytest.raises(Exception):
+    with pytest.raises(ToolException):
         convert_amount("0", 6)
 
 
@@ -178,8 +179,7 @@ async def test_aerodrome_quote_usdc_weth(w3: AsyncWeb3):
                 )
             ).call()
             amount_out = result[0]
-            if amount_out > best_out:
-                best_out = amount_out
+            best_out = max(best_out, amount_out)
         except Exception:
             continue
 
@@ -216,7 +216,7 @@ async def test_aerodrome_quote_result_fields(w3: AsyncWeb3):
 
     assert result is not None
     assert len(result) == 4
-    amount_out, sqrt_price_after, ticks_crossed, gas_estimate = result
+    amount_out, sqrt_price_after, _ticks_crossed, gas_estimate = result
     assert amount_out > 0
     assert sqrt_price_after > 0
     assert gas_estimate > 0

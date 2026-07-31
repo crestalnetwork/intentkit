@@ -38,16 +38,16 @@ def _make_session_mock():
 
 def _make_existing_agent(**overrides):
     """Return a MagicMock that looks like an Agent returned by get_agent."""
-    defaults = dict(
-        id="agent-1",
-        owner="owner-1",
-        slug="my-slug",
-        system_prompt="## Purpose\n\nsome purpose",
-        team_id=None,
-        visibility=None,
-        archived_at=None,
-        sub_agents=None,
-    )
+    defaults = {
+        "id": "agent-1",
+        "owner": "owner-1",
+        "slug": "my-slug",
+        "system_prompt": "## Purpose\n\nsome purpose",
+        "team_id": None,
+        "visibility": None,
+        "archived_at": None,
+        "sub_agents": None,
+    }
     defaults.update(overrides)
     agent = MagicMock()
     for k, v in defaults.items():
@@ -224,7 +224,7 @@ class TestOverrideAgent:
 
         with patch("intentkit.models.agent.Agent.model_validate") as mock_validate:
             mock_validate.return_value = _make_existing_agent()
-            result_agent, result_data = await override_agent(
+            _result_agent, _result_data = await override_agent(
                 "agent-1", agent_update, "owner-1"
             )
 
@@ -296,7 +296,7 @@ class TestPatchAgent:
 
         with patch("intentkit.models.agent.Agent.model_validate") as mock_validate:
             mock_validate.return_value = _make_existing_agent()
-            result_agent, result_data = await patch_agent(
+            _result_agent, _result_data = await patch_agent(
                 "agent-1", agent_update, "owner-1"
             )
 
@@ -386,7 +386,7 @@ class TestCreateAgent:
                 "intentkit.core.team.subscription.auto_subscribe_team",
                 new_callable=AsyncMock,
             ) as mock_subscribe:
-                result_agent, result_data = await create_agent(agent_create)
+                _result_agent, _result_data = await create_agent(agent_create)
                 mock_subscribe.assert_awaited_once_with("team-1", validated_agent.id)
 
         mock_session.commit.assert_awaited_once()

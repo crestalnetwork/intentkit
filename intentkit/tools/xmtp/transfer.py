@@ -114,7 +114,7 @@ class XmtpTransfer(XmtpBaseTool):
                 )
             except Exception as e:
                 raise ToolException(
-                    f"Failed to validate ERC20 contract {token_contract_address}: {str(e)}"
+                    f"Failed to validate ERC20 contract {token_contract_address}: {e!s}"
                 )
         else:
             # For ETH transfers, use 18 decimals

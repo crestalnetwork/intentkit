@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Any, ClassVar, Generic, TypeVar
+from typing import Any, ClassVar, TypeVar
 
 from pydantic import BaseModel, ConfigDict
 from pydantic import Field as PydanticField
@@ -59,6 +59,6 @@ class TeamSubscription(BaseModel):
     subscribed_at: datetime
 
 
-class TeamFeedPage(BaseModel, Generic[T]):
+class TeamFeedPage[T](BaseModel):
     items: list[T] = PydanticField(default_factory=list)
     next_cursor: str | None = None

@@ -139,8 +139,10 @@ def _built_in_sub_agents_section() -> str:
 
     lines = [
         "### Built-in sub-agents\n\n",
-        "Delegate team-management work to these fixed system agents with "
-        "`lead_call_agent`, using the slug as the agent id:\n\n",
+        (
+            "Delegate team-management work to these fixed system agents with "
+            "`lead_call_agent`, using the slug as the agent id:\n\n"
+        ),
     ]
     for definition in SUB_AGENT_REGISTRY.values():
         lines.append(f"- `{definition.slug}`: {definition.description}\n")

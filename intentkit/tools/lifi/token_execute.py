@@ -316,7 +316,7 @@ class TokenExecute(LiFiBaseTool):
             )
         except Exception as e:
             self.logger.error("LiFi_Token_Approval_Error: %s", str(e))
-            raise ToolException(f"Failed to approve token: {str(e)}")
+            raise ToolException(f"Failed to approve token: {e!s}")
 
     async def _execute_transfer_transaction(
         self,
@@ -350,7 +350,7 @@ class TokenExecute(LiFiBaseTool):
 
         except Exception as e:
             self.logger.error("LiFi_Execution_Error: %s", str(e))
-            raise ToolException(f"Failed to execute transaction: {str(e)}")
+            raise ToolException(f"Failed to execute transaction: {e!s}")
 
     def _build_transaction_request(
         self, tx_params: dict[str, Any]
@@ -491,7 +491,7 @@ class TokenExecute(LiFiBaseTool):
 
             except Exception as e:
                 self.logger.warning(
-                    f"Status check failed (attempt {attempt + 1}): {str(e)}"
+                    f"Status check failed (attempt {attempt + 1}): {e!s}"
                 )
 
             attempt += 1
@@ -565,4 +565,4 @@ class TokenExecute(LiFiBaseTool):
 
         except Exception as e:
             self.logger.error("Token approval failed: %s", e)
-            raise ToolException(f"Failed to approve token transfer: {str(e)}")
+            raise ToolException(f"Failed to approve token transfer: {e!s}")

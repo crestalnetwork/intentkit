@@ -134,9 +134,8 @@ async def _sync_supabase_user(user_id: str) -> User:
 
     # Sync avatar: from Google avatar_url if user has no avatar yet
     google_avatar = user_metadata.get("avatar_url")
-    if google_avatar and has_google:
-        if not (existing_user and existing_user.avatar):
-            update_fields["avatar"] = google_avatar
+    if google_avatar and has_google and not (existing_user and existing_user.avatar):
+        update_fields["avatar"] = google_avatar
 
     update_fields["synced_at"] = datetime.now(UTC)
 

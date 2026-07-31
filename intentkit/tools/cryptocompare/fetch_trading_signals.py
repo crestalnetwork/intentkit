@@ -73,7 +73,7 @@ class CryptoCompareFetchTradingSignals(CryptoCompareBaseTool):
 
             # Convert to list of TradingSignal objects
             result = []
-            if "Data" in signals_data and signals_data["Data"]:
+            if signals_data.get("Data"):
                 for indicator_name, indicator_data in signals_data["Data"].items():
                     if (
                         isinstance(indicator_data, dict)

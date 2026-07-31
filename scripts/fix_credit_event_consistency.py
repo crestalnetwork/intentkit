@@ -237,7 +237,7 @@ class CreditEventConsistencyFixer:
             return True
 
         except Exception as e:
-            logger.error(f"Failed to fix record {record.id}: {str(e)}")
+            logger.error(f"Failed to fix record {record.id}: {e!s}")
             return False
 
     async def find_and_fix_inconsistent_records(self, session: AsyncSession):
@@ -319,10 +319,7 @@ class CreditEventConsistencyFixer:
             print("\n" + "-" * 40)
             print("FAILED TO FIX RECORDS")
             print("-" * 40)
-            failed_count = 0
-            for detail in self.inconsistent_details:
-                if failed_count >= self.failed_fixes:
-                    break
+            for detail in self.inconsistent_details[: self.failed_fixes]:
                 print(f"Record ID: {detail['id']}")
                 print(f"User ID: {detail['user_id']}")
                 print(f"Tool: {detail['tool_name']}")
@@ -331,7 +328,6 @@ class CreditEventConsistencyFixer:
                 for error in detail["errors"]:
                     print(f"  - {error}")
                 print("-" * 20)
-                failed_count += 1
 
 
 async def main():

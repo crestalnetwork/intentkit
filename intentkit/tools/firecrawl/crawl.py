@@ -349,7 +349,7 @@ class FirecrawlCrawl(FirecrawlBaseTool):
                                     f"firecrawl_crawl: Error indexing content: {index_error}"
                                 )
                                 formatted_result += "\n## Content Indexing\n"
-                                formatted_result += f"Warning: Failed to index content for later querying: {str(index_error)}\n"
+                                formatted_result += f"Warning: Failed to index content for later querying: {index_error!s}\n"
 
                         return formatted_result.strip()
 
@@ -390,5 +390,5 @@ class FirecrawlCrawl(FirecrawlBaseTool):
                 f"Timeout error: The request to crawl {url} took too long to complete."
             )
         except Exception as e:
-            logger.exception("firecrawl_crawl: Error crawling URL: %s", e)
+            logger.exception("firecrawl_crawl: Error crawling URL")
             raise ToolException(f"An error occurred while crawling the URL: {e!s}")

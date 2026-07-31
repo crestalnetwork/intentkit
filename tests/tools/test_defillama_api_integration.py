@@ -92,7 +92,7 @@ class TestDefiLlamaAPI(unittest.TestCase):
         except TimeoutError:
             raise AssertionError(f"Test timed out after {self.timeout} seconds")
         except Exception as e:
-            raise AssertionError(f"Test failed with exception: {str(e)}")
+            raise AssertionError(f"Test failed with exception: {e!s}")
 
     def assert_successful_response(self, response):
         """Helper to check if response contains an error"""

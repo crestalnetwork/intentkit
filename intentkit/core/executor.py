@@ -11,7 +11,7 @@ import importlib
 import logging
 import time
 from collections.abc import Sequence
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
 import httpcore
@@ -89,18 +89,19 @@ def _should_retry_model_failure(exc: Exception) -> bool:
             ),
         ):
             return True
-        if isinstance(cause, ResponseValidationError):
-            # A 2xx whose body stopped mid-JSON — the upstream stream dropped.
-            # The SDK's own retries never see it: parsing happens after the
-            # HTTP layer already succeeded. Two sibling cases deliberately fall
-            # through to the status filter instead: a body that parsed but
-            # failed the schema (SDK/API drift, permanent), and any non-2xx,
-            # since the SDK unmarshals error bodies too and a truncated 402
-            # must stay as final as an intact one.
-            if 200 <= cause.status_code < 300 and not isinstance(
-                cause.__cause__, (ValidationError, ValidationErrorV1)
-            ):
-                return True
+        # A 2xx whose body stopped mid-JSON — the upstream stream dropped.
+        # The SDK's own retries never see it: parsing happens after the
+        # HTTP layer already succeeded. Two sibling cases deliberately fall
+        # through to the status filter instead: a body that parsed but
+        # failed the schema (SDK/API drift, permanent), and any non-2xx,
+        # since the SDK unmarshals error bodies too and a truncated 402
+        # must stay as final as an intact one.
+        if (
+            isinstance(cause, ResponseValidationError)
+            and 200 <= cause.status_code < 300
+            and not isinstance(cause.__cause__, (ValidationError, ValidationErrorV1))
+        ):
+            return True
         for status in http_status_candidates(cause):
             if isinstance(status, str) and status.isdigit():
                 status = int(status)
@@ -371,7 +372,7 @@ async def _get_build_lock(agent_id: str) -> asyncio.Lock:
 
 def _cleanup_cache() -> None:
     """Evict expired executor cache entries based on last access time."""
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     expired_before = now - _EXECUTOR_CACHE_TTL
     for aid in list(_agents_accessed_at):
         if _agents_accessed_at[aid] < expired_before:
@@ -400,7 +401,7 @@ async def build_and_cache_executor(
     executor = await build_executor(agent, agent_data)
     agents[aid] = executor
     agents_updated[aid] = max(agent.updated_at, agent_data.updated_at)
-    _agents_accessed_at[aid] = datetime.now(timezone.utc)
+    _agents_accessed_at[aid] = datetime.now(UTC)
 
 
 async def agent_executor(
@@ -420,10 +421,11 @@ async def agent_executor(
     updated_at = max(agent.updated_at, agent_data.updated_at)
     # Check if agent needs reinitialization due to updates
     needs_reinit = False
-    if agent_id in agents:
-        if agent_id not in agents_updated or updated_at != agents_updated[agent_id]:
-            needs_reinit = True
-            logger.info("Reinitializing agent %s due to updates", agent_id)
+    if agent_id in agents and (
+        agent_id not in agents_updated or updated_at != agents_updated[agent_id]
+    ):
+        needs_reinit = True
+        logger.info("Reinitializing agent %s due to updates", agent_id)
 
     # cold start or needs reinitialization
     cold_start_cost = 0.0
@@ -439,5 +441,5 @@ async def agent_executor(
                 await build_and_cache_executor(agent_id, agent, agent_data)
                 cold_start_cost = time.perf_counter() - start
 
-    _agents_accessed_at[agent_id] = datetime.now(timezone.utc)
+    _agents_accessed_at[agent_id] = datetime.now(UTC)
     return agents[agent_id], cold_start_cost

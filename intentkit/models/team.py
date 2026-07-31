@@ -312,7 +312,7 @@ class TeamCreate(BaseModel):
         ),
     ] = None
 
-    async def save(self, creator_user_id: str) -> "Team":
+    async def save(self, creator_user_id: str) -> Team:
         """Create a new team and add the creator as owner.
 
         Args:
@@ -444,7 +444,7 @@ class Team(TeamCreate):
         return v.isoformat(timespec="milliseconds")
 
     @classmethod
-    async def get(cls, team_id: str) -> "Team | None":
+    async def get(cls, team_id: str) -> Team | None:
         """Get a team by ID."""
         async with get_session() as db:
             team = await db.get(TeamTable, team_id)
@@ -509,7 +509,7 @@ class Team(TeamCreate):
             return result or {}
 
     @classmethod
-    async def get_by_user(cls, user_id: str) -> list["Team"]:
+    async def get_by_user(cls, user_id: str) -> list[Team]:
         """Get all teams a user belongs to, including the user's role."""
         async with get_session() as db:
             stmt = (

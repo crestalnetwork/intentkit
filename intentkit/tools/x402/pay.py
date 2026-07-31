@@ -3,7 +3,6 @@
 This tool performs a paid HTTP request with a configurable maximum payment amount.
 """
 
-import asyncio
 import logging
 from typing import Any, cast, override
 from urllib.parse import urlparse
@@ -162,7 +161,7 @@ class X402Pay(X402BaseTool):
                     f"{exc} | last_payment_error={error_context}"
                 ) from exc
             raise ToolException(str(exc)) from exc
-        except (httpx.TimeoutException, asyncio.TimeoutError) as exc:
+        except (TimeoutError, httpx.TimeoutException) as exc:
             raise ToolException(
                 f"Request to {url} or related operation timed out after {timeout} seconds"
             ) from exc
@@ -172,7 +171,7 @@ class X402Pay(X402BaseTool):
             ) from exc
         except (httpx.RequestError, aiohttp.ClientError) as exc:
             raise ToolException(
-                f"Network error while connecting to {url} or RPC: {str(exc)}"
+                f"Network error while connecting to {url} or RPC: {exc!s}"
             ) from exc
         except (TimeExhausted, Web3RPCError) as exc:
             if isinstance(exc, Web3RPCError):
@@ -192,4 +191,4 @@ class X402Pay(X402BaseTool):
             raise
         except Exception as exc:
             logger.error("Unexpected error in x402_pay", exc_info=exc)
-            raise ToolException(f"Unexpected error occurred - {str(exc)}") from exc
+            raise ToolException(f"Unexpected error occurred - {exc!s}") from exc

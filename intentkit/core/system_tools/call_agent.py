@@ -327,5 +327,5 @@ class CallAgentTool(SystemTool):
         except ToolException:
             raise
         except Exception as e:
-            self.logger.exception("call_agent failed: %s", e)
+            self.logger.exception("call_agent failed")
             raise ToolException(f"Call agent failed with error: {e}") from e

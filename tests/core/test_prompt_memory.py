@@ -191,7 +191,6 @@ class TestBuildSystemPromptMemory:
 
         async def fake_get(agent_id, scope, scope_key):
             seen.append((scope, scope_key))
-            return None
 
         with (
             self._config_patch(),

@@ -152,5 +152,5 @@ class CreatePostTool(SystemTool):
         except ToolException:
             raise
         except Exception as e:
-            self.logger.exception("create_post failed: %s", e)
+            self.logger.exception("create_post failed")
             raise ToolException(f"Failed to create post: {e}") from e

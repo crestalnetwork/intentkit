@@ -114,7 +114,6 @@ class PancakeSwapRemoveLiquidity(PancakeSwapBaseTool):
                     if was_staked:
                         raise
                     # Not staked in MasterChef, continue
-                    pass
 
             # Get position details
             pos_info = await pm.functions.positions(token_id).call()
@@ -169,7 +168,7 @@ class PancakeSwapRemoveLiquidity(PancakeSwapBaseTool):
                     )
                     burn_receipt = await wallet.wait_for_receipt(burn_tx)
                     burned = burn_receipt.get("status", 0) == 1
-                except Exception:
+                except Exception:  # noqa: S110 - best-effort step; outcome is reflected in the result
                     pass
 
             # Format result

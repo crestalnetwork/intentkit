@@ -84,8 +84,6 @@ class DefiLlamaFetchFeesOverview(DefiLlamaBaseTool):
     class EmptyArgsSchema(BaseModel):
         """Empty schema for no input parameters."""
 
-        pass
-
     args_schema: ArgsSchema | None = EmptyArgsSchema
 
     async def _arun(self, **kwargs) -> FetchFeesOverviewResponse:

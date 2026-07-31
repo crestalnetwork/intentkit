@@ -38,7 +38,7 @@ async def get_agent(agent_id: str) -> Agent | None:
 
 async def iterate_agent_id_batches(
     batch_size: int = 100,
-) -> AsyncGenerator[list[str], None]:
+) -> AsyncGenerator[list[str]]:
     """Yield agent IDs in ascending batches to limit memory usage."""
 
     last_id: str | None = None

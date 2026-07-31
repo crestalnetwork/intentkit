@@ -68,7 +68,7 @@ class CryptoCompareFetchTopVolume(CryptoCompareBaseTool):
 
             # Convert to list of CryptoCurrency objects
             result = []
-            if "Data" in volume_data and volume_data["Data"]:
+            if volume_data.get("Data"):
                 for item in volume_data["Data"]:
                     coin_info = item.get("CoinInfo", {})
                     raw_data = item.get("RAW", {}).get(to_symbol, {})

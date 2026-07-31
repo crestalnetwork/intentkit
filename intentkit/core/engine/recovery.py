@@ -49,10 +49,7 @@ def is_unrecoverable_checkpoint_error(exc: Exception) -> bool:
     except ImportError:
         pass
 
-    if isinstance(exc, unrecoverable_types):
-        return True
-
-    return False
+    return isinstance(exc, unrecoverable_types)
 
 
 def summarize_history_messages(msgs: list[Any], max_messages: int = 10) -> list[dict]:

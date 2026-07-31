@@ -226,16 +226,16 @@ async def test_get_autonomous(client, mock_task, monkeypatch):
 
 
 def _mock_execution(**overrides):
-    base = dict(
-        id="exec-1",
-        task_id="task-1",
-        team_id=LEAD_TEAM_ID,
-        agent_id="agent-x",
-        target_agent_id="agent-x",
-        chat_id="autonomous-task-1",
-        message_id="msg-1",
-        started_at=datetime.now(UTC),
-    )
+    base = {
+        "id": "exec-1",
+        "task_id": "task-1",
+        "team_id": LEAD_TEAM_ID,
+        "agent_id": "agent-x",
+        "target_agent_id": "agent-x",
+        "chat_id": "autonomous-task-1",
+        "message_id": "msg-1",
+        "started_at": datetime.now(UTC),
+    }
     base.update(overrides)
     return AutonomousExecution.model_validate(base)
 
@@ -406,7 +406,7 @@ async def test_sweep_waits_for_legacy_migration(monkeypatch):
     # Failed migration -> the sweep retries next time and prunes nothing now.
     await autonomous_module.schedule_agent_autonomous_tasks()
     assert calls["migration"] == 1
-    assert getattr(autonomous_module, "_legacy_migration_done") is False
+    assert autonomous_module._legacy_migration_done is False
 
 
 @pytest.mark.asyncio
@@ -432,10 +432,10 @@ async def test_sweep_runs_migration_once_then_proceeds(monkeypatch):
     ctx.__aenter__ = AsyncMock(return_value=session)
     ctx.__aexit__ = AsyncMock(return_value=None)
     monkeypatch.setattr(autonomous_module, "get_session", lambda: ctx)
-    monkeypatch.setattr(autonomous_module.scheduler, "get_jobs", lambda: [])
+    monkeypatch.setattr(autonomous_module.scheduler, "get_jobs", list)
 
     await autonomous_module.schedule_agent_autonomous_tasks()
-    assert getattr(autonomous_module, "_legacy_migration_done") is True
+    assert autonomous_module._legacy_migration_done is True
     # Once done, later sweeps skip the migration check entirely.
     await autonomous_module.schedule_agent_autonomous_tasks()
     assert calls["migration"] == 1

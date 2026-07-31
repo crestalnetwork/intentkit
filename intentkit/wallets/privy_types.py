@@ -287,7 +287,6 @@ class WalletProvider(ABC):
     @abstractmethod
     def get_address(self) -> str | Awaitable[str]:
         """Get the wallet's public address."""
-        pass
 
     @abstractmethod
     async def execute_transaction(
@@ -309,7 +308,6 @@ class WalletProvider(ABC):
         Returns:
             TransactionResult with success status and tx hash
         """
-        pass
 
     @abstractmethod
     async def transfer_erc20(
@@ -331,12 +329,10 @@ class WalletProvider(ABC):
         Returns:
             TransactionResult with success status and tx hash
         """
-        pass
 
     @abstractmethod
     async def get_balance(self, chain_id: int | None = None) -> int:
         """Get native token balance in wei."""
-        pass
 
     @abstractmethod
     async def get_erc20_balance(
@@ -345,4 +341,3 @@ class WalletProvider(ABC):
         chain_id: int | None = None,
     ) -> int:
         """Get ERC20 token balance."""
-        pass

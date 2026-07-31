@@ -106,7 +106,7 @@ class UniswapQuote(UniswapBaseTool):
                         best_out = amount_out
                         best_fee = fee
                         best_gas = gas_estimate
-                except Exception:
+                except Exception:  # noqa: S112 - expected miss while probing candidates
                     continue
 
             if best_out == 0:

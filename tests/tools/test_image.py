@@ -6,6 +6,7 @@ from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+from pydantic import ValidationError
 
 from intentkit.tools.image import available, get_tools
 from intentkit.tools.image.base import ImageGenerationInput
@@ -53,7 +54,7 @@ def test_input_schema_valid():
 
 def test_input_schema_requires_prompt():
     """Test ImageGenerationInput requires prompt."""
-    with pytest.raises(Exception):
+    with pytest.raises(ValidationError):
         ImageGenerationInput()  # pyright: ignore[reportCallIssue]
 
 

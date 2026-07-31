@@ -376,7 +376,7 @@ async def join_team(code: str, user_id: str) -> Team:
     return team
 
 
-async def _get_member_role(db: "AsyncSession", team_id: str, user_id: str) -> TeamRole:
+async def _get_member_role(db: AsyncSession, team_id: str, user_id: str) -> TeamRole:
     """Get member's role or raise ValueError if not found."""
     from sqlalchemy import select
 
@@ -391,7 +391,7 @@ async def _get_member_role(db: "AsyncSession", team_id: str, user_id: str) -> Te
     return TeamRole(role.value if hasattr(role, "value") else str(role))
 
 
-async def _ensure_not_last_owner(db: "AsyncSession", team_id: str) -> None:
+async def _ensure_not_last_owner(db: AsyncSession, team_id: str) -> None:
     """Raise ValueError if there is only one owner left."""
     from sqlalchemy import func, select
 
@@ -483,7 +483,7 @@ async def remove_member(team_id: str, user_id: str) -> None:
     await _invalidate_role_cache(team_id, user_id)
 
 
-async def get_members(team_id: str) -> list["TeamMember"]:
+async def get_members(team_id: str) -> list[TeamMember]:
     """Get all members of a team, including user profile info."""
     from sqlalchemy import select
 

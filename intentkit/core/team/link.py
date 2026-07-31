@@ -468,18 +468,26 @@ def build_links_section(team_id: str, links: list[TeamLink]) -> str:
     lines = [
         "### Links\n\n",
         "External app accounts can be linked for you to act through, at two levels:\n",
-        f"- Team-level apps (linked by a team admin, shared by every member): "
-        f"{team_apps}.\n",
-        f"- User-level apps (each user links their own account; you act on "
-        f"the current user's own account): {user_apps}.\n\n",
-        "- When at least one account is linked, you have tools prefixed with "
-        "`COMPOSIO_` to search for and execute actions on the linked apps; "
-        "prefer them whenever a request involves one of these apps.\n",
-        "- If the user asks about one of these apps but no usable account is "
-        "linked in this conversation (not linked, or expired/revoked), do not "
-        "improvise or claim access. Instead, share this URL and explain who "
-        "can link it there — a team admin for team-level apps, the user "
-        f"themselves for user-level apps: {url}\n\n",
+        (
+            f"- Team-level apps (linked by a team admin, shared by every member): "
+            f"{team_apps}.\n"
+        ),
+        (
+            f"- User-level apps (each user links their own account; you act on "
+            f"the current user's own account): {user_apps}.\n\n"
+        ),
+        (
+            "- When at least one account is linked, you have tools prefixed with "
+            "`COMPOSIO_` to search for and execute actions on the linked apps; "
+            "prefer them whenever a request involves one of these apps.\n"
+        ),
+        (
+            "- If the user asks about one of these apps but no usable account is "
+            "linked in this conversation (not linked, or expired/revoked), do not "
+            "improvise or claim access. Instead, share this URL and explain who "
+            "can link it there — a team admin for team-level apps, the user "
+            f"themselves for user-level apps: {url}\n\n"
+        ),
         "Accounts linked in this conversation:\n",
     ]
     active = [link for link in links if link.status == LINK_STATUS_ACTIVE]

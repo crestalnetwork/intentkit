@@ -123,5 +123,5 @@ class TokenPrice(TokenBaseTool):
         except Exception as e:
             logger.error("Error fetching token price: %s", e)
             return {
-                "error": f"An error occurred while fetching token price: {str(e)}. Please try again later."
+                "error": f"An error occurred while fetching token price: {e!s}. Please try again later."
             }

@@ -198,10 +198,10 @@ MORPHO_BLUE_ABI: list[dict] = [
 
 # Re-export ERC20_ABI for convenience
 __all__ = [
+    "ERC20_ABI",
+    "MAX_UINT256",
     "METAMORPHO_ABI",
     "MORPHO_BLUE_ABI",
     "MORPHO_BLUE_ADDRESS",
-    "ERC20_ABI",
     "SUPPORTED_NETWORKS",
-    "MAX_UINT256",
 ]

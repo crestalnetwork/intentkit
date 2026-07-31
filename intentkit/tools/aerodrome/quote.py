@@ -91,7 +91,7 @@ class AerodromeQuote(AerodromeBaseTool):
                         best_out = amount_out
                         best_tick_spacing = tick_spacing
                         best_gas = gas_estimate
-                except Exception:
+                except Exception:  # noqa: S112 - expected miss while probing candidates
                     continue
 
             if best_out == 0:

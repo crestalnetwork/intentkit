@@ -1,5 +1,7 @@
 """Tests for Langfuse tracing setup (intentkit.config.tracing)."""
 
+from typing import ClassVar
+
 import pytest
 
 from intentkit.config import tracing
@@ -66,7 +68,7 @@ def test_apply_cost_details_noop_when_no_resolver(restore_resolver):
 
 
 class _FakeLangfuse:
-    instances: list[dict] = []
+    instances: ClassVar[list[dict]] = []
 
     def __init__(self, **kwargs):
         _FakeLangfuse.instances.append(kwargs)
@@ -330,7 +332,7 @@ def test_handler_wiring_scores_turn_on_root_end(root_callback):
 
 
 class _FakePropagate:
-    entered: list[dict] = []
+    entered: ClassVar[list[dict]] = []
     exited: int = 0
 
     def __init__(self, **kwargs):
@@ -338,7 +340,6 @@ class _FakePropagate:
 
     def __enter__(self):
         _FakePropagate.entered.append(self.kwargs)
-        return None
 
     def __exit__(self, *exc):
         _FakePropagate.exited += 1

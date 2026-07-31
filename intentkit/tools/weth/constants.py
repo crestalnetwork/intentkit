@@ -57,4 +57,4 @@ def get_weth_address(network_id: str) -> str | None:
 
 
 # Re-export ERC20_ABI for convenience
-__all__ = ["WETH_ABI", "ERC20_ABI", "get_weth_address"]
+__all__ = ["ERC20_ABI", "WETH_ABI", "get_weth_address"]

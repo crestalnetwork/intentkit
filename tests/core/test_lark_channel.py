@@ -58,7 +58,7 @@ class TestLarkResolution:
     def test_user_lookup_and_bind_field_exist(self):
         # _resolve_lead does getattr(User, lookup)(...) and
         # UserUpdate.model_validate({bind_field: ...}); both must resolve.
-        assert callable(getattr(User, "get_by_lark_id"))
+        assert callable(User.get_by_lark_id)
         assert "lark_id" in UserUpdate.model_fields
 
 

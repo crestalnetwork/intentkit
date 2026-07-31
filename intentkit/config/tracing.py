@@ -12,10 +12,10 @@ Tracing is enabled only when both Langfuse keys are configured (see
 import logging
 import sys
 import threading
-from collections.abc import Generator
+from collections.abc import Callable, Generator
 from contextlib import contextmanager
 from contextvars import ContextVar
-from typing import Any, Callable
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -67,7 +67,7 @@ def _apply_cost_details(runs: Any, run_id: Any, response: Any) -> None:
 class _TurnUsage:
     """Accumulated LLM token usage for one live trace (one chat turn)."""
 
-    __slots__ = ("owner_run_id", "input_tokens", "cached_tokens")
+    __slots__ = ("cached_tokens", "input_tokens", "owner_run_id")
 
     def __init__(self, owner_run_id: Any) -> None:
         self.owner_run_id = owner_run_id
@@ -341,9 +341,11 @@ def setup_langfuse(
     )
 
     # Handler as contextvar default => attaches to runs in any context/thread.
+    # The single shared handler instance is deliberate — per-run state lives in
+    # Langfuse's own context, not on the handler.
     _langfuse_handler_var = ContextVar(
         "langfuse_callback_handler",
-        default=_build_cost_forwarding_handler(CallbackHandler),
+        default=_build_cost_forwarding_handler(CallbackHandler),  # noqa: B039
     )
     register_configure_hook(_langfuse_handler_var, True)
     _hook_registered = True

@@ -339,10 +339,11 @@ class SummarizationMiddleware(AgentMiddleware[AgentState, AgentContext]):
                 summary = await self._summarize_once(chunk)
             return summary
         except Exception as exc:
+            provider_detail = describe_provider_error(exc)
             logger.exception(
                 "History summarization failed for model %s%s; keeping full history",
                 self.model_info.id,
-                describe_provider_error(exc),
+                provider_detail,
             )
             return None
 

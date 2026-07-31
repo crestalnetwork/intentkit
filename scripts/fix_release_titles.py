@@ -59,13 +59,11 @@ def should_fix_title(tag_name: str, current_title: str) -> bool:
     if not current_title or current_title.strip() == "":
         return True
 
-    # Title doesn't match tag
-    if current_title != tag_name:
-        # Check if it's a commit message format (e.g., "docs: update CHANGELOG.md for v0.8.59")
-        if ":" in current_title or "update" in current_title.lower():
-            return True
-
-    return False
+    # Title doesn't match tag and looks like a commit message format
+    # (e.g., "docs: update CHANGELOG.md for v0.8.59")
+    return current_title != tag_name and (
+        ":" in current_title or "update" in current_title.lower()
+    )
 
 
 def main():

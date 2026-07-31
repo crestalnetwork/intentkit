@@ -82,7 +82,6 @@ class DocumentIndexer(WebScraperBaseTool):
         """Add text content to the vector database."""
         # Get agent context - throw error if not available
         # Configuration is always available in new runtime
-        pass
 
         context = self.get_context()
         if not context or not context.agent_id:

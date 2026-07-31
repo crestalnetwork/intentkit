@@ -47,23 +47,23 @@ def mock_llm_config(**keys):
 
     All API keys default to None unless explicitly provided.
     """
-    defaults = dict(
-        google_api_key=None,
-        openai_api_key=None,
-        openrouter_api_key=None,
-        xai_api_key=None,
-        deepseek_api_key=None,
-        minimax_plan_api_key=None,
-        mimo_plan_api_key=None,
-        openai_compatible_api_key=None,
-        openai_compatible_base_url=None,
-        openai_compatible_model=None,
-        openai_compatible_model_lite=None,
-        anthropic_compatible_api_key=None,
-        anthropic_compatible_base_url=None,
-        anthropic_compatible_model=None,
-        anthropic_compatible_model_lite=None,
-    )
+    defaults = {
+        "google_api_key": None,
+        "openai_api_key": None,
+        "openrouter_api_key": None,
+        "xai_api_key": None,
+        "deepseek_api_key": None,
+        "minimax_plan_api_key": None,
+        "mimo_plan_api_key": None,
+        "openai_compatible_api_key": None,
+        "openai_compatible_base_url": None,
+        "openai_compatible_model": None,
+        "openai_compatible_model_lite": None,
+        "anthropic_compatible_api_key": None,
+        "anthropic_compatible_base_url": None,
+        "anthropic_compatible_model": None,
+        "anthropic_compatible_model_lite": None,
+    }
     defaults.update(keys)
     with (
         patch("intentkit.models.llm.config") as m1,

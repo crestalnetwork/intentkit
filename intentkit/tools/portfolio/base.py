@@ -7,9 +7,9 @@ from typing import Any
 import aiohttp
 from langchain_core.tools import ToolException
 
+from intentkit.clients.moralis import MORALIS_API_BASE_URL
 from intentkit.config.config import config
 from intentkit.tools.base import IntentKitTool
-from intentkit.tools.portfolio.constants import MORALIS_API_BASE_URL
 
 logger = logging.getLogger(__name__)
 
@@ -73,30 +73,32 @@ class PortfolioBaseTool(IntentKitTool, ABC):
 
         logger.debug("portfolio/base.py: Making request to %s", url)
 
-        async with aiohttp.ClientSession() as session:
-            async with session.request(
+        async with (
+            aiohttp.ClientSession() as session,
+            session.request(
                 method=method,
                 url=url,
                 headers=headers,
                 params=processed_params,
                 json=data,
-            ) as response:
-                if response.status >= 400:
-                    error_text = await response.text()
-                    logger.error(
-                        "portfolio/base.py: API error %s for %s", response.status, url
-                    )
-                    raise ToolException(
-                        f"Moralis API error: {response.status} - {error_text}"
-                    )
+            ) as response,
+        ):
+            if response.status >= 400:
+                error_text = await response.text()
+                logger.error(
+                    "portfolio/base.py: API error %s for %s", response.status, url
+                )
+                raise ToolException(
+                    f"Moralis API error: {response.status} - {error_text}"
+                )
 
-                try:
-                    return await response.json()
-                except aiohttp.ContentTypeError as exc:
-                    await response.text()
-                    logger.error(
-                        "portfolio/base.py: Failed to decode JSON response from %s", url
-                    )
-                    raise ToolException(
-                        "Moralis API returned invalid JSON payload."
-                    ) from exc
+            try:
+                return await response.json()
+            except aiohttp.ContentTypeError as exc:
+                await response.text()
+                logger.error(
+                    "portfolio/base.py: Failed to decode JSON response from %s", url
+                )
+                raise ToolException(
+                    "Moralis API returned invalid JSON payload."
+                ) from exc

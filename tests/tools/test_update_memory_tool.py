@@ -4,6 +4,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from langchain_core.tools.base import ToolException
+from pydantic import ValidationError
 
 from intentkit.abstracts.graph import AgentContext
 from intentkit.core.system_tools.update_memory import (
@@ -42,13 +43,13 @@ class TestUpdateMemoryInput:
         assert inp.content == "Remember this fact"
 
     def test_scope_and_content_required(self):
-        with pytest.raises(Exception):
+        with pytest.raises(ValidationError):
             UpdateMemoryInput(content="x")  # pyright: ignore[reportCallIssue]
-        with pytest.raises(Exception):
+        with pytest.raises(ValidationError):
             UpdateMemoryInput(scope="team")  # pyright: ignore[reportCallIssue]
 
     def test_unknown_scope_rejected(self):
-        with pytest.raises(Exception):
+        with pytest.raises(ValidationError):
             UpdateMemoryInput(scope="galaxy", content="x")  # pyright: ignore[reportArgumentType]
 
 

@@ -68,7 +68,7 @@ class EnsoGetPrices(EnsoBaseTool):
         async with httpx.AsyncClient() as client:
             try:
                 response = await client.get(
-                    f"{base_url}/api/v1/prices/{str(resolved_chain_id)}/{address}",
+                    f"{base_url}/api/v1/prices/{resolved_chain_id!s}/{address}",
                     headers=headers,
                 )
                 response.raise_for_status()

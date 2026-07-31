@@ -16,8 +16,6 @@ class CarvNewsInput(BaseModel):
     This API endpoint does not require any specific parameters from the user.
     """
 
-    pass
-
 
 class FetchNewsTool(CarvBaseTool):
     """

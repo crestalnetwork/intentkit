@@ -170,7 +170,7 @@ class AgentPublishInput(BaseModel):
         description="Up to 3 category tags from the predefined list",
     )
 
-    def to_public_info(self) -> "AgentPublicInfo":
+    def to_public_info(self) -> AgentPublicInfo:
         """Build the canonical AgentPublicInfo for the publish flow.
 
         Forces ``fee_percentage = 1`` and leaves all other public-info fields

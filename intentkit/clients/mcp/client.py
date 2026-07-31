@@ -59,19 +59,21 @@ async def _connect(
 ) -> AsyncGenerator[ClientSession]:
     """Connect to an MCP server and yield an initialized session."""
     if transport == "sse":
-        async with sse_client(url, headers=headers) as transport_streams:
-            async with _session_from_streams(transport_streams) as session:
-                yield session
+        async with (
+            sse_client(url, headers=headers) as transport_streams,
+            _session_from_streams(transport_streams) as session,
+        ):
+            yield session
     elif transport == "streamable_http":
         # streamable_http_client only manages the lifecycle of a client it
         # creates itself; a caller-provided one (needed for headers) must be
         # closed by us or its connection pool leaks on every call.
-        async with httpx.AsyncClient(headers=headers, timeout=60) as http_client:
-            async with streamable_http_client(
-                url, http_client=http_client
-            ) as transport_streams:
-                async with _session_from_streams(transport_streams) as session:
-                    yield session
+        async with (
+            httpx.AsyncClient(headers=headers, timeout=60) as http_client,
+            streamable_http_client(url, http_client=http_client) as transport_streams,
+            _session_from_streams(transport_streams) as session,
+        ):
+            yield session
     else:
         raise ValueError(f"Unknown transport: {transport}")
 

@@ -138,7 +138,7 @@ class PrivyWalletSigner:
 
         # Create message hash for the SignedMessage
         message_bytes = message_text.encode("utf-8")
-        prefix = f"\x19Ethereum Signed Message:\n{len(message_bytes)}".encode("utf-8")
+        prefix = f"\x19Ethereum Signed Message:\n{len(message_bytes)}".encode()
         message_hash = keccak(prefix + message_bytes)
 
         return SignedMessage(

@@ -33,7 +33,7 @@ async def acp_request(
             f"HTTP {exc.response.status_code}: {exc.response.text}"
         ) from exc
     except httpx.RequestError as exc:
-        raise ToolException(f"Network error: {str(exc)}") from exc
+        raise ToolException(f"Network error: {exc!s}") from exc
 
 
 class AcpBaseTool(IntentKitTool):

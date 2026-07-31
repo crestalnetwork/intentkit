@@ -127,8 +127,8 @@ class WalletNFTs(PortfolioBaseTool):
             return await self._make_request(
                 method="GET", endpoint=endpoint, api_key=api_key, params=params
             )
-        except Exception as e:
-            logger.exception(f"wallet_nfts.py: Error fetching wallet NFTs: {e}")
+        except Exception:
+            logger.exception("wallet_nfts.py: Error fetching wallet NFTs")
             return {
                 "error": "An error occurred while fetching wallet NFTs. Please try again later."
             }

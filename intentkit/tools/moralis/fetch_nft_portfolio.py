@@ -113,10 +113,10 @@ class FetchNftPortfolio(WalletBaseTool):
                 # Fetch from all supported chains
                 from intentkit.tools.moralis.base import CHAIN_MAPPING
 
-                for chain_id in CHAIN_MAPPING.keys():
+                for mapped_chain_id in CHAIN_MAPPING:
                     await self._fetch_evm_nfts(
                         address,
-                        chain_id,
+                        mapped_chain_id,
                         limit // len(CHAIN_MAPPING),
                         normalize_metadata,
                         result,
@@ -182,7 +182,7 @@ class FetchNftPortfolio(WalletBaseTool):
         for nft in nft_data.get("result", []):
             # Extract metadata
             metadata = None
-            if "metadata" in nft and nft["metadata"]:
+            if nft.get("metadata"):
                 try:
                     if isinstance(nft["metadata"], str):
                         metadata_dict = json.loads(nft["metadata"])
@@ -200,7 +200,6 @@ class FetchNftPortfolio(WalletBaseTool):
                 except Exception as e:
                     logger.warning("Error parsing NFT metadata: %s", e)
                     # If metadata parsing fails, continue without it
-                    pass
 
             # Create NFT item
             nft_item = NftItem(
@@ -250,7 +249,7 @@ class FetchNftPortfolio(WalletBaseTool):
 
             # Create NFT item
             metadata = None
-            if "metadata" in nft and nft["metadata"]:
+            if nft.get("metadata"):
                 try:
                     metadata_dict = nft["metadata"]
                     if isinstance(metadata_dict, str):
@@ -266,7 +265,6 @@ class FetchNftPortfolio(WalletBaseTool):
                     )
                 except Exception as e:
                     logger.warning("Error parsing Solana NFT metadata: %s", e)
-                    pass
 
             nft_item = NftItem(
                 token_id=nft.get("mint", ""),  # Use mint address as token ID

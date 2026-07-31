@@ -170,7 +170,7 @@ class SafeClient:
         packed_data = b""
         for tx in transactions:
             operation = 0  # Call
-            to = bytes.fromhex(tx.to[2:] if tx.to.startswith("0x") else tx.to)
+            to = bytes.fromhex(tx.to.removeprefix("0x"))
             value = tx.value
             data = tx.data
             data_len = len(data)
@@ -434,9 +434,7 @@ class SafeWalletProvider(WalletProvider):
                 signature = await self.privy_client.sign_hash(
                     self.privy_wallet_id, safe_tx_hash
                 )
-                sig_bytes = bytes.fromhex(
-                    signature[2:] if signature.startswith("0x") else signature
-                )
+                sig_bytes = bytes.fromhex(signature.removeprefix("0x"))
 
                 # d. Encode execTransaction calldata with DelegateCall
                 exec_tx_data = self._encode_safe_exec_transaction(
@@ -945,9 +943,7 @@ class SafeWalletProvider(WalletProvider):
             text="executeAllowanceTransfer(address,address,address,uint96,address,uint96,address,bytes)"
         )[:4]
 
-        sig_bytes = bytes.fromhex(
-            signature[2:] if signature.startswith("0x") else signature
-        )
+        sig_bytes = bytes.fromhex(signature.removeprefix("0x"))
 
         exec_data = encode(
             [
@@ -1252,7 +1248,7 @@ async def deploy_safe(
                 log_data_bytes = bytes(raw_data)
             else:
                 raw_str = str(raw_data)
-                hex_str = raw_str[2:] if raw_str.startswith("0x") else raw_str
+                hex_str = raw_str.removeprefix("0x")
                 log_data_bytes = bytes.fromhex(hex_str)
             if len(log_data_bytes) >= 32:
                 # Extract address from first 32 bytes (last 20 bytes are the address)
@@ -1724,9 +1720,7 @@ async def enable_allowance_module(
     signature_hex = await privy_client.sign_hash(privy_wallet_id, safe_tx_hash)
 
     # Parse signature and adjust v value for Safe
-    sig_bytes = bytes.fromhex(
-        signature_hex[2:] if signature_hex.startswith("0x") else signature_hex
-    )
+    sig_bytes = bytes.fromhex(signature_hex.removeprefix("0x"))
     r = sig_bytes[:32]
     s = sig_bytes[32:64]
     v = sig_bytes[64]
@@ -1858,9 +1852,7 @@ async def set_spending_limit(
     signature_hex = await privy_client.sign_hash(privy_wallet_id, safe_tx_hash)
 
     # Parse signature and adjust v value for Safe
-    sig_bytes = bytes.fromhex(
-        signature_hex[2:] if signature_hex.startswith("0x") else signature_hex
-    )
+    sig_bytes = bytes.fromhex(signature_hex.removeprefix("0x"))
     r = sig_bytes[:32]
     s = sig_bytes[32:64]
     v = sig_bytes[64]
@@ -2138,9 +2130,7 @@ async def execute_gasless_transaction(
     signature_hex = await privy_client.sign_hash(privy_wallet_id, safe_tx_hash)
 
     # Parse signature and adjust v value for Safe
-    sig_bytes = bytes.fromhex(
-        signature_hex[2:] if signature_hex.startswith("0x") else signature_hex
-    )
+    sig_bytes = bytes.fromhex(signature_hex.removeprefix("0x"))
     r = sig_bytes[:32]
     s = sig_bytes[32:64]
     v = sig_bytes[64]

@@ -153,7 +153,9 @@ def parse_agent_markdown(text: str, *, source: str) -> dict:
 
     frontmatter = safe_load("\n".join(lines[1:closing])) or {}
     if not isinstance(frontmatter, dict):
-        raise ValueError(f"{source}: frontmatter must be a mapping")
+        # Malformed file content, not a wrong argument type — ValueError keeps
+        # it consistent with the sibling frontmatter checks.
+        raise ValueError(f"{source}: frontmatter must be a mapping")  # noqa: TRY004
 
     allowed = set(AgentUpdate.model_fields) | _EXTRA_FRONTMATTER_KEYS
     unknown = sorted(set(frontmatter) - allowed)
@@ -325,16 +327,19 @@ async def sync_public_agents() -> None:
 
         # Archive predefined agents whose slug no longer has a definition file
         for agent in all_predefined.values():
-            if agent.slug and agent.slug not in syncing_slugs:
-                if agent.archived_at is None:
-                    await _warn_if_referenced(agent.id, agent.slug)
-                    agent.archived_at = datetime.now(UTC)
-                    archived += 1
-                    logger.info(
-                        "Archived removed public agent: %s (id=%s)",
-                        agent.slug,
-                        agent.id,
-                    )
+            if (
+                agent.slug
+                and agent.slug not in syncing_slugs
+                and agent.archived_at is None
+            ):
+                await _warn_if_referenced(agent.id, agent.slug)
+                agent.archived_at = datetime.now(UTC)
+                archived += 1
+                logger.info(
+                    "Archived removed public agent: %s (id=%s)",
+                    agent.slug,
+                    agent.id,
+                )
 
         # Collect agent IDs for auto-subscription before leaving the session.
         # ORM objects become detached after session close, so we capture IDs now.

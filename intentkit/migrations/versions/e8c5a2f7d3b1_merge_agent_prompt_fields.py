@@ -26,15 +26,15 @@ Create Date: 2026-07-12 00:00:00.000000
 
 """
 
-from typing import Sequence, Union
+from collections.abc import Sequence
 
 from alembic import op
 
 # revision identifiers, used by Alembic.
 revision: str = "e8c5a2f7d3b1"
-down_revision: Union[str, Sequence[str], None] = "c7e4a2d9f1b8"
-branch_labels: Union[str, Sequence[str], None] = None
-depends_on: Union[str, Sequence[str], None] = None
+down_revision: str | Sequence[str] | None = "c7e4a2d9f1b8"
+branch_labels: str | Sequence[str] | None = None
+depends_on: str | Sequence[str] | None = None
 
 _OLD_COLUMNS = ("purpose", "personality", "principles", "prompt", "prompt_append")
 

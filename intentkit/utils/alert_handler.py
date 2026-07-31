@@ -9,9 +9,10 @@ Uses Redis for distributed rate limiting with sliding window algorithm.
 
 import logging
 import time
+from collections.abc import Callable
 from queue import Queue
 from threading import Thread
-from typing import Callable, override
+from typing import override
 
 from redis import Redis
 

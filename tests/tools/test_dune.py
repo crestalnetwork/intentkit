@@ -4,6 +4,7 @@ from decimal import Decimal
 from unittest.mock import patch
 
 import pytest
+from pydantic import ValidationError
 
 from intentkit.tools.dune import available, get_tools
 from intentkit.tools.dune.execute_query import DuneExecuteQuery, DuneExecuteQueryInput
@@ -50,9 +51,9 @@ def test_execute_query_input_with_params():
 
 def test_execute_query_input_invalid_limit():
     """Test DuneExecuteQueryInput rejects out-of-range limits."""
-    with pytest.raises(Exception):
+    with pytest.raises(ValidationError):
         DuneExecuteQueryInput(query_id=1, limit=0)
-    with pytest.raises(Exception):
+    with pytest.raises(ValidationError):
         DuneExecuteQueryInput(query_id=1, limit=1001)
 
 

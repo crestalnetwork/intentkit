@@ -54,5 +54,5 @@ class RecentActivitiesTool(SystemTool):
         except ToolException:
             raise
         except Exception as e:
-            self.logger.exception("recent_activities failed: %s", e)
+            self.logger.exception("recent_activities failed")
             raise ToolException(f"Failed to retrieve recent activities: {e}") from e

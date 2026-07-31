@@ -92,7 +92,7 @@ class HttpGet(HttpBaseTool):
                 f"HTTP {exc.response.status_code} - {truncate_response(exc.response.text)}"
             ) from exc
         except httpx.RequestError as exc:
-            raise ToolException(f"Failed to connect to {url} - {str(exc)}") from exc
+            raise ToolException(f"Failed to connect to {url} - {exc!s}") from exc
         except Exception as exc:
             logger.error("Unexpected error in HTTP GET request", exc_info=exc)
-            raise ToolException(f"Unexpected error occurred - {str(exc)}") from exc
+            raise ToolException(f"Unexpected error occurred - {exc!s}") from exc

@@ -5,6 +5,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from langchain_core.tools.base import ToolException
+from pydantic import ValidationError
 
 from intentkit.tools.cn_stock import get_tools
 from intentkit.tools.cn_stock.base import (
@@ -76,9 +77,9 @@ def test_market_of_classifies_correctly():
 
 def test_quote_input_validation():
     GetQuoteInput(symbols=["600519"])
-    with pytest.raises(Exception):
+    with pytest.raises(ValidationError):
         GetQuoteInput(symbols=[])
-    with pytest.raises(Exception):
+    with pytest.raises(ValidationError):
         GetQuoteInput(symbols=["600519"] * 51)
 
 
@@ -87,9 +88,9 @@ def test_kline_input_defaults_and_bounds():
     assert inp.period == "daily"
     assert inp.days_back == 90
     assert inp.adjust == "qfq"
-    with pytest.raises(Exception):
+    with pytest.raises(ValidationError):
         GetKLineInput(symbol="600519", days_back=0)
-    with pytest.raises(Exception):
+    with pytest.raises(ValidationError):
         GetKLineInput(symbol="600519", days_back=2000)
 
 

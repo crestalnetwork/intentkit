@@ -143,8 +143,8 @@ class TokenBalances(PortfolioBaseTool):
             return await self._make_request(
                 method="GET", endpoint=endpoint, api_key=api_key, params=params
             )
-        except Exception as e:
-            logger.exception(f"token_balances.py: Error fetching token balances: {e}")
+        except Exception:
+            logger.exception("token_balances.py: Error fetching token balances")
             return {
                 "error": "An error occurred while fetching token balances. Please try again later."
             }

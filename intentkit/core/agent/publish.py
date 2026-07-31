@@ -115,7 +115,7 @@ async def publish_agent(
     agent_id: str,
     public_info: AgentPublicInfo,
     description: str | None = None,
-) -> "Agent":
+) -> Agent:
     """Mark an agent as public after merging in the supplied public info.
 
     Enforces the owning team's ``public_agent_limit`` before flipping
@@ -202,7 +202,7 @@ async def publish_agent(
         return Agent.model_validate(db_agent)
 
 
-async def unpublish_agent(*, agent_id: str) -> "Agent":
+async def unpublish_agent(*, agent_id: str) -> Agent:
     """Flip an agent back to TEAM visibility and clear its subscriptions.
 
     Activity / post feed rows are intentionally retained. Only the

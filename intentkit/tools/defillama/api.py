@@ -1,6 +1,6 @@
 """DeFi Llama API implementation and shared schemas."""
 
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Any
 
 import httpx
@@ -86,7 +86,7 @@ async def fetch_batch_historical_prices(
 async def fetch_price_chart(coins: list[str]) -> dict[str, Any]:
     """Get historical price chart data from the past day for multiple tokens."""
     coins_str = ",".join(coins)
-    start_time = int(datetime.now().timestamp()) - 86400  # now - 1 day
+    start_time = int(datetime.now(UTC).timestamp()) - 86400  # now - 1 day
     # 12 points at 2h intervals spans exactly the past day; a longer period
     # would request future timestamps and the API returns no data at all.
     return await _get(
@@ -98,7 +98,7 @@ async def fetch_price_chart(coins: list[str]) -> dict[str, Any]:
 async def fetch_price_percentage(coins: list[str]) -> dict[str, Any]:
     """Get price percentage changes for multiple tokens over a 24h period."""
     coins_str = ",".join(coins)
-    current_timestamp = int(datetime.now().timestamp())
+    current_timestamp = int(datetime.now(UTC).timestamp())
     return await _get(
         f"{DEFILLAMA_COINS_BASE_URL}/percentage/{coins_str}",
         params={
@@ -117,7 +117,7 @@ async def fetch_first_price(coins: list[str]) -> dict[str, Any]:
 
 async def fetch_block(chain: str) -> dict[str, Any]:
     """Get current block data for a specific chain."""
-    current_timestamp = int(datetime.now().timestamp())
+    current_timestamp = int(datetime.now(UTC).timestamp())
     return await _get(f"{DEFILLAMA_COINS_BASE_URL}/block/{chain}/{current_timestamp}")
 
 

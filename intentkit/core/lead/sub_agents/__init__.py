@@ -5,7 +5,7 @@ from __future__ import annotations
 import logging
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 from langchain_core.tools import BaseTool
@@ -53,7 +53,7 @@ async def get_sub_agent_executor(
     agent = _sub_agents.get(key)
 
     if executor and agent:
-        _sub_cached_at[key] = datetime.now(timezone.utc)
+        _sub_cached_at[key] = datetime.now(UTC)
         return executor, agent
 
     definition = SUB_AGENT_REGISTRY[slug]
@@ -68,7 +68,7 @@ async def get_sub_agent_executor(
 
     _sub_executors[key] = executor
     _sub_agents[key] = agent
-    _sub_cached_at[key] = datetime.now(timezone.utc)
+    _sub_cached_at[key] = datetime.now(UTC)
     logger.info("Built sub-agent executor %s for team %s", slug, team_id)
 
     return executor, agent

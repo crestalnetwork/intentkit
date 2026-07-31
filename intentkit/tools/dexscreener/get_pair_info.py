@@ -105,12 +105,11 @@ class GetPairInfo(DexScreenerBaseTool):
                     }
                 )
 
-            except Exception as validation_error:
+            except Exception:
                 logger.exception(
-                    "Failed to validate pair response for %s on %s: %s",
+                    "Failed to validate pair response for %s on %s",
                     pair_address,
                     chain_id,
-                    validation_error,
                 )
                 # Return raw data if validation fails
                 return format_success_response(

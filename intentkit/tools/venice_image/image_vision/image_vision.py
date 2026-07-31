@@ -88,11 +88,11 @@ class ImageVision(VeniceImageVisionBaseTool):
         except ToolException as e:
             return {
                 "success": False,
-                "error": f"An unexpected error occurred: {str(e)}",
+                "error": f"An unexpected error occurred: {e!s}",
             }
         except Exception as e:
             logger.error("Error in %s: %s", self.name, e)
             return {
                 "success": False,
-                "error": f"An unexpected error occurred: {str(e)}",
+                "error": f"An unexpected error occurred: {e!s}",
             }

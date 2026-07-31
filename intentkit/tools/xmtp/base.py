@@ -1,4 +1,4 @@
-from typing import Literal
+from typing import ClassVar, Literal
 
 from langchain_core.tools.base import ToolException
 
@@ -14,7 +14,7 @@ class XmtpBaseTool(IntentKitOnChainTool):
     response_format: Literal["content", "content_and_artifact"] = "content_and_artifact"
 
     # ChainId mapping for XMTP wallet_sendCalls (mainnet only)
-    CHAIN_ID_HEX_BY_NETWORK: dict[str, str] = {
+    CHAIN_ID_HEX_BY_NETWORK: ClassVar[dict[str, str]] = {
         "ethereum-mainnet": "0x1",  # 1
         "base-mainnet": "0x2105",  # 8453
         "arbitrum-mainnet": "0xA4B1",  # 42161
@@ -22,7 +22,7 @@ class XmtpBaseTool(IntentKitOnChainTool):
     }
 
     # CDP network mapping for swap quote API (mainnet only)
-    NETWORK_FOR_CDP_MAPPING: dict[str, str] = {
+    NETWORK_FOR_CDP_MAPPING: ClassVar[dict[str, str]] = {
         "ethereum-mainnet": "ethereum",
         "base-mainnet": "base",
         "arbitrum-mainnet": "arbitrum",

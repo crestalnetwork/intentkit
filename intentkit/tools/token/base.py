@@ -6,9 +6,9 @@ from typing import Any
 import aiohttp
 from langchain_core.tools.base import ToolException
 
+from intentkit.clients.moralis import MORALIS_API_BASE_URL
 from intentkit.config.config import config
 from intentkit.tools.base import IntentKitTool
-from intentkit.tools.token.constants import MORALIS_API_BASE_URL
 
 logger = logging.getLogger(__name__)
 
@@ -77,26 +77,28 @@ class TokenBaseTool(IntentKitTool):
         processed_params = self._prepare_params(params) if params else None
 
         try:
-            async with aiohttp.ClientSession() as session:
-                async with session.request(
+            async with (
+                aiohttp.ClientSession() as session,
+                session.request(
                     method=method,
                     url=url,
                     headers=headers,
                     params=processed_params,
                     json=data,
-                ) as response:
-                    if response.status >= 400:
-                        error_text = await response.text()
-                        logger.error("API error %s: %s", response.status, error_text)
-                        return {
-                            "error": f"API error: {response.status}",
-                            "details": error_text,
-                        }
+                ) as response,
+            ):
+                if response.status >= 400:
+                    error_text = await response.text()
+                    logger.error("API error %s: %s", response.status, error_text)
+                    return {
+                        "error": f"API error: {response.status}",
+                        "details": error_text,
+                    }
 
-                    return await response.json()
+                return await response.json()
         except aiohttp.ClientError as e:
             logger.error("HTTP error making request: %s", e)
-            return {"error": f"HTTP error: {str(e)}"}
+            return {"error": f"HTTP error: {e!s}"}
         except Exception as e:
             logger.error("Unexpected error making request: %s", e)
-            return {"error": f"Unexpected error: {str(e)}"}
+            return {"error": f"Unexpected error: {e!s}"}

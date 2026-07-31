@@ -98,8 +98,6 @@ class DefiLlamaFetchProtocols(DefiLlamaBaseTool):
     class EmptyArgsSchema(BaseModel):
         """Empty schema for no input parameters."""
 
-        pass
-
     args_schema: ArgsSchema | None = EmptyArgsSchema
 
     async def _arun(self, **kwargs) -> DefiLlamaProtocolsOutput:
@@ -123,7 +121,7 @@ class DefiLlamaFetchProtocols(DefiLlamaBaseTool):
             try:
                 # Process hallmarks if present
                 hallmarks = None
-                if "hallmarks" in protocol_data and protocol_data["hallmarks"]:
+                if protocol_data.get("hallmarks"):
                     hallmarks = [
                         Hallmark(timestamp=h[0], description=h[1])
                         for h in protocol_data["hallmarks"]

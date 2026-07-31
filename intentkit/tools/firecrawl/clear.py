@@ -74,6 +74,6 @@ class FirecrawlClearIndexedContent(FirecrawlBaseTool):
 
         except Exception as e:
             logger.exception(
-                f"firecrawl_clear: Error clearing indexed content for agent {agent_id}: {e}"
+                f"firecrawl_clear: Error clearing indexed content for agent {agent_id}"
             )
-            raise ToolException(f"Error clearing indexed content: {str(e)}")
+            raise ToolException(f"Error clearing indexed content: {e!s}")

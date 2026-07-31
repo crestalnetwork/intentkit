@@ -84,7 +84,7 @@ class UserData(BaseModel):
     ] = PydanticField(default_factory=lambda: datetime.now(UTC))
 
     @classmethod
-    async def get(cls, user_id: str, key: str) -> "UserData | None":
+    async def get(cls, user_id: str, key: str) -> UserData | None:
         """Get user data by user_id and key.
 
         Args:

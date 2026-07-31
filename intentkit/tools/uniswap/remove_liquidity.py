@@ -124,7 +124,7 @@ class UniswapRemoveLiquidity(UniswapBaseTool):
                     )
                     burn_receipt = await wallet.wait_for_receipt(burn_tx)
                     burned = burn_receipt.get("status", 0) == 1
-                except Exception:
+                except Exception:  # noqa: S110 - best-effort step; outcome is reflected in the result
                     pass
 
             # Format result

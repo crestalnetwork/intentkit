@@ -1,7 +1,6 @@
 """Template operations for agent templates."""
 
 import logging
-from typing import TYPE_CHECKING
 
 from epyxid import XID
 from pydantic import BaseModel
@@ -11,9 +10,6 @@ from sqlalchemy import select
 from intentkit.config.db import get_session
 from intentkit.models.agent import Agent, AgentCore, AgentTable, AgentVisibility
 from intentkit.models.template import Template, TemplateTable
-
-if TYPE_CHECKING:
-    pass
 
 logger = logging.getLogger(__name__)
 

@@ -145,7 +145,7 @@ class AgentData(BaseModel):
     ]
 
     @classmethod
-    async def get(cls, agent_id: str) -> "AgentData":
+    async def get(cls, agent_id: str) -> AgentData:
         """Get agent data by ID.
 
         Args:
@@ -184,7 +184,7 @@ class AgentData(BaseModel):
             await db.commit()
 
     @staticmethod
-    async def patch(id: str, data: dict[str, Any]) -> "AgentData":
+    async def patch(id: str, data: dict[str, Any]) -> AgentData:
         """Update agent data.
 
         Args:
@@ -361,7 +361,7 @@ class AgentQuota(BaseModel):
     ]
 
     @classmethod
-    async def get(cls, agent_id: str) -> "AgentQuota":
+    async def get(cls, agent_id: str) -> AgentQuota:
         """Get agent quota by id, if not exists, create a new one.
 
         Args:
@@ -399,9 +399,7 @@ class AgentQuota(BaseModel):
         if self.message_count_monthly >= self.message_limit_monthly:
             return False
         # Check daily limit
-        if self.message_count_daily >= self.message_limit_daily:
-            return False
-        return True
+        return self.message_count_daily < self.message_limit_daily
 
     def has_autonomous_quota(self) -> bool:
         """Check if the agent has autonomous quota.
@@ -413,9 +411,7 @@ class AgentQuota(BaseModel):
         if self.autonomous_count_total >= self.autonomous_limit_total:
             return False
         # Check monthly limit
-        if self.autonomous_count_monthly >= self.autonomous_limit_monthly:
-            return False
-        return True
+        return self.autonomous_count_monthly < self.autonomous_limit_monthly
 
     @staticmethod
     async def add_free_income_in_session(
@@ -454,7 +450,7 @@ class AgentQuota(BaseModel):
             raise IntentKitAPIError(
                 status_code=500,
                 key="DatabaseError",
-                message=f"Database error: {str(e)}",
+                message=f"Database error: {e!s}",
             )
 
     async def add_message(self) -> None:

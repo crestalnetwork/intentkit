@@ -81,9 +81,7 @@ def include_object(obj, name, type_, reflected, compare_to) -> bool:
     """
     if type_ == "table" and name not in target_metadata.tables:
         return False
-    if type_ == "index" and name in _MIGRATION_MANAGED_INDEXES:
-        return False
-    return True
+    return not (type_ == "index" and name in _MIGRATION_MANAGED_INDEXES)
 
 
 # Library-owned version table. Downstream applications build their own models

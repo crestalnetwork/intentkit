@@ -136,5 +136,5 @@ class ERC20Transfers(TokenBaseTool):
         except Exception as e:
             logger.error("Error fetching ERC20 transfers: %s", e)
             return {
-                "error": f"An error occurred while fetching ERC20 transfers: {str(e)}. Please try again later."
+                "error": f"An error occurred while fetching ERC20 transfers: {e!s}. Please try again later."
             }

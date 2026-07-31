@@ -173,8 +173,8 @@ class GitHubSearch(GitHubBaseTool):
             )
         except ToolException:
             raise
-        except Exception as e:
-            logger.exception(f"github_search.py: Error searching GitHub: {e}")
+        except Exception:
+            logger.exception("github_search.py: Error searching GitHub")
             raise ToolException(
                 "An error occurred while searching GitHub. Please try again later."
             )

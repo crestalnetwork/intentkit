@@ -76,7 +76,6 @@ dependencies = [
     # Utilities (direct imports of pydantic/web3 companions)
     "cryptography>=48.0.0",
     "pydantic-core>=2.46.4",
-    "typing-extensions>=4.15.0",
     # MCP (Model Context Protocol)
     "mcp>=1.0.0",
     # Chinese A-share market data (cn_stock tool)
@@ -135,8 +134,8 @@ dev = [
     "pytest>=8.4.0",
     "pytest-asyncio>=1.2.0",
     "testing.postgresql",
-    # Linting and code quality
-    "ruff>=0.11.9",
+    # Linting and code quality (lint config inherits ruff 0.16's default rule set)
+    "ruff>=0.16.0",
     "deptry>=0.23.0",
     # Local LLM testing
     "langchain-ollama>=1.1,<2",
@@ -203,27 +202,49 @@ include = [
 exclude = ["*.md"]
 
 [tool.ruff.lint]
-# Ruff 0.16 widened its implicit default from 59 to 413 rules (~1700 diagnostics
-# here), so selection is pinned explicitly rather than inherited. The baseline is
-# ruff's pre-0.16 default (E4/E7/E9/F) plus isort; anything beyond that is opted
-# into one rule at a time, never picked up as a side effect of a version bump.
-select = [
-    "E4", "E7", "E9", "F", "I",
-    # High-signal rules adopted from 0.16's wider set. Listed individually
-    # rather than as "ASYNC" to leave out ASYNC109, which targets trio-style
-    # cancel scopes and would flag our httpx tools' `timeout` parameter.
-    "ASYNC230", "ASYNC240", "ASYNC250", "ASYNC251",  # blocking calls in async defs
-    "B006",    # mutable argument default
-    "G201",    # logger.error(exc_info=True) should be logger.exception()
-    "LOG",     # logging API misuse
-    "RUF100",  # unused noqa
+# Ruff 0.16 replaced the old E4/E7/E9/F default with a curated 413-rule set
+# (partial-prefix subsets across ~35 groups). We inherit that default instead of
+# pinning: new defaults from future ruff versions are adopted on upgrade, and
+# anything we can't pass goes into `ignore` below with a reason.
+extend-select = [
+    # The pre-0.16 pycodestyle baseline, no longer part of ruff's defaults.
+    "E4", "E7", "E9",
+    # Full isort (defaults only carry I001).
+    "I",
+    # Blocking subprocess/os calls in async defs; adopted pre-0.16 but not in
+    # the curated default set.
+    "ASYNC240", "ASYNC250",
+]
+ignore = [
+    # Broad `except Exception` is deliberate resilience in a tool-execution
+    # platform: agent/tool failures must degrade, never crash the run loop.
+    "BLE001",
+    # The whole repo (credit system, pricing, tools, tests — 300+ sites)
+    # uniformly uses the str constructor for Decimal (`Decimal("100")` and
+    # `Decimal("0.0001")` alike). FURB157 would rewrite only the int-valued
+    # ones, splitting the style in financial code.
+    "FURB157",
+]
+
+[tool.ruff.lint.flake8-bugbear]
+# FastAPI's parameter markers are designed to be called in defaults.
+extend-immutable-calls = [
+    "fastapi.Body",
+    "fastapi.Depends",
+    "fastapi.File",
+    "fastapi.Path",
+    "fastapi.Query",
 ]
 
 [tool.ruff.lint.per-file-ignores]
-# One-off ops/migration scripts run interactively from a shell; blocking I/O and
-# prompts on the event loop are fine there (scripts/ is likewise out of scope
-# for deptry and basedpyright).
-"scripts/*" = ["ASYNC", "LOG015"]
+# One-off ops/migration scripts run interactively from a shell; blocking I/O,
+# prompts on the event loop, and naive local timestamps are fine there
+# (scripts/ is likewise out of scope for deptry and basedpyright).
+"scripts/*" = ["ASYNC", "LOG015", "DTZ"]
+# Nested `with patch(...)` stacks mirror decorator stacking and read better
+# than one parenthesized mega-with; naive datetimes are fine for fixture data;
+# silently swallowed exceptions in best-effort test cleanup are fine too.
+"tests/*" = ["SIM117", "DTZ", "S110", "S112"]
 
 [tool.ruff.lint.isort]
 force-single-line = false
@@ -239,8 +260,11 @@ exclude = ["scripts", "tests", "frontend", "docs", "\\.venv", "\\.claude"]
 
 [tool.deptry.per_rule_ignores]
 # asyncpg/aiosqlite are loaded dynamically by SQLAlchemy as DB drivers;
-# pymdown-extensions is loaded by name through the markdown extension registry
-DEP002 = ["asyncpg", "aiosqlite", "pymdown-extensions"]
+# pymdown-extensions is loaded by name through the markdown extension registry;
+# psycopg is never imported directly but is the runtime driver behind
+# psycopg-pool, langgraph's AsyncPostgresSaver, and the postgresql+psycopg://
+# migration URL in config/db.py
+DEP002 = ["asyncpg", "aiosqlite", "pymdown-extensions", "psycopg"]
 # app/ legitimately uses the app dependency group (deptry treats groups as dev)
 DEP004 = ["sentry_sdk", "jwt"]
 

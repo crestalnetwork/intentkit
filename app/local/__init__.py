@@ -25,9 +25,9 @@ __all__ = [
     "lead_router",
     "link_router",
     "memory_router",
+    "metadata_router",
     "public_router",
     "schema_router",
     "wallet_router",
-    "metadata_router",
     "wechat_router",
 ]

@@ -2,7 +2,7 @@ import asyncio
 import importlib.util
 import logging
 import signal
-from datetime import datetime
+from datetime import UTC, datetime
 from pathlib import Path
 from types import ModuleType
 
@@ -208,7 +208,7 @@ async def run_legacy_autonomous_migration() -> bool:
         _ = await module.migrate_if_table_empty()
         return True
     except Exception as e:
-        logger.exception("Legacy autonomous migration failed: %s", e)
+        logger.exception("Legacy autonomous migration failed")
         if not _legacy_migration_alerted:
             _legacy_migration_alerted = True
             try:
@@ -370,14 +370,14 @@ if __name__ == "__main__":
                 "interval",
                 id=HEAD_JOB_ID,
                 minutes=1,
-                next_run_time=datetime.now(),
+                next_run_time=datetime.now(UTC),
                 replace_existing=True,
             )
 
-        # Add job to send heartbeat every 5 minutes
+        # Add job to send heartbeat every minute
         _ = scheduler.add_job(
             send_autonomous_heartbeat,
-            trigger=CronTrigger(minute="*", timezone="UTC"),  # Run every minute
+            trigger=CronTrigger(minute="*", timezone="UTC"),
             id="autonomous_heartbeat",
             name="Autonomous Heartbeat",
             replace_existing=True,

@@ -26,8 +26,6 @@ class FetchHistoricalTVLInput(BaseModel):
     global TVL data across all chains.
     """
 
-    pass
-
 
 class FetchHistoricalTVLResponse(BaseModel):
     """Response schema for historical TVL data."""

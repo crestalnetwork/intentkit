@@ -319,7 +319,7 @@ class AutonomousTask(BaseModel):
             )
         return v
 
-    def normalize_status_defaults(self) -> "AutonomousTask":
+    def normalize_status_defaults(self) -> AutonomousTask:
         """Normalize runtime status fields.
 
         Clears status/next_run_time when the task is disabled, and defaults the

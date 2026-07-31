@@ -96,16 +96,18 @@ async def stream_agent(message: ChatMessageCreate) -> AsyncIterator[ChatMessage]
 
     # Make HTTP request in non-local environment
     url = f"{config.internal_base_url}/core/stream"
-    async with httpx.AsyncClient() as client:
-        async with client.stream(
+    async with (
+        httpx.AsyncClient() as client,
+        client.stream(
             "POST",
             url,
             json=message.model_dump(mode="json"),
             timeout=300,
-        ) as response:
-            response.raise_for_status()
-            async for line in response.aiter_lines():
-                if line.startswith("data: "):
-                    json_str = line[6:]  # Remove "data: " prefix
-                    if json_str.strip():
-                        yield ChatMessage.model_validate_json(json_str)
+        ) as response,
+    ):
+        response.raise_for_status()
+        async for line in response.aiter_lines():
+            if line.startswith("data: "):
+                json_str = line[6:]  # Remove "data: " prefix
+                if json_str.strip():
+                    yield ChatMessage.model_validate_json(json_str)

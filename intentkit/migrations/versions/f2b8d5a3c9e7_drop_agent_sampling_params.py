@@ -11,15 +11,15 @@ Create Date: 2026-07-14 00:00:00.000000
 
 """
 
-from typing import Sequence, Union
+from collections.abc import Sequence
 
 from alembic import op
 
 # revision identifiers, used by Alembic.
 revision: str = "f2b8d5a3c9e7"
-down_revision: Union[str, Sequence[str], None] = "a7d3e9f2c1b4"
-branch_labels: Union[str, Sequence[str], None] = None
-depends_on: Union[str, Sequence[str], None] = None
+down_revision: str | Sequence[str] | None = "a7d3e9f2c1b4"
+branch_labels: str | Sequence[str] | None = None
+depends_on: str | Sequence[str] | None = None
 
 _COLUMNS = ("temperature", "frequency_penalty", "presence_penalty")
 

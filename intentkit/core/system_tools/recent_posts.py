@@ -49,5 +49,5 @@ class RecentPostsTool(SystemTool):
         except ToolException:
             raise
         except Exception as e:
-            self.logger.exception("recent_posts failed: %s", e)
+            self.logger.exception("recent_posts failed")
             raise ToolException(f"Failed to retrieve recent posts: {e}") from e

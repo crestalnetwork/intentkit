@@ -1,6 +1,6 @@
 """Tests for the lead's public-agent follow/unfollow tools and prompt injection."""
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -360,7 +360,7 @@ async def test_call_db_agent_rejects_archived(mock_lead_runtime):
     # An own-team agent that happens to be archived must not be callable.
     archived = _agent("own-1", "Archived", visibility=10)
     archived.team_id = "test-team"
-    archived.archived_at = datetime.now(timezone.utc)
+    archived.archived_at = datetime.now(UTC)
 
     tool = LeadCallAgent()
     with patch(

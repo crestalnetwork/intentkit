@@ -67,7 +67,7 @@ class CryptoCompareFetchTopMarketCap(CryptoCompareBaseTool):
 
             # Convert to list of CryptoCurrency objects
             result = []
-            if "Data" in market_cap_data and market_cap_data["Data"]:
+            if market_cap_data.get("Data"):
                 for item in market_cap_data["Data"]:
                     coin_info = item.get("CoinInfo", {})
                     raw_data = item.get("RAW", {}).get(to_symbol, {})

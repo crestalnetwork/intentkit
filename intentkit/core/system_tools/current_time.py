@@ -81,5 +81,5 @@ class CurrentTimeTool(SystemTool):
         except ToolException:
             raise
         except Exception as e:
-            self.logger.exception("current_time failed: %s", e)
+            self.logger.exception("current_time failed")
             raise ToolException(f"Failed to get current time: {e}") from e

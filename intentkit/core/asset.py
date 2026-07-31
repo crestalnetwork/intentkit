@@ -224,7 +224,11 @@ async def agent_asset(agent_id: str) -> AgentAssets:
                 try:
                     net_worth_total += Decimal(net_worth)
                 except Exception:
-                    pass
+                    logger.debug(
+                        "Ignoring unparsable net worth %r for wallet %s",
+                        net_worth,
+                        address,
+                    )
             assets_result = AgentAssets(
                 net_worth=str(net_worth_total),
                 tokens=[
@@ -267,11 +271,11 @@ async def agent_asset(agent_id: str) -> AgentAssets:
 
 
 __all__ = [
-    "Asset",
-    "AgentAssets",
-    "USDC_ADDRESSES",
     "NATION_ADDRESS",
+    "USDC_ADDRESSES",
+    "AgentAssets",
+    "Asset",
+    "_get_wallet_net_worth",
     "agent_asset",
     "build_assets_list",
-    "_get_wallet_net_worth",
 ]

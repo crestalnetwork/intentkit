@@ -91,10 +91,7 @@ def _normalize_unit(response_data: dict[str, Any], chain: str) -> None:
     value_index = column_infos.index("value")
 
     chain = chain.lower()
-    if chain == "ethereum":
-        divisor = Decimal("1e18")
-        ticker = "ETH"
-    elif chain == "base":
+    if chain in ("ethereum", "base"):
         divisor = Decimal("1e18")
         ticker = "ETH"
     elif chain == "solana":

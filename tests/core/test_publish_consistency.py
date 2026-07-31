@@ -166,13 +166,7 @@ class TestTransitionGaps:
         existing.sub_agents = ["sub-1"]
 
         update = MagicMock()
-        update.model_dump = MagicMock(
-            side_effect=lambda **kw: (
-                {"archived_at": None}
-                if kw.get("exclude_unset")
-                else {"archived_at": None}
-            )
-        )
+        update.model_dump = MagicMock(side_effect=lambda **kw: {"archived_at": None})
 
         with (
             mock_patch(

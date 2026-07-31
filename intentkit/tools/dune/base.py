@@ -72,7 +72,7 @@ class DuneBaseTool(IntentKitTool):
         except ToolException:
             raise
         except Exception as e:
-            logger.exception("Dune API request failed: %s", e)
+            logger.exception("Dune API request failed")
             raise ToolException(f"Dune API request failed: {e}")
 
     async def _poll_execution(

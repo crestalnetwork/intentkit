@@ -1,11 +1,13 @@
 """Tests for system tools in intentkit/core/system_tools/."""
 
 from datetime import datetime
+from typing import Self
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import httpx
 import pytest
 from langchain_core.tools.base import ToolException
+from pydantic import ValidationError
 
 from intentkit.abstracts.graph import AgentContext
 from intentkit.clients.s3 import download_image_bytes
@@ -534,7 +536,7 @@ async def test_create_activity_with_link(mock_runtime):
 
 def test_create_activity_input_text_validation():
     """Text exceeding 280 bytes raises ValueError."""
-    with pytest.raises(Exception):
+    with pytest.raises(ValidationError):
         CreateActivityInput(text="a" * 281)
 
 
@@ -725,7 +727,7 @@ class _FakeAsyncClient:
     def __init__(self, response: _FakeSearchResponse) -> None:
         self._response = response
 
-    async def __aenter__(self) -> "_FakeAsyncClient":
+    async def __aenter__(self) -> Self:
         return self
 
     async def __aexit__(self, *args: object) -> bool:

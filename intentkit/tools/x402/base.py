@@ -417,7 +417,8 @@ class X402BaseTool(IntentKitOnChainTool):
             raise ValueError("Failed to decode token balance response.") from exc
         result = payload.get("result")
         if not isinstance(result, str):
-            raise ValueError("Token balance response missing result.")
+            # Malformed RPC response data, not a wrong argument type.
+            raise ValueError("Token balance response missing result.")  # noqa: TRY004
         try:
             return int(result, 16)
         except ValueError as exc:
@@ -674,7 +675,6 @@ class X402BaseTool(IntentKitOnChainTool):
 
             tx_hash = payment_data.get("transaction", payment_data.get("txHash"))
             success = payment_data.get("success", True)
-            description = description
 
             # Create order record
             order = X402OrderCreate(
@@ -702,6 +702,6 @@ class X402BaseTool(IntentKitOnChainTool):
                 f"Recorded x402 order for agent {agent_id}: {tx_hash or 'no tx'}"
             )
 
-        except Exception as e:
+        except Exception:
             # Don't fail the tool execution if order recording fails
-            logger.exception("Failed to record x402 order: %s", e)
+            logger.exception("Failed to record x402 order")

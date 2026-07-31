@@ -232,8 +232,9 @@ Extract the URLs now:"""
 
         for line in ai_response.strip().split("\n"):
             line = line.strip()
-            # Remove any markdown formatting, bullets, numbering
-            line = line.lstrip("- •*123456789. ")
+            # Remove any markdown formatting, bullets, numbering — a character
+            # set (not a prefix), which is exactly what lstrip does.
+            line = line.lstrip("- •*123456789. ")  # noqa: B005
 
             # Check if it looks like a URL
             if line.startswith(("http://", "https://")):
@@ -242,7 +243,7 @@ Extract the URLs now:"""
                     parsed = urlparse(line)
                     if parsed.netloc and not line.endswith((".xml", ".rss", ".atom")):
                         urls.append(line)
-                except Exception:
+                except Exception:  # noqa: S112 - skip lines urlparse rejects
                     continue
 
         return list(set(urls))  # Remove duplicates
@@ -443,14 +444,6 @@ Extract the URLs now:"""
             return enhanced_result
 
         except Exception as e:
-            # Extract agent_id for error logging if possible
-            agent_id = "UNKNOWN"
-            try:
-                context = self.get_context()
-                if context and context.agent_id:
-                    agent_id = context.agent_id
-            except Exception:
-                pass
-
-            logger.exception("[%s] Error in WebsiteIndexer: %s", agent_id, e)
+            agent_id = self.agent_id_for_log()
+            logger.exception("[%s] Error in WebsiteIndexer", agent_id)
             raise type(e)(f"[agent:{agent_id}]: {e}") from e

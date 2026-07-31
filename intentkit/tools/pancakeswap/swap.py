@@ -116,7 +116,7 @@ class PancakeSwapSwap(PancakeSwapBaseTool):
                     if result[0] > best_out:
                         best_out = result[0]
                         best_fee = fee
-                except Exception:
+                except Exception:  # noqa: S112 - expected miss while probing candidates
                     continue
 
             if best_out == 0:

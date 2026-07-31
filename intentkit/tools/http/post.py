@@ -79,9 +79,10 @@ class HttpPost(HttpBaseTool):
             request_headers = headers or {}
 
             # If data is a dictionary, send as JSON
-            if isinstance(data, dict):
-                if "content-type" not in {k.lower() for k in request_headers.keys()}:
-                    request_headers["Content-Type"] = "application/json"
+            if isinstance(data, dict) and "content-type" not in {
+                k.lower() for k in request_headers
+            }:
+                request_headers["Content-Type"] = "application/json"
 
             async with httpx.AsyncClient() as client:
                 response = await client.post(
@@ -108,7 +109,7 @@ class HttpPost(HttpBaseTool):
                 f"HTTP {exc.response.status_code} - {truncate_response(exc.response.text)}"
             ) from exc
         except httpx.RequestError as exc:
-            raise ToolException(f"Failed to connect to {url} - {str(exc)}") from exc
+            raise ToolException(f"Failed to connect to {url} - {exc!s}") from exc
         except Exception as exc:
             logger.error("Unexpected error in HTTP POST request", exc_info=exc)
-            raise ToolException(f"Unexpected error occurred - {str(exc)}") from exc
+            raise ToolException(f"Unexpected error occurred - {exc!s}") from exc

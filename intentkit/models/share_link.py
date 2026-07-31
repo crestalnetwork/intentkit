@@ -65,8 +65,6 @@ class ShareLinkBase(BaseModel):
 class ShareLinkCreate(ShareLinkBase):
     """Input model for creating a share link."""
 
-    pass
-
 
 class ShareLink(ShareLinkBase):
     """Full share link model with generated fields."""

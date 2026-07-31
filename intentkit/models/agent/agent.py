@@ -90,7 +90,7 @@ class Agent(AgentCreate, AgentPublicInfo):
             return result or 0
 
     @classmethod
-    async def get(cls, agent_id: str) -> "Agent | None":
+    async def get(cls, agent_id: str) -> Agent | None:
         """Get agent by ID from database.
 
         .. deprecated::

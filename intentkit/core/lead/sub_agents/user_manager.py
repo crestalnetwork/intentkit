@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from langchain_core.tools import BaseTool
 
@@ -24,7 +24,7 @@ def get_user_manager_tools() -> Sequence[BaseTool]:
 
 def build_user_manager(team_id: str) -> Agent:
     """Build an in-memory User Manager sub-agent."""
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
 
     rules = (
         "### Workflow\n\n"

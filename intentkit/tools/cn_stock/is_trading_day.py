@@ -48,7 +48,8 @@ class IsTradingDay(CNStockBaseTool):
         s = s.strip()
         for fmt in ("%Y-%m-%d", "%Y%m%d", "%Y/%m/%d"):
             try:
-                return datetime.strptime(s, fmt).date()
+                # Date-only parse; a timezone would be meaningless here.
+                return datetime.strptime(s, fmt).date()  # noqa: DTZ007
             except ValueError:
                 continue
         raise ToolException(f"Cannot parse date: {s!r}")

@@ -56,7 +56,7 @@ class AgentToolDataCreate(BaseModel):
     key: Annotated[str, Field(description="Key for this specific piece of data")]
     data: Annotated[dict[str, Any], Field(description="JSON data stored for this key")]
 
-    async def save(self) -> "AgentToolData":
+    async def save(self) -> AgentToolData:
         """Save or update tool data.
 
         Returns:
@@ -90,7 +90,7 @@ class AgentToolDataCreate(BaseModel):
 
             # Check if new total would exceed limit (10MB = 10 * 1024 * 1024 bytes)
             if new_total > 10 * 1024 * 1024:
-                raise Exception(
+                raise ValueError(
                     f"Total size would exceed 10MB limit. Current: {current_total}, New: {new_total}"
                 )
 
@@ -247,7 +247,7 @@ class ChatToolDataCreate(BaseModel):
     agent_id: Annotated[str, Field(description="ID of the agent that owns this chat")]
     data: Annotated[dict[str, Any], Field(description="JSON data stored for this key")]
 
-    async def save(self) -> "ChatToolData":
+    async def save(self) -> ChatToolData:
         """Save or update tool data.
 
         Returns:

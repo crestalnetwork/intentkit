@@ -3,8 +3,9 @@
 import asyncio
 import json
 import logging
+from collections.abc import Callable
 from datetime import date, datetime
-from typing import Any, Callable
+from typing import Any
 
 import pytz
 from langchain_core.tools.base import ToolException

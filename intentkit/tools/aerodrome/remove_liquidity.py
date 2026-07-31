@@ -100,7 +100,7 @@ class AerodromeRemoveLiquidity(AerodromeBaseTool):
                         aero_reward = await gauge.functions.earned(
                             checksum_wallet, token_id
                         ).call()
-                    except Exception:
+                    except Exception:  # noqa: S110 - best-effort step; outcome is reflected in the result
                         pass
 
                     # Withdraw from gauge (returns NFT to wallet)
@@ -169,7 +169,7 @@ class AerodromeRemoveLiquidity(AerodromeBaseTool):
                     )
                     burn_receipt = await wallet.wait_for_receipt(burn_tx)
                     burned = burn_receipt.get("status", 0) == 1
-                except Exception:
+                except Exception:  # noqa: S110 - best-effort step; outcome is reflected in the result
                     pass
 
             # Format result

@@ -12,7 +12,6 @@ from urllib.parse import urlparse
 import boto3
 import filetype
 import httpx
-from botocore.exceptions import ClientError
 from mypy_boto3_s3.client import S3Client
 
 from intentkit.config.config import config
@@ -269,64 +268,54 @@ async def store_image(url: str, key: str) -> str:
 
     max_content_length = 20 * 1024 * 1024  # 20 MB
 
-    try:
-        # Download the image from the URL asynchronously using streaming
-        # to avoid buffering oversized responses into memory.
-        async with httpx.AsyncClient(timeout=30) as http_client:
-            async with http_client.stream(
-                "GET", url, follow_redirects=True
-            ) as response:
-                response.raise_for_status()
-                content_length = response.headers.get("content-length")
-                if content_length and int(content_length) > max_content_length:
-                    raise ValueError(
-                        f"Response too large: {content_length} bytes (limit: {max_content_length})"
-                    )
-                chunks: list[bytes] = []
-                total = 0
-                async for chunk in response.aiter_bytes():
-                    total += len(chunk)
-                    if total > max_content_length:
-                        raise ValueError(
-                            f"Response too large: >{max_content_length} bytes"
-                        )
-                    chunks.append(chunk)
-            content = b"".join(chunks)
-            resp_content_type = response.headers.get("Content-Type", "")
+    # Download the image from the URL asynchronously using streaming
+    # to avoid buffering oversized responses into memory.
+    async with httpx.AsyncClient(timeout=30) as http_client:
+        async with http_client.stream("GET", url, follow_redirects=True) as response:
+            response.raise_for_status()
+            content_length = response.headers.get("content-length")
+            if content_length and int(content_length) > max_content_length:
+                raise ValueError(
+                    f"Response too large: {content_length} bytes (limit: {max_content_length})"
+                )
+            chunks: list[bytes] = []
+            total = 0
+            async for chunk in response.aiter_bytes():
+                total += len(chunk)
+                if total > max_content_length:
+                    raise ValueError(f"Response too large: >{max_content_length} bytes")
+                chunks.append(chunk)
+        content = b"".join(chunks)
+        resp_content_type = response.headers.get("Content-Type", "")
 
-        # Prepare the S3 key with prefix
-        prefixed_key = f"{_prefix}{key}"
+    # Prepare the S3 key with prefix
+    prefixed_key = f"{_prefix}{key}"
 
-        # Use BytesIO to create a file-like object that implements read
-        file_obj = BytesIO(content)
+    # Use BytesIO to create a file-like object that implements read
+    file_obj = BytesIO(content)
 
-        # Determine the correct content type
-        content_type = resp_content_type
-        if content_type == "binary/octet-stream" or not content_type:
-            # Try to detect the image type from the content
-            kind = filetype.guess(content)
-            if kind and kind.mime.startswith("image/"):
-                content_type = kind.mime
-            else:
-                # Default to JPEG if detection fails
-                content_type = "image/jpeg"
+    # Determine the correct content type
+    content_type = resp_content_type
+    if content_type == "binary/octet-stream" or not content_type:
+        # Try to detect the image type from the content
+        kind = filetype.guess(content)
+        if kind and kind.mime.startswith("image/"):
+            content_type = kind.mime
+        else:
+            # Default to JPEG if detection fails
+            content_type = "image/jpeg"
 
-        # Upload to S3
-        client.upload_fileobj(
-            file_obj,
-            _bucket,
-            prefixed_key,
-            ExtraArgs={"ContentType": content_type, "ContentDisposition": "inline"},
-        )
+    # Upload to S3
+    client.upload_fileobj(
+        file_obj,
+        _bucket,
+        prefixed_key,
+        ExtraArgs={"ContentType": content_type, "ContentDisposition": "inline"},
+    )
 
-        # Return the relative path
-        logger.info("Image uploaded successfully to %s", prefixed_key)
-        return prefixed_key
-
-    except httpx.HTTPError:
-        raise
-    except ClientError:
-        raise
+    # Return the relative path
+    logger.info("Image uploaded successfully to %s", prefixed_key)
+    return prefixed_key
 
 
 async def store_image_bytes(
@@ -356,38 +345,34 @@ async def store_image_bytes(
     if not image_bytes:
         raise ValueError("Image bytes cannot be empty")
 
-    try:
-        # Prepare the S3 key with prefix
-        prefixed_key = f"{_prefix}{key}"
+    # Prepare the S3 key with prefix
+    prefixed_key = f"{_prefix}{key}"
 
-        # Use BytesIO to create a file-like object that implements read
-        file_obj = BytesIO(image_bytes)
+    # Use BytesIO to create a file-like object that implements read
+    file_obj = BytesIO(image_bytes)
 
-        # Determine the correct content type if not provided
-        if not content_type:
-            # Try to detect the image type from the content
-            kind = filetype.guess(image_bytes)
-            if kind and kind.mime.startswith("image/"):
-                content_type = kind.mime
-            else:
-                # Default to JPEG if detection fails
-                content_type = "image/jpeg"
+    # Determine the correct content type if not provided
+    if not content_type:
+        # Try to detect the image type from the content
+        kind = filetype.guess(image_bytes)
+        if kind and kind.mime.startswith("image/"):
+            content_type = kind.mime
+        else:
+            # Default to JPEG if detection fails
+            content_type = "image/jpeg"
 
-        logger.info("uploading image to s3")
-        # Upload to S3
-        client.upload_fileobj(
-            file_obj,
-            _bucket,
-            prefixed_key,
-            ExtraArgs={"ContentType": content_type, "ContentDisposition": "inline"},
-        )
+    logger.info("uploading image to s3")
+    # Upload to S3
+    client.upload_fileobj(
+        file_obj,
+        _bucket,
+        prefixed_key,
+        ExtraArgs={"ContentType": content_type, "ContentDisposition": "inline"},
+    )
 
-        # Return the relative path
-        logger.info("image is uploaded to %s", prefixed_key)
-        return prefixed_key
-
-    except ClientError:
-        raise
+    # Return the relative path
+    logger.info("image is uploaded to %s", prefixed_key)
+    return prefixed_key
 
 
 class FileType(str, Enum):
@@ -485,51 +470,47 @@ async def store_file_bytes(
             f"File size exceeds the allowed limit of {size_limit_bytes} bytes"
         )
 
-    try:
-        # Prepare the S3 key with prefix
-        prefixed_key = f"{_prefix}{key}"
+    # Prepare the S3 key with prefix
+    prefixed_key = f"{_prefix}{key}"
 
-        # Use BytesIO to create a file-like object that implements read
-        file_obj = BytesIO(file_bytes)
+    # Use BytesIO to create a file-like object that implements read
+    file_obj = BytesIO(file_bytes)
 
-        # Determine content type based on file_type
-        content_type = ""
-        if file_type == FileType.IMAGE:
-            kind = filetype.guess(file_bytes)
-            if kind and kind.mime.startswith("image/"):
-                content_type = kind.mime
-            else:
-                content_type = "image/jpeg"
-        elif file_type == FileType.VIDEO:
-            kind = filetype.guess(file_bytes)
-            if kind and kind.mime.startswith("video/"):
-                content_type = kind.mime
-            else:
-                content_type = "video/mp4"
-        elif file_type == FileType.AUDIO:
-            kind = filetype.guess(file_bytes)
-            if kind and kind.mime.startswith("audio/"):
-                content_type = kind.mime
-            else:
-                content_type = "audio/mpeg"
-        elif file_type == FileType.PDF:
-            content_type = "application/pdf"
+    # Determine content type based on file_type
+    content_type = ""
+    if file_type == FileType.IMAGE:
+        kind = filetype.guess(file_bytes)
+        if kind and kind.mime.startswith("image/"):
+            content_type = kind.mime
         else:
-            raise ValueError(f"Unsupported file type: {file_type}")  # pyright: ignore[reportUnreachable]
+            content_type = "image/jpeg"
+    elif file_type == FileType.VIDEO:
+        kind = filetype.guess(file_bytes)
+        if kind and kind.mime.startswith("video/"):
+            content_type = kind.mime
+        else:
+            content_type = "video/mp4"
+    elif file_type == FileType.AUDIO:
+        kind = filetype.guess(file_bytes)
+        if kind and kind.mime.startswith("audio/"):
+            content_type = kind.mime
+        else:
+            content_type = "audio/mpeg"
+    elif file_type == FileType.PDF:
+        content_type = "application/pdf"
+    else:
+        raise ValueError(f"Unsupported file type: {file_type}")  # pyright: ignore[reportUnreachable]
 
-        logger.info("Uploading %s to S3 with content type %s", file_type, content_type)
+    logger.info("Uploading %s to S3 with content type %s", file_type, content_type)
 
-        # Upload to S3
-        client.upload_fileobj(
-            file_obj,
-            _bucket,
-            prefixed_key,
-            ExtraArgs={"ContentType": content_type, "ContentDisposition": "inline"},
-        )
+    # Upload to S3
+    client.upload_fileobj(
+        file_obj,
+        _bucket,
+        prefixed_key,
+        ExtraArgs={"ContentType": content_type, "ContentDisposition": "inline"},
+    )
 
-        # Return the relative path
-        logger.info("%s uploaded successfully to %s", file_type, prefixed_key)
-        return prefixed_key
-
-    except ClientError:
-        raise
+    # Return the relative path
+    logger.info("%s uploaded successfully to %s", file_type, prefixed_key)
+    return prefixed_key

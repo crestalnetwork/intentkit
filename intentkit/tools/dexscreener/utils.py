@@ -194,8 +194,8 @@ def sort_pairs_by_criteria(
     try:
         sort_func = get_sort_function(sort_by, volume_timeframe)
         return sorted(pairs, key=sort_func, reverse=reverse)
-    except Exception as e:
-        logger.exception("Failed to sort pairs: %s", e)
+    except Exception:
+        logger.exception("Failed to sort pairs")
         return pairs  # Return original list if sorting fails
 
 

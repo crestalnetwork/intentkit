@@ -115,8 +115,8 @@ class VeniceImageGenerationBaseTool(VeniceImageBaseTool):
             result["image_bytes_sha256"] = image_hash
 
             return result
-        except ToolException as e:
-            raise e
+        except ToolException:
+            raise
         except Exception as e:
             raise ToolException(
                 "An unexpected error occurred during the image generation process."

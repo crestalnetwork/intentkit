@@ -1,7 +1,7 @@
 import logging
 from abc import ABC, abstractmethod
 from enum import IntEnum, StrEnum
-from typing import final, override
+from typing import ClassVar, final, override
 
 import httpx
 
@@ -452,9 +452,9 @@ class QuicknodeChainProvider(ChainProvider):
                     req_err,
                 )
                 return
-            except Exception as exc:
+            except Exception:
                 logger.exception(
-                    "Unexpected error while fetching QuickNode chain configs: %s", exc
+                    "Unexpected error while fetching QuickNode chain configs"
                 )
                 return
 
@@ -553,7 +553,7 @@ class InfuraChainProvider(ChainProvider):
     and Infura V3 URLs.
     """
 
-    INFURA_NETWORKS: dict[SupportedNetwork, tuple[Chain, str]] = {
+    INFURA_NETWORKS: ClassVar[dict[SupportedNetwork, tuple[Chain, str]]] = {
         SupportedNetwork.EthereumMainnet: (Chain.Ethereum, "mainnet"),
         # SupportedNetwork.EthereumSepolia: (Chain.Ethereum, "sepolia"), # Not supported
         SupportedNetwork.ArbitrumMainnet: (Chain.Arbitrum, "arbitrum-mainnet"),

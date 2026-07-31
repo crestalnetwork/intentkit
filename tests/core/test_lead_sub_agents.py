@@ -1,6 +1,6 @@
 """Tests for lead sub-agents: self-updater, content-manager, and user-manager."""
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -210,7 +210,7 @@ async def test_recent_team_activities_found(mock_lead_runtime):
     mock_activity.id = "act_1"
     mock_activity.agent_name = "Agent One"
     mock_activity.agent_id = "agent-1"
-    mock_activity.created_at = datetime(2024, 1, 1, tzinfo=timezone.utc)
+    mock_activity.created_at = datetime(2024, 1, 1, tzinfo=UTC)
     mock_activity.text = "Did something important"
     mock_activity.images = None
     mock_activity.video = None
@@ -257,7 +257,7 @@ async def test_recent_team_activities_with_link(mock_lead_runtime):
     mock_activity.id = "act_2"
     mock_activity.agent_name = "Agent Two"
     mock_activity.agent_id = "agent-2"
-    mock_activity.created_at = datetime(2024, 1, 1, tzinfo=timezone.utc)
+    mock_activity.created_at = datetime(2024, 1, 1, tzinfo=UTC)
     mock_activity.text = "Check this link"
     mock_activity.images = ["https://example.com/img.png"]
     mock_activity.video = None
@@ -290,7 +290,7 @@ async def test_recent_team_posts_found(mock_lead_runtime):
     mock_post.id = "post_1"
     mock_post.agent_name = "Agent One"
     mock_post.title = "Great Post"
-    mock_post.created_at = datetime(2024, 1, 1, tzinfo=timezone.utc)
+    mock_post.created_at = datetime(2024, 1, 1, tzinfo=UTC)
     mock_post.slug = "great-post"
     mock_post.excerpt = "A summary"
     mock_post.tags = ["tag1", "tag2"]
@@ -337,7 +337,7 @@ async def test_lead_get_post_success(mock_lead_runtime):
     mock_post.id = "post_1"
     mock_post.agent_name = "Agent One"
     mock_post.title = "Test Post"
-    mock_post.created_at = datetime(2024, 1, 1, tzinfo=timezone.utc)
+    mock_post.created_at = datetime(2024, 1, 1, tzinfo=UTC)
     mock_post.slug = "test-post"
     mock_post.excerpt = "An excerpt"
     mock_post.tags = ["tag1"]

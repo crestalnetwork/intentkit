@@ -224,9 +224,7 @@ async def run_autonomous_task(
             await _record_error_activity(task_id, effective_agent_id, error_text)
 
     except Exception as e:
-        logger.exception(
-            f"Error in autonomous task {task_id} for team {team_id}: {repr(e)}"
-        )
-        error_text = f"Autonomous task exception: {repr(e)}"
+        logger.exception(f"Error in autonomous task {task_id} for team {team_id}")
+        error_text = f"Autonomous task exception: {e!r}"
         await _finish_execution(execution, [], error_text)
         await _record_error_activity(task_id, effective_agent_id, error_text)

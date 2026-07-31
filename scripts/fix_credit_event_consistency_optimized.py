@@ -308,7 +308,7 @@ class OptimizedCreditEventConsistencyFixer:
                 return self.calculate_detailed_amounts(record)
             return None
         except Exception as e:
-            raise Exception(f"Error processing record {record.id}: {str(e)}")
+            raise RuntimeError(f"Error processing record {record.id}: {e!s}") from e
 
     async def batch_update_records(
         self, session: AsyncSession, updates: list[dict[str, Any]]
@@ -339,7 +339,7 @@ class OptimizedCreditEventConsistencyFixer:
                 successful += len(batch_updates)
 
             except Exception as e:
-                logger.error(f"Failed to update batch: {str(e)}")
+                logger.error(f"Failed to update batch: {e!s}")
                 failed += len(batch_updates)
 
         return successful, failed
@@ -391,22 +391,21 @@ class OptimizedCreditEventConsistencyFixer:
             self.failed_fixes += failed_count
 
             # Apply updates in batches and commit periodically
-            if (
+            if pending_updates and (
                 len(pending_updates) >= BATCH_UPDATE_SIZE
                 or batch_number % COMMIT_INTERVAL == 0
             ):
-                if pending_updates:
-                    successful, failed = await self.batch_update_records(
-                        session, pending_updates
-                    )
-                    self.fixed_records += successful
-                    self.failed_fixes += failed
+                successful, failed = await self.batch_update_records(
+                    session, pending_updates
+                )
+                self.fixed_records += successful
+                self.failed_fixes += failed
 
-                    # Commit periodically to avoid long transactions
-                    await session.commit()
-                    logger.info(f"Committed {successful} updates, {failed} failed")
+                # Commit periodically to avoid long transactions
+                await session.commit()
+                logger.info(f"Committed {successful} updates, {failed} failed")
 
-                    pending_updates = []
+                pending_updates = []
 
             if fixed_count > 0 or failed_count > 0:
                 logger.info(
@@ -488,7 +487,7 @@ async def main():
         logger.info("Consistency fixing completed.")
 
     except Exception as e:
-        logger.error(f"Error during processing: {str(e)}")
+        logger.error(f"Error during processing: {e!s}")
         raise
     finally:
         # Ensure cleanup

@@ -226,8 +226,6 @@ async def request_validation_exception_handler(
 class IntentKitLookUpError(LookupError):
     """Custom lookup error for IntentKit."""
 
-    pass
-
 
 class AgentError(Exception):
     """Custom exception for agent-related errors."""

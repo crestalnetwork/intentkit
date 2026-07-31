@@ -39,7 +39,7 @@ class IntentKitEvmSignerAdapter:
 
     @property
     def address(self) -> str:
-        return getattr(self._signer, "address")
+        return self._signer.address
 
     def sign_typed_data(
         self,
@@ -100,7 +100,7 @@ def _normalize_payment_error(exc: Exception) -> str:
 
 def _wrap_selector(
     selector: Callable[[int, list[Any]], Any] | None,
-    hooks: "X402HttpxCompatHooks | None",
+    hooks: X402HttpxCompatHooks | None,
 ) -> Callable[[int, list[Any]], Any] | None:
     if hooks is None:
         return selector
@@ -260,7 +260,7 @@ def _build_x402_client(
     signer: Any,
     max_value: int | None = None,
     payment_requirements_selector: Callable[[int, list[Any]], Any] | None = None,
-    hooks: "X402HttpxCompatHooks | None" = None,
+    hooks: X402HttpxCompatHooks | None = None,
 ) -> x402Client:
     wrapped_selector = _wrap_selector(payment_requirements_selector, hooks)
     client = x402Client(payment_requirements_selector=wrapped_selector)

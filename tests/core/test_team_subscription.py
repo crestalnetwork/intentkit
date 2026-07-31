@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -7,7 +7,7 @@ from intentkit.models.agent.core import AgentVisibility
 from intentkit.models.team_feed import TeamSubscription
 from intentkit.utils.error import IntentKitAPIError
 
-NOW = datetime.now(timezone.utc)
+NOW = datetime.now(UTC)
 
 MODULE = "intentkit.core.team.subscription"
 

@@ -60,8 +60,6 @@ class X402OrderBase(BaseModel):
 class X402OrderCreate(X402OrderBase):
     """Model for creating a new x402 order."""
 
-    pass
-
 
 class X402Order(X402OrderBase):
     """Full x402 order model with auto-generated fields."""

@@ -73,7 +73,7 @@ class CryptoCompareFetchTopExchanges(CryptoCompareBaseTool):
 
             # Convert to list of CryptoExchange objects
             result = []
-            if "Data" in exchanges_data and exchanges_data["Data"]:
+            if exchanges_data.get("Data"):
                 for item in exchanges_data["Data"]:
                     if len(result) >= limit:
                         break

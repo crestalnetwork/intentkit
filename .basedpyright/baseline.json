@@ -212,92 +212,12 @@
                 }
             }
         ],
-        "./tests/bdd/test_onchain_aerodrome.py": [
-            {
-                "code": "reportUnusedVariable",
-                "range": {
-                    "startColumn": 34,
-                    "endColumn": 47,
-                    "lineCount": 1
-                }
-            }
-        ],
-        "./tests/bdd/test_onchain_pancakeswap.py": [
-            {
-                "code": "reportUnusedVariable",
-                "range": {
-                    "startColumn": 34,
-                    "endColumn": 47,
-                    "lineCount": 1
-                }
-            }
-        ],
         "./tests/core/test_agent_info.py": [
             {
                 "code": "reportArgumentType",
                 "range": {
                     "startColumn": 28,
                     "endColumn": 33,
-                    "lineCount": 1
-                }
-            }
-        ],
-        "./tests/core/test_agent_management.py": [
-            {
-                "code": "reportUnusedVariable",
-                "range": {
-                    "startColumn": 12,
-                    "endColumn": 24,
-                    "lineCount": 1
-                }
-            },
-            {
-                "code": "reportUnusedVariable",
-                "range": {
-                    "startColumn": 26,
-                    "endColumn": 37,
-                    "lineCount": 1
-                }
-            },
-            {
-                "code": "reportUnusedVariable",
-                "range": {
-                    "startColumn": 12,
-                    "endColumn": 24,
-                    "lineCount": 1
-                }
-            },
-            {
-                "code": "reportUnusedVariable",
-                "range": {
-                    "startColumn": 26,
-                    "endColumn": 37,
-                    "lineCount": 1
-                }
-            },
-            {
-                "code": "reportUnusedVariable",
-                "range": {
-                    "startColumn": 16,
-                    "endColumn": 28,
-                    "lineCount": 1
-                }
-            },
-            {
-                "code": "reportUnusedVariable",
-                "range": {
-                    "startColumn": 30,
-                    "endColumn": 41,
-                    "lineCount": 1
-                }
-            }
-        ],
-        "./tests/core/test_share_link.py": [
-            {
-                "code": "reportUnusedVariable",
-                "range": {
-                    "startColumn": 13,
-                    "endColumn": 22,
                     "lineCount": 1
                 }
             }
