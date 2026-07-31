@@ -1,3 +1,8 @@
+## Bug Fixes
+
+- Editing an agent that has a custom URL name now saves correctly. Previously, if you opened an agent's edit page, made a change, and reloaded the page before saving, the save could fail with an "agent not found" error.
+
 ## Improvements
 
-- Clearer diagnostics for model provider failures: when a model provider rejects or fails a request, error logs and alerts now include the provider's status code and response details, instead of only a generic message like "Provider returned error". This applies to agent runs and to background history summarization, and makes it possible to tell at a glance whether a failure was a provider outage or a rejected request.
+- Codebase-wide quality pass: the project's automated code checks were expanded from a small hand-picked set to the linter's full recommended set, and roughly 1,600 findings were resolved across the codebase. Most were stylistic, but the sweep also corrected a few real issues, including timestamps recorded without a timezone in the autonomous task scheduler and the DeFi Llama market-data client, and error logs that repeated the same error text twice. Failure-case tests were tightened to verify the specific error they expect instead of accepting any failure.
+- Removed an unused third-party dependency, slightly reducing install size.
