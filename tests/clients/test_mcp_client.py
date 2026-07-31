@@ -14,12 +14,22 @@ import pytest
 from mcp.types import CallToolResult, ListToolsResult, TextContent, Tool
 
 from intentkit.clients.mcp.client import (
+    _CLIENT_INFO,
     McpToolError,
     call_mcp_tool_at,
     list_mcp_tools_at,
 )
 
 MODULE = "intentkit.clients.mcp.client"
+
+
+def test_client_info_identifies_us():
+    """We send this to third-party servers, which may gate behaviour on it.
+
+    It read ``claude-code``/``1.0.12`` until 2026-08-01.
+    """
+    assert _CLIENT_INFO.name == "intentkit"
+    assert _CLIENT_INFO.version
 
 
 def _session(*, tools=None, call_result=None):

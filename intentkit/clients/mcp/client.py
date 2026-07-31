@@ -15,6 +15,7 @@ from mcp.client.streamable_http import streamable_http_client
 from mcp.types import Implementation, TextContent
 
 from intentkit.clients.mcp.registry import McpServerDef
+from intentkit.config.config import config
 
 logger = logging.getLogger(__name__)
 
@@ -41,7 +42,10 @@ def _build_headers(server_def: McpServerDef, api_key: str | None) -> dict[str, s
     return headers
 
 
-_CLIENT_INFO = Implementation(name="claude-code", version="1.0.12")
+#: Identifies us to remote MCP servers. ``config.release`` is the same backend
+#: version both APIs advertise and Sentry tags, so a server-side log lines up
+#: with a deploy; it is "local" outside a released build.
+_CLIENT_INFO = Implementation(name="intentkit", version=config.release)
 
 
 @asynccontextmanager
