@@ -95,17 +95,17 @@ def pick_default_model() -> str:
 def pick_lead_model() -> str:
     """Pick the model for the team lead orchestrator.
 
-    The lead drives user conversation and multi-agent delegation, so it runs a
-    flash model at least as strong as the per-agent default
-    (``pick_default_model``).
+    The lead drives user conversation and multi-agent delegation. DeepSeek's
+    V4 Flash 0731 build tops agent/tool-driving benchmarks at flash cost, so
+    it heads the list on both its providers.
     """
     order: list[tuple[str, LLMProvider]] = [
+        ("deepseek-v4-flash", LLMProvider.DEEPSEEK),
+        ("deepseek/deepseek-v4-flash-0731", LLMProvider.OPENROUTER),
         ("gemini-3.6-flash", LLMProvider.GOOGLE),
-        ("google/gemini-3.6-flash", LLMProvider.OPENROUTER),
         ("gpt-5.6-luna", LLMProvider.OPENAI),
         ("grok-4.5", LLMProvider.XAI),
         ("MiniMax-M3", LLMProvider.MINIMAX),
-        ("deepseek-v4-flash", LLMProvider.DEEPSEEK),
         ("mimo-v2.5", LLMProvider.MIMO_PLAN),
     ]
     return _first_configured(order, fallback=_DEFAULT_FALLBACK_MODEL)
