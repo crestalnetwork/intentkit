@@ -13,6 +13,7 @@ from sqlalchemy.orm import Mapped, mapped_column
 from intentkit.config.base import Base
 
 SLUG_MAX_LENGTH = 60
+MAX_TAGS = 3
 
 
 class AgentPostBase(BaseModel):
@@ -68,7 +69,7 @@ class AgentPostBase(BaseModel):
         list[str],
         PydanticField(
             description="List of tags",
-            max_length=3,
+            max_length=MAX_TAGS,
         ),
     ] = []
 

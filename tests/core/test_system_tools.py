@@ -22,7 +22,13 @@ from intentkit.core.system_tools.create_activity import (
 )
 from intentkit.core.system_tools.current_time import CurrentTimeTool
 from intentkit.core.system_tools.get_post import GetPostTool
-from intentkit.core.system_tools.read_webpage import ReadWebpageCloudflareTool
+from intentkit.core.system_tools.read_webpage import (
+    _CF_MAX_ATTEMPTS,
+    _DIRECT_MAX_BYTES,
+    ReadWebpageCloudflareTool,
+    _retry_delay,
+    _validate_request_url,
+)
 from intentkit.core.system_tools.recent_activities import RecentActivitiesTool
 from intentkit.core.system_tools.recent_posts import RecentPostsTool
 from intentkit.core.system_tools.search_web import (
@@ -669,11 +675,25 @@ async def test_recent_posts_empty(mock_runtime):
 # ──────────────────────────────────────────────
 
 
+def _no_cf_pacing(monkeypatch) -> None:
+    """Zero out Cloudflare pacing/backoff delays and reset the shared slot.
+
+    monkeypatch restores all three module globals on teardown.
+    """
+    module = "intentkit.core.system_tools.read_webpage"
+    monkeypatch.setattr(f"{module}._CF_MIN_INTERVAL", 0.0)
+    monkeypatch.setattr(f"{module}._CF_RETRY_BASE_DELAY", 0.0)
+    monkeypatch.setattr(f"{module}._cf_next_slot", 0.0)
+
+
 @pytest.mark.asyncio
 async def test_read_webpage_cloudflare_missing_config():
     """Missing config raises ToolException."""
     tool = ReadWebpageCloudflareTool()
-    with patch("intentkit.config.config.config") as mock_config:
+    with (
+        patch("intentkit.config.config.config") as mock_config,
+        patch.object(tool, "_try_direct_fetch", new=AsyncMock(return_value=None)),
+    ):
         mock_config.cloudflare_account_id = None
         mock_config.cloudflare_api_token = None
         with pytest.raises(
@@ -688,6 +708,7 @@ async def test_read_webpage_cloudflare_success():
     tool = ReadWebpageCloudflareTool()
     with (
         patch("intentkit.config.config.config") as mock_config,
+        patch.object(tool, "_try_direct_fetch", new=AsyncMock(return_value=None)),
         patch.object(
             tool, "_fetch_markdown", new=AsyncMock(return_value="raw markdown")
         ),
@@ -702,30 +723,177 @@ async def test_read_webpage_cloudflare_success():
     assert result == "cleaned markdown"
 
 
+@pytest.mark.asyncio
+async def test_read_webpage_direct_fetch_returns_json_without_rendering(monkeypatch):
+    """A JSON response is returned as-is; Cloudflare and the LLM are skipped."""
+    tool = ReadWebpageCloudflareTool()
+    _patch_httpx_stream(
+        monkeypatch,
+        b'{"id": 1}',
+        headers={"content-type": "application/json; charset=utf-8"},
+    )
+    with (
+        patch.object(tool, "_fetch_markdown", new=AsyncMock()) as fetch_markdown,
+        patch.object(tool, "_clean_with_llm", new=AsyncMock()) as clean_with_llm,
+    ):
+        result = await tool._arun("https://api.example.com/item/1.json")
+
+    assert result == '{"id": 1}'
+    fetch_markdown.assert_not_awaited()
+    clean_with_llm.assert_not_awaited()
+
+
+@pytest.mark.asyncio
+async def test_read_webpage_direct_fetch_whitespace_body(monkeypatch):
+    """A whitespace-only direct body yields the no-content message."""
+    tool = ReadWebpageCloudflareTool()
+    _patch_httpx_stream(monkeypatch, b"  \n ", headers={"content-type": "text/plain"})
+    result = await tool._arun("https://example.com/empty.txt")
+    assert result == "The URL returned no content."
+
+
+@pytest.mark.asyncio
+async def test_read_webpage_direct_fetch_rejects_html(monkeypatch):
+    """An HTML response is not fetched directly; the body is never consumed."""
+    tool = ReadWebpageCloudflareTool()
+    _patch_httpx_stream(
+        monkeypatch,
+        b"<html></html>",
+        headers={"content-type": "text/html; charset=utf-8"},
+    )
+    assert await tool._try_direct_fetch("https://example.com") is None
+
+
+@pytest.mark.asyncio
+async def test_read_webpage_direct_fetch_rejects_non_200(monkeypatch):
+    """Non-200 responses fall back to Cloudflare."""
+    tool = ReadWebpageCloudflareTool()
+    _patch_httpx_stream(
+        monkeypatch, b"", headers={"content-type": "application/json"}, status_code=503
+    )
+    assert await tool._try_direct_fetch("https://example.com/x.json") is None
+
+
+@pytest.mark.asyncio
+async def test_read_webpage_direct_fetch_caps_body_size(monkeypatch):
+    """The direct download stops at _DIRECT_MAX_BYTES."""
+    tool = ReadWebpageCloudflareTool()
+    _patch_httpx_stream(
+        monkeypatch,
+        b"x" * (_DIRECT_MAX_BYTES + 50000),
+        headers={"content-type": "text/plain"},
+        chunk_size=65536,
+    )
+    result = await tool._try_direct_fetch("https://example.com/huge.txt")
+    assert result is not None
+    assert len(result) == _DIRECT_MAX_BYTES
+
+
+@pytest.mark.asyncio
+async def test_read_webpage_blocks_internal_url():
+    """URLs targeting internal networks are rejected before any fetch."""
+    tool = ReadWebpageCloudflareTool()
+    with pytest.raises(ToolException, match="Blocked request"):
+        await tool._arun("http://169.254.169.254/latest/meta-data/")
+    with pytest.raises(ToolException, match="Blocked request"):
+        await tool._arun("http://redis:6379/")
+
+
+@pytest.mark.asyncio
+async def test_read_webpage_redirect_hop_is_validated():
+    """The request hook re-checks every redirect hop against the SSRF guard."""
+    with pytest.raises(ToolException, match="Blocked request"):
+        await _validate_request_url(httpx.Request("GET", "http://10.0.0.1/steal"))
+    # Public hops pass
+    await _validate_request_url(httpx.Request("GET", "https://example.com/ok"))
+
+
+@pytest.mark.asyncio
+async def test_read_webpage_cloudflare_retries_429_then_succeeds(monkeypatch):
+    """A 429 from Cloudflare is retried and the eventual result returned."""
+    _no_cf_pacing(monkeypatch)
+    tool = ReadWebpageCloudflareTool()
+    client = _FakeAsyncClient(
+        [
+            _FakeSearchResponse(429, text="rate limited"),
+            _FakeSearchResponse(200, {"success": True, "result": "# md"}),
+        ]
+    )
+    with patch(
+        "intentkit.core.system_tools.read_webpage.httpx.AsyncClient",
+        return_value=client,
+    ):
+        result = await tool._fetch_markdown("acc", "token", "https://example.com")
+
+    assert result == "# md"
+    assert client.calls == 2
+
+
+@pytest.mark.asyncio
+async def test_read_webpage_cloudflare_429_exhausted(monkeypatch):
+    """Persistent 429s raise a ToolException after the retry budget."""
+    _no_cf_pacing(monkeypatch)
+    tool = ReadWebpageCloudflareTool()
+    client = _FakeAsyncClient([_FakeSearchResponse(429, text="rate limited")])
+    with patch(
+        "intentkit.core.system_tools.read_webpage.httpx.AsyncClient",
+        return_value=client,
+    ):
+        with pytest.raises(ToolException, match="rate limited"):
+            await tool._fetch_markdown("acc", "token", "https://example.com")
+
+    assert client.calls == _CF_MAX_ATTEMPTS
+
+
+def test_read_webpage_retry_delay():
+    """Retry-After is honored (capped); otherwise exponential backoff."""
+    # Retry-After header wins
+    assert _retry_delay("42", 0) == 42
+    # Retry-After is capped
+    assert _retry_delay("999", 0) == 120
+    # Invalid (e.g. HTTP-date) Retry-After falls back to exponential backoff
+    assert _retry_delay("soon", 1) == 20
+    # No header: exponential backoff
+    assert _retry_delay(None, 0) == 10
+    assert _retry_delay(None, 2) == 40
+
+
 # ──────────────────────────────────────────────
 # WebSearchTool
 # ──────────────────────────────────────────────
 
 
 class _FakeSearchResponse:
-    """Minimal httpx-like response for web_search backend tests."""
+    """Minimal httpx-like response for web_search/read_webpage tests."""
 
     def __init__(
-        self, status_code: int, json_data: dict | None = None, text: str = ""
+        self,
+        status_code: int,
+        json_data: dict | None = None,
+        text: str = "",
+        headers: dict[str, str] | None = None,
     ) -> None:
         self.status_code = status_code
         self._json = json_data or {}
         self.text = text
+        self.headers = headers or {}
 
     def json(self) -> dict:
         return self._json
 
 
 class _FakeAsyncClient:
-    """Async-context-manager stub that returns a fixed response."""
+    """Async-context-manager stub replaying one response or a sequence.
 
-    def __init__(self, response: _FakeSearchResponse) -> None:
-        self._response = response
+    A single response repeats forever; a list advances per call and its last
+    element repeats on overflow (the `calls` counter still records overruns).
+    """
+
+    def __init__(
+        self, response: "_FakeSearchResponse | list[_FakeSearchResponse]"
+    ) -> None:
+        self._responses = response if isinstance(response, list) else [response]
+        self.calls = 0
 
     async def __aenter__(self) -> Self:
         return self
@@ -733,11 +901,16 @@ class _FakeAsyncClient:
     async def __aexit__(self, *args: object) -> bool:
         return False
 
+    def _next(self) -> _FakeSearchResponse:
+        response = self._responses[min(self.calls, len(self._responses) - 1)]
+        self.calls += 1
+        return response
+
     async def post(self, *args: object, **kwargs: object) -> _FakeSearchResponse:
-        return self._response
+        return self._next()
 
     async def get(self, *args: object, **kwargs: object) -> _FakeSearchResponse:
-        return self._response
+        return self._next()
 
 
 def _set_search_keys(
@@ -948,6 +1121,7 @@ class _FakeStreamResponse:
         self._chunk_size = chunk_size
         self.headers = headers or {}
         self.status_code = status_code
+        self.encoding: str | None = None
         self.request = httpx.Request("GET", "https://example.com/x")
 
     async def aread(self) -> bytes:

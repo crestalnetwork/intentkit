@@ -10,20 +10,23 @@ from intentkit.core.agent_activity import create_agent_activity
 from intentkit.core.agent_post import create_agent_post
 from intentkit.core.system_tools.base import SystemTool
 from intentkit.models.agent_activity import AgentActivityCreate
-from intentkit.models.agent_post import SLUG_MAX_LENGTH, AgentPostCreate
+from intentkit.models.agent_post import MAX_TAGS, SLUG_MAX_LENGTH, AgentPostCreate
 from intentkit.models.chat import ChatMessageAttachment, ChatMessageAttachmentType
 
 
 class CreatePostInput(BaseModel):
-    """Input schema for creating an agent post."""
+    """Input schema for creating an agent post.
+
+    slug and tags carry no hard length caps in the schema: LLMs occasionally
+    overshoot, and a hard schema rejection wastes a whole turn. Both are
+    clamped in _arun instead.
+    """
 
     title: str = Field(..., description="Post title", max_length=200)
     markdown: str = Field(
         ...,
         description="Post body in markdown. Omit h1 title; use h2 for sections.",
     )
-    # No max_length here: LLMs occasionally overshoot, and a hard schema
-    # rejection wastes a whole turn. Longer slugs are truncated in _arun.
     slug: str = Field(
         ...,
         description=(
@@ -35,7 +38,7 @@ class CreatePostInput(BaseModel):
     excerpt: str = Field(
         ..., description="Short summary, max 200 chars", max_length=200
     )
-    tags: list[str] = Field(..., description="Tags, max 3", max_length=3)
+    tags: list[str] = Field(..., description=f"Tags, max {MAX_TAGS}")
     cover: str | None = Field(
         default=None, description="Cover image URL", max_length=1000
     )
@@ -101,6 +104,7 @@ class CreatePostTool(SystemTool):
             agent_id = context.agent_id
 
             slug = _truncate_slug(slug)
+            tags = [t.strip() for t in tags if t.strip()][:MAX_TAGS]
 
             post_create = AgentPostCreate(
                 agent_id=agent_id,

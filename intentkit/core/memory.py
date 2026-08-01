@@ -124,7 +124,9 @@ async def merge_memory_content(existing: str, new_content: str) -> str:
 
     try:
         model_name = pick_summarize_model()
-        llm = await create_llm_model(model_name)
+        # Merging memory documents needs no reasoning; "none" clamps to the
+        # weakest level the picked model supports.
+        llm = await create_llm_model(model_name, reasoning_effort="none")
         model = await llm.create_instance()
 
         response = await model.ainvoke(

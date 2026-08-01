@@ -27,28 +27,28 @@ def validate_url(url: str) -> None:
     # Strip trailing dot (FQDN notation) to prevent bypass via "localhost." etc.
     hostname = hostname.rstrip(".")
 
-    # Block single-segment hostnames (docker service names like "redis", "db")
-    if "." not in hostname:
-        raise ToolException(
-            f"Blocked request to single-segment hostname '{hostname}' "
-            "(internal service names are not allowed)"
-        )
-
-    # Check if hostname is an IP address in a private/reserved range
+    # IP literals: block anything outside the globally routable space.
+    # `not is_global` covers private/reserved/loopback/link-local plus the
+    # special-use ranges those flags miss (CGNAT 100.64/10, 0.0.0.0/8, ...);
+    # multicast is excluded separately since parts of it count as global.
+    # This runs before the single-segment rule so IPv6 literals (which
+    # contain no dot) are judged by their address, not their spelling.
     try:
         addr = ipaddress.ip_address(hostname)
-        if (
-            addr.is_private
-            or addr.is_reserved
-            or addr.is_loopback
-            or addr.is_link_local
-        ):
-            raise ToolException(
-                f"Blocked request to internal/reserved IP address: {hostname}"
-            )
     except ValueError:
-        # Not an IP literal — it's a domain name, which is fine
-        pass
+        # Not an IP literal — it's a hostname. Block single-segment names
+        # (docker service names like "redis", "db").
+        if "." not in hostname:
+            raise ToolException(
+                f"Blocked request to single-segment hostname '{hostname}' "
+                "(internal service names are not allowed)"
+            ) from None
+        return
+
+    if not addr.is_global or addr.is_multicast:
+        raise ToolException(
+            f"Blocked request to internal/reserved IP address: {hostname}"
+        )
 
 
 # Maximum response body size (1 MB) to prevent memory exhaustion from large responses

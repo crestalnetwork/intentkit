@@ -180,12 +180,29 @@ def test_create_post_input_validation():
             tags=["tag1"],
         )
 
-    # Test invalid tags (too many)
-    with pytest.raises(ValidationError):
-        CreatePostInput(
-            title="Valid Title",
-            markdown="Content",
-            slug="valid-slug-123",
-            excerpt="Valid excerpt",
-            tags=["1", "2", "3", "4"],
-        )
+    # Too many tags pass the schema for the same reason; extras are
+    # dropped later in _arun.
+    CreatePostInput(
+        title="Valid Title",
+        markdown="Content",
+        slug="valid-slug-123",
+        excerpt="Valid excerpt",
+        tags=["1", "2", "3", "4"],
+    )
+
+
+@pytest.mark.asyncio
+async def test_create_post_drops_extra_tags(mock_db_session):
+    """Extra tags from the LLM are dropped, not rejected."""
+    content, _ = await _run_create_post(
+        title="Title",
+        markdown="Content",
+        slug="valid-slug",
+        excerpt="Excerpt",
+        tags=["1", "2", "3", "4"],
+    )
+
+    assert "Post created successfully" in content
+    post_obj = _stored(mock_db_session, AgentPostTable)
+    assert post_obj is not None
+    assert post_obj.tags == ["1", "2", "3"]
