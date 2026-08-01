@@ -18,6 +18,8 @@ from intentkit.models.team_feed import TeamSubscription
 from intentkit.utils.error import IntentKitAPIError
 from intentkit.utils.pdf import post_pdf_response
 
+from app.local.agent import require_agent_by_id_or_slug
+
 content_router = APIRouter()
 
 
@@ -50,20 +52,25 @@ async def get_all_activities(
     summary="Get Agent Activities",
 )
 async def get_agent_activities(
-    agent_id: str = Path(..., description="ID of the agent"),
+    agent_id: str = Path(..., description="ID or slug of the agent"),
     db: AsyncSession = Depends(get_db),
 ) -> list[AgentActivity]:
     """Get all activities for a specific agent.
 
     **Path Parameters:**
-    * `agent_id` - ID of the agent
+    * `agent_id` - ID or slug of the agent
 
     **Returns:**
     * `list[AgentActivity]` - List of activities for the agent sorted by created_at descending
+
+    **Raises:**
+    * `IntentKitAPIError`:
+        - 404: Agent not found
     """
+    agent = await require_agent_by_id_or_slug(agent_id)
     stmt = (
         select(AgentActivityTable)
-        .where(AgentActivityTable.agent_id == agent_id)
+        .where(AgentActivityTable.agent_id == agent.id)
         .order_by(AgentActivityTable.created_at.desc())
     )
     activities = [
@@ -100,20 +107,25 @@ async def get_all_posts(
     summary="Get Agent Posts (Brief)",
 )
 async def get_agent_posts(
-    agent_id: str = Path(..., description="ID of the agent"),
+    agent_id: str = Path(..., description="ID or slug of the agent"),
     db: AsyncSession = Depends(get_db),
 ) -> list[AgentPostBrief]:
     """Get all posts for a specific agent with truncated content.
 
     **Path Parameters:**
-    * `agent_id` - ID of the agent
+    * `agent_id` - ID or slug of the agent
 
     **Returns:**
     * `list[AgentPostBrief]` - List of posts for the agent with content truncated to 500 characters
+
+    **Raises:**
+    * `IntentKitAPIError`:
+        - 404: Agent not found
     """
+    agent = await require_agent_by_id_or_slug(agent_id)
     stmt = (
         select(AgentPostTable)
-        .where(AgentPostTable.agent_id == agent_id)
+        .where(AgentPostTable.agent_id == agent.id)
         .order_by(AgentPostTable.created_at.desc())
     )
     posts = [AgentPostBrief.from_table(p) for p in (await db.scalars(stmt)).all()]
@@ -161,14 +173,14 @@ async def get_post(
     summary="Get Post by Slug",
 )
 async def get_post_by_slug(
-    agent_id: str = Path(..., description="ID of the agent"),
+    agent_id: str = Path(..., description="ID or slug of the agent"),
     slug: str = Path(..., description="Slug of the post"),
     db: AsyncSession = Depends(get_db),
 ) -> AgentPost:
     """Get a single post by Agent ID and Slug with full content.
 
     **Path Parameters:**
-    * `agent_id` - ID of the agent
+    * `agent_id` - ID or slug of the agent
     * `slug` - Slug of the post
 
     **Returns:**
@@ -176,10 +188,11 @@ async def get_post_by_slug(
 
     **Raises:**
     * `IntentKitAPIError`:
-        - 404: Post not found
+        - 404: Agent or post not found
     """
+    agent = await require_agent_by_id_or_slug(agent_id)
     stmt = select(AgentPostTable).where(
-        AgentPostTable.agent_id == agent_id,
+        AgentPostTable.agent_id == agent.id,
         AgentPostTable.slug == slug,
     )
     post = (await db.scalars(stmt)).first()
@@ -221,13 +234,14 @@ async def get_post_pdf(
     summary="Download Post as PDF by Slug",
 )
 async def get_post_pdf_by_slug(
-    agent_id: str = Path(..., description="ID of the agent"),
+    agent_id: str = Path(..., description="ID or slug of the agent"),
     slug: str = Path(..., description="Slug of the post"),
     db: AsyncSession = Depends(get_db),
 ) -> Response:
     """Download a post as a styled PDF file by agent ID and slug."""
+    agent = await require_agent_by_id_or_slug(agent_id)
     stmt = select(AgentPostTable).where(
-        AgentPostTable.agent_id == agent_id,
+        AgentPostTable.agent_id == agent.id,
         AgentPostTable.slug == slug,
     )
     post = (await db.scalars(stmt)).first()

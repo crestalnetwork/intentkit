@@ -52,6 +52,25 @@ def mock_db_session():
 
 
 @pytest.fixture
+def resolve_known_agents(monkeypatch):
+    """Resolve the canned agent ids (or their slugs) without a DB.
+
+    The endpoints resolve through require_agent_by_id_or_slug, which reads
+    get_agent_by_id_or_slug from the app.local.agent module namespace.
+    """
+    import app.local.agent as agent_module
+
+    slug_to_id = {"agent-one-slug": "agent-1"}
+
+    async def fake_get_agent_by_id_or_slug(agent_id: str) -> AgentInfo | None:
+        return AGENT_INFOS.get(slug_to_id.get(agent_id, agent_id))
+
+    monkeypatch.setattr(
+        agent_module, "get_agent_by_id_or_slug", fake_get_agent_by_id_or_slug
+    )
+
+
+@pytest.fixture
 def sample_activities():
     """Sample activity data for tests."""
     now = datetime.now()
@@ -147,7 +166,7 @@ async def test_get_all_activities(monkeypatch, sample_activities):
 
 
 @pytest.mark.asyncio
-async def test_get_agent_activities(monkeypatch, sample_activities):
+async def test_get_agent_activities(resolve_known_agents, sample_activities):
     """Test GET /agents/{agent_id}/activities returns filtered activities."""
     import app.local.content as content_module
 
@@ -165,6 +184,21 @@ async def test_get_agent_activities(monkeypatch, sample_activities):
 
     assert len(result) == 2
     assert all(a.agent_id == "agent-1" for a in result)
+
+
+@pytest.mark.asyncio
+async def test_get_agent_activities_unknown_agent_404(resolve_known_agents):
+    """An unknown id or slug 404s instead of returning an empty feed."""
+    from intentkit.utils.error import IntentKitAPIError
+
+    import app.local.content as content_module
+
+    with pytest.raises(IntentKitAPIError) as exc_info:
+        await content_module.get_agent_activities(
+            agent_id="no-such-agent", db=AsyncMock()
+        )
+
+    assert exc_info.value.status_code == 404
 
 
 @pytest.mark.asyncio
@@ -190,7 +224,7 @@ async def test_get_all_posts_truncates_content(monkeypatch, sample_posts):
 
 
 @pytest.mark.asyncio
-async def test_get_agent_posts(monkeypatch, sample_posts):
+async def test_get_agent_posts(resolve_known_agents, sample_posts):
     """Test GET /agents/{agent_id}/posts returns filtered posts."""
     import app.local.content as content_module
 

@@ -23,9 +23,6 @@ from intentkit.core.agent import (
     override_agent,
     patch_agent,
 )
-from intentkit.core.agent import (
-    get_agent as get_agent_by_id,
-)
 from intentkit.core.agent.publish import (
     ensure_not_referenced_by_public_agent,
     ensure_sub_agents_public,
@@ -48,6 +45,21 @@ from app.common.upload import validate_and_store_image
 agent_router = APIRouter()
 
 logger = logging.getLogger(__name__)
+
+
+async def require_agent_by_id_or_slug(agent_id: str) -> Agent:
+    """Resolve an id-or-slug path parameter, 404ing when it matches nothing.
+
+    useAgentSlugRewrite means any `{agent_id}` path parameter reachable from
+    the frontend may carry a slug, while DB rows and core functions are
+    id-only — endpoints must resolve before touching either.
+    """
+    agent = await get_agent_by_id_or_slug(agent_id)
+    if not agent:
+        raise IntentKitAPIError(
+            status_code=404, key="NotFound", message="Agent not found"
+        )
+    return agent
 
 
 @agent_router.post(
@@ -107,7 +119,7 @@ async def create_agent_endpoint(
 )
 async def override_agent_endpoint(
     background_tasks: BackgroundTasks,
-    agent_id: str = Path(..., description="ID of the agent to update"),
+    agent_id: str = Path(..., description="ID or slug of the agent to update"),
     agent: AgentUpdate = Body(AgentUpdate, description="Agent update configuration"),
 ) -> Response:
     """Override an existing agent.
@@ -115,7 +127,7 @@ async def override_agent_endpoint(
     Use input to override agent configuration. If some fields are not provided, they will be reset to default values.
 
     **Path Parameters:**
-    * `agent_id` - ID of the agent to update
+    * `agent_id` - ID or slug of the agent to update
 
     **Request Body:**
     * `agent` - Agent update configuration
@@ -131,10 +143,11 @@ async def override_agent_endpoint(
     """
     picture_provided = "picture" in agent.model_fields_set
 
-    latest_agent, agent_data = await override_agent(agent_id, agent)
+    existing_agent = await require_agent_by_id_or_slug(agent_id)
+    latest_agent, agent_data = await override_agent(existing_agent.id, agent)
 
     if not picture_provided:
-        background_tasks.add_task(backfill_agent_avatar, agent_id)
+        background_tasks.add_task(backfill_agent_avatar, existing_agent.id)
 
     agent_response = await AgentResponse.from_agent(latest_agent, agent_data)
 
@@ -181,12 +194,7 @@ async def patch_agent_endpoint(
     update_fields = agent.model_dump(exclude_unset=True)
     picture_explicitly_set = "picture" in update_fields
 
-    # Accept a slug like the paired GET /agents/{agent_id}/editable does. The
-    # frontend rewrites the address bar to the slug, so after a reload the edit
-    # page saves against one; patch_agent and backfill_agent_avatar are id-only.
-    existing_agent = await get_agent_by_id_or_slug(agent_id)
-    if not existing_agent:
-        raise IntentKitAPIError(404, "NotFound", "Agent not found")
+    existing_agent = await require_agent_by_id_or_slug(agent_id)
 
     latest_agent, agent_data = await patch_agent(existing_agent.id, agent)
 
@@ -277,11 +285,7 @@ async def get_agent(
     * `IntentKitAPIError`:
         - 404: Agent not found
     """
-    agent = await get_agent_by_id_or_slug(agent_id)
-    if not agent:
-        raise IntentKitAPIError(
-            status_code=404, key="NotFound", message="Agent not found"
-        )
+    agent = await require_agent_by_id_or_slug(agent_id)
 
     # Get agent data
     agent_data = await AgentData.get(agent.id)
@@ -316,11 +320,7 @@ async def get_agent_editable(
     * `IntentKitAPIError`:
         - 404: Agent not found
     """
-    agent = await get_agent_by_id_or_slug(agent_id)
-    if not agent:
-        raise IntentKitAPIError(
-            status_code=404, key="NotFound", message="Agent not found"
-        )
+    agent = await require_agent_by_id_or_slug(agent_id)
 
     editable_agent = AgentUpdate.model_validate(agent)
     return Response(
@@ -358,29 +358,26 @@ async def upload_agent_picture(
     summary="Archive Agent",
 )
 async def archive_agent(
-    agent_id: str = Path(..., description="ID of the agent to archive"),
+    agent_id: str = Path(..., description="ID or slug of the agent to archive"),
 ) -> Response:
     """Archive an agent by setting archived_at timestamp.
 
     **Path Parameters:**
-    * `agent_id` - ID of the agent to archive
+    * `agent_id` - ID or slug of the agent to archive
 
     **Raises:**
     * `IntentKitAPIError`:
         - 404: Agent not found
         - 500: Database error
     """
-    # Check if agent exists
-    agent = await get_agent_by_id(agent_id)
-    if not agent:
-        raise IntentKitAPIError(404, "NotFound", "Agent not found")
+    agent = await require_agent_by_id_or_slug(agent_id)
 
     # A sub-agent of a public agent cannot be archived while referenced.
     await ensure_not_referenced_by_public_agent(agent.id, agent.slug)
 
     # Update archived_at in database
     async with get_session() as db:
-        result = await db.execute(select(AgentTable).where(AgentTable.id == agent_id))
+        result = await db.execute(select(AgentTable).where(AgentTable.id == agent.id))
         agent_row = result.scalar_one_or_none()
         if not agent_row:
             raise IntentKitAPIError(404, "NotFound", "Agent not found")
@@ -400,22 +397,19 @@ async def archive_agent(
     summary="Reactivate Agent",
 )
 async def reactivate_agent(
-    agent_id: str = Path(..., description="ID of the agent to reactivate"),
+    agent_id: str = Path(..., description="ID or slug of the agent to reactivate"),
 ) -> Response:
     """Reactivate an archived agent by clearing archived_at timestamp.
 
     **Path Parameters:**
-    * `agent_id` - ID of the agent to reactivate
+    * `agent_id` - ID or slug of the agent to reactivate
 
     **Raises:**
     * `IntentKitAPIError`:
         - 404: Agent not found
         - 500: Database error
     """
-    # Check if agent exists
-    agent = await get_agent_by_id(agent_id)
-    if not agent:
-        raise IntentKitAPIError(404, "NotFound", "Agent not found")
+    agent = await require_agent_by_id_or_slug(agent_id)
 
     # Un-archiving a public agent revives its guest-facing call_agent
     # surface: its sub-agents must all (still) be public.
@@ -427,7 +421,7 @@ async def reactivate_agent(
 
     # Clear archived_at in database
     async with get_session() as db:
-        result = await db.execute(select(AgentTable).where(AgentTable.id == agent_id))
+        result = await db.execute(select(AgentTable).where(AgentTable.id == agent.id))
         agent_row = result.scalar_one_or_none()
         if not agent_row:
             raise IntentKitAPIError(404, "NotFound", "Agent not found")

@@ -100,17 +100,19 @@ async def unsubscribe(
     response_model=list[AgentActivity],
 )
 async def get_agent_activities(
-    agent_id: str = Path(...),
+    agent_id: str = Path(..., description="Agent ID or slug"),
     auth: tuple[str, str] = Depends(verify_team_member),
 ) -> list[AgentActivity]:
     """Get all activities for a team's agent."""
     _, team_id = auth
-    await get_accessible_agent(agent_id, team_id)
+    # get_accessible_agent accepts a slug; content rows store the real id, so
+    # filter by the resolved agent rather than the raw path parameter.
+    agent = await get_accessible_agent(agent_id, team_id)
 
     async with get_session() as db:
         stmt = (
             select(AgentActivityTable)
-            .where(AgentActivityTable.agent_id == agent_id)
+            .where(AgentActivityTable.agent_id == agent.id)
             .order_by(AgentActivityTable.created_at.desc())
         )
         activities = [
@@ -127,17 +129,17 @@ async def get_agent_activities(
     response_model=list[AgentPostBrief],
 )
 async def get_agent_posts(
-    agent_id: str = Path(...),
+    agent_id: str = Path(..., description="Agent ID or slug"),
     auth: tuple[str, str] = Depends(verify_team_member),
 ) -> list[AgentPostBrief]:
     """Get all posts for a team's agent with truncated content."""
     _, team_id = auth
-    await get_accessible_agent(agent_id, team_id)
+    agent = await get_accessible_agent(agent_id, team_id)
 
     async with get_session() as db:
         stmt = (
             select(AgentPostTable)
-            .where(AgentPostTable.agent_id == agent_id)
+            .where(AgentPostTable.agent_id == agent.id)
             .order_by(AgentPostTable.created_at.desc())
         )
         posts = [AgentPostBrief.from_table(p) for p in (await db.scalars(stmt)).all()]
