@@ -47,7 +47,8 @@
   },
   "overrides": {
     "postcss": "$postcss",
-    "sharp": "^0.35.3"
+    "sharp": "^0.35.3",
+    "brace-expansion@1": "^1.1.17"
   },
   "allowScripts": {
     "fsevents@2.3.3": true,
