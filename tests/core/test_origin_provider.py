@@ -61,7 +61,7 @@ def test_origin_provider_loaded_from_catalog():
 
     kimi = models.get("openrouter:moonshotai/kimi-k3")
     assert kimi is not None
-    assert kimi.origin_provider == "moonshotai/int4"
+    assert kimi.origin_provider == "moonshotai"
 
     grok = models.get("openrouter:x-ai/grok-4.5")
     assert grok is not None
