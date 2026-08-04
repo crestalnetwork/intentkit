@@ -20,6 +20,7 @@ from intentkit.tools.x402.base import (
     get_payment_required_header,
     normalize_payment_required_payload,
 )
+from intentkit.utils.ssrf import httpx_request_guard
 
 logger = logging.getLogger(__name__)
 
@@ -116,7 +117,9 @@ class X402CheckPrice(X402BaseTool):
 
         try:
             # Use regular httpx client without x402 signing to get the 402 response
-            async with httpx.AsyncClient(timeout=timeout) as client:
+            async with httpx.AsyncClient(
+                timeout=timeout, event_hooks={"request": [httpx_request_guard]}
+            ) as client:
                 response = await client.request(method_upper, **request_kwargs)
 
                 if response.status_code == 402:

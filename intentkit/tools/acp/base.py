@@ -6,9 +6,10 @@ import httpx
 from langchain_core.tools import ToolException
 
 from intentkit.tools.base import IntentKitTool
-from intentkit.tools.http.base import truncate_response, validate_url
+from intentkit.tools.http.base import truncate_response
+from intentkit.utils.ssrf import httpx_request_guard
 
-__all__ = ["AcpBaseTool", "acp_request", "truncate_response", "validate_url"]
+__all__ = ["AcpBaseTool", "acp_request", "truncate_response"]
 
 
 async def acp_request(
@@ -19,10 +20,15 @@ async def acp_request(
 ) -> httpx.Response:
     """Make an HTTP request with standard ACP error handling.
 
-    Raises ToolException on timeout, HTTP errors, or network errors.
+    The merchant URL is a tool argument, so the client carries the SSRF
+    guard — every ACP tool is covered here rather than at each call site.
+
+    Raises ToolException on a blocked target, timeout, HTTP or network errors.
     """
     try:
-        async with httpx.AsyncClient(timeout=timeout) as client:
+        async with httpx.AsyncClient(
+            timeout=timeout, event_hooks={"request": [httpx_request_guard]}
+        ) as client:
             response = await client.request(method, url, **kwargs)
             response.raise_for_status()
             return response

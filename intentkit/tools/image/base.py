@@ -17,6 +17,7 @@ from intentkit.clients.s3 import get_cdn_url, store_image_bytes
 from intentkit.config.config import config
 from intentkit.models.chat import ChatMessageAttachment, ChatMessageAttachmentType
 from intentkit.tools.base import IntentKitTool
+from intentkit.utils.ssrf import httpx_request_guard
 
 logger = logging.getLogger(__name__)
 
@@ -68,9 +69,14 @@ class ImageBaseTool(IntentKitTool, metaclass=ABCMeta):
         ...
 
     async def _download_images(self, urls: list[str]) -> list[bytes]:
-        """Download images from URLs and return as bytes."""
+        """Download images from URLs and return as bytes.
+
+        The URLs are a tool argument, so the client carries the SSRF guard.
+        """
         results: list[bytes] = []
-        async with httpx.AsyncClient(timeout=30) as client:
+        async with httpx.AsyncClient(
+            timeout=30, event_hooks={"request": [httpx_request_guard]}
+        ) as client:
             for url in urls:
                 resp = await client.get(url, follow_redirects=True)
                 resp.raise_for_status()

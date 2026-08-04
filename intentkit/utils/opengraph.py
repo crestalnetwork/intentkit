@@ -7,6 +7,8 @@ from urllib.parse import urljoin, urlparse
 import httpx
 from pydantic import BaseModel
 
+from intentkit.utils.ssrf import httpx_request_guard
+
 logger = logging.getLogger(__name__)
 
 
@@ -75,6 +77,7 @@ async def fetch_link_meta(url: str) -> LinkMeta | None:
         async with httpx.AsyncClient(
             timeout=5.0,
             follow_redirects=True,
+            event_hooks={"request": [httpx_request_guard]},
             headers={
                 "User-Agent": (
                     "Mozilla/5.0 (compatible; IntentKit/1.0; +https://intentkit.io)"

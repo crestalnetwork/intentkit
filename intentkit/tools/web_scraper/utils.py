@@ -20,6 +20,7 @@ from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 from intentkit.config.config import config
 from intentkit.models.tool import AgentToolData, AgentToolDataCreate
+from intentkit.utils.ssrf import requests_redirect_guard, validate_fetch_url
 
 logger = logging.getLogger(__name__)
 
@@ -507,21 +508,19 @@ async def scrape_and_index_urls(
     Returns:
         Tuple of (total_chunks, was_merged, valid_urls)
     """
-    from urllib.parse import urlparse
-
     from langchain_community.document_loaders import WebBaseLoader
 
-    # Validate URLs
+    # Validate URLs. A batch keeps going when one entry is rejected: these
+    # lists are often machine-generated (sitemap extraction), so one bad
+    # entry should not discard the rest.
     valid_urls = []
     for url in urls:
         try:
-            parsed = urlparse(url)
-            if parsed.scheme in ["http", "https"] and parsed.netloc:
-                valid_urls.append(url)
-            else:
-                logger.warning("Invalid URL format: %s", url)
-        except Exception as e:
-            logger.warning("Error parsing URL %s: %s", url, e)
+            await validate_fetch_url(url)
+        except ToolException as e:
+            logger.warning("Skipping unusable URL %s: %s", url, e)
+        else:
+            valid_urls.append(url)
 
     if not valid_urls:
         return 0, False, []
@@ -567,6 +566,12 @@ async def scrape_and_index_urls(
                 web_paths=[url],
                 requests_per_second=requests_per_second,
             )
+
+            # WebBaseLoader follows redirects, so the URL checked above is only
+            # the first hop; the hook classifies each further hop before it is
+            # taken. Raising inside it aborts the load, which the retry below
+            # reports as a failed URL — blocked, then skipped.
+            loader.session.hooks["response"].append(requests_redirect_guard)
 
             # Configure loader with enhanced headers to bypass bot protection
             loader.requests_kwargs = {

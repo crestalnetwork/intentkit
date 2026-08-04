@@ -79,3 +79,25 @@ async def db_engine(postgres_engine):
         yield postgres_engine
     finally:
         await _truncate_tables(postgres_engine)
+
+
+@pytest.fixture()
+def stub_public_dns():
+    """Answer the SSRF guard's lookups with a fixed public address.
+
+    Tools resolve a URL's hostname before requesting it, so any test that
+    drives one through a placeholder host would otherwise depend on what the
+    machine's resolver says about example.com — some networks answer with an
+    address the guard rightly blocks. Modules that exercise those tools opt
+    in with ``pytestmark = pytest.mark.usefixtures("stub_public_dns")``.
+    """
+    import socket
+    from unittest.mock import patch
+
+    with patch(
+        "intentkit.utils.ssrf.socket.getaddrinfo",
+        return_value=[
+            (socket.AF_INET, socket.SOCK_STREAM, 6, "", ("93.184.216.34", 0))
+        ],
+    ):
+        yield

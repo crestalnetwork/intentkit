@@ -12,7 +12,7 @@ from intentkit.utils.pdf import (
     _safe_url_fetcher,
 )
 
-_GETADDRINFO = "intentkit.utils.pdf.socket.getaddrinfo"
+_GETADDRINFO = "intentkit.utils.ssrf.socket.getaddrinfo"
 
 
 def _addrinfo(ip: str):

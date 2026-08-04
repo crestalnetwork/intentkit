@@ -5,7 +5,7 @@ from typing import Any, override
 from langchain_core.tools import ArgsSchema
 from pydantic import BaseModel, Field
 
-from .base import AcpBaseTool, acp_request, validate_url
+from .base import AcpBaseTool, acp_request
 
 
 class AcpCreateCheckoutInput(BaseModel):
@@ -45,7 +45,6 @@ class AcpCreateCheckout(AcpBaseTool):
         timeout: float = 30.0,
         **_: Any,
     ) -> str:
-        validate_url(merchant_url)
         url = f"{merchant_url.rstrip('/')}/checkout_sessions"
         response = await acp_request(
             "POST", url, timeout=timeout, json={"items": items}

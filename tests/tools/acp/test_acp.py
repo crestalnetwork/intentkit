@@ -21,6 +21,10 @@ from intentkit.tools.acp.create_checkout import (
 from intentkit.tools.acp.get_checkout import AcpGetCheckout
 from intentkit.tools.acp.list_products import AcpListProducts, AcpListProductsInput
 
+# ACP tools resolve merchant_url before requesting it.
+pytestmark = pytest.mark.usefixtures("stub_public_dns")
+
+
 # --- Metadata tests ---
 
 

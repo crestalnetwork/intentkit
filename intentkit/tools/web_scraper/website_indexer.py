@@ -18,6 +18,7 @@ from intentkit.tools.web_scraper.utils import (
     VectorStoreManager,
     scrape_and_index_urls,
 )
+from intentkit.utils.ssrf import validate_fetch_url
 
 logger = logging.getLogger(__name__)
 
@@ -77,33 +78,33 @@ class WebsiteIndexer(WebScraperBaseTool):
             return f"https://{url}"
         return url
 
+    async def _fetch_text(self, url: str, what: str) -> str:
+        """GET a URL with the bot-protection headers, returning "" on failure.
+
+        Redirects are refused rather than followed: the caller validated this
+        exact URL, and a 3xx would carry the fetch to a host that was never
+        checked. Some sites answer the browser-like header set and reject the
+        plainer one, or vice versa, so both are tried.
+        """
+        from intentkit.tools.web_scraper.utils import DEFAULT_HEADERS, FALLBACK_HEADERS
+
+        for headers in (DEFAULT_HEADERS, FALLBACK_HEADERS):
+            async with httpx.AsyncClient(timeout=30, headers=headers) as client:
+                try:
+                    response = await client.get(url, follow_redirects=False)
+                    if response.status_code == 200:
+                        return response.text
+                except Exception as e:
+                    logger.warning("Could not fetch %s from %s: %s", what, url, e)
+        return ""
+
     async def _get_robots_txt(self, base_url: str) -> str:
         """Fetch robots.txt content."""
         robots_url = urljoin(base_url, "/robots.txt")
-
-        # Import headers from utils
-        from intentkit.tools.web_scraper.utils import DEFAULT_HEADERS, FALLBACK_HEADERS
-
-        # Try with primary headers first
-        async with httpx.AsyncClient(timeout=30, headers=DEFAULT_HEADERS) as client:
-            try:
-                response = await client.get(robots_url)
-                if response.status_code == 200:
-                    return response.text
-            except Exception as e:
-                logger.warning(
-                    f"Primary headers failed for robots.txt from {robots_url}: {e}"
-                )
-
-        # Try with fallback headers
-        async with httpx.AsyncClient(timeout=30, headers=FALLBACK_HEADERS) as client:
-            try:
-                response = await client.get(robots_url)
-                if response.status_code == 200:
-                    return response.text
-            except Exception as e:
-                logger.warning("Could not fetch robots.txt from %s: %s", robots_url, e)
-        return ""
+        # Raises for an internal target: base_url is the caller's own argument,
+        # so failing loudly beats reporting "no sitemaps found" later.
+        await validate_fetch_url(robots_url)
+        return await self._fetch_text(robots_url, "robots.txt")
 
     def _extract_sitemaps_from_robots(
         self, robots_content: str, base_url: str
@@ -134,29 +135,16 @@ class WebsiteIndexer(WebScraperBaseTool):
 
     async def _fetch_sitemap_content(self, sitemap_url: str) -> str:
         """Fetch sitemap XML content."""
-        # Import headers from utils
-        from intentkit.tools.web_scraper.utils import DEFAULT_HEADERS, FALLBACK_HEADERS
+        # Unlike base_url, sitemap URLs can come from the target's own
+        # robots.txt, so a blocked one is somebody else's content pointing
+        # inward: skip it and keep going rather than failing the whole run.
+        try:
+            await validate_fetch_url(sitemap_url)
+        except ToolException as e:
+            logger.warning("Skipping blocked sitemap URL %s: %s", sitemap_url, e)
+            return ""
 
-        # Try with primary headers first
-        async with httpx.AsyncClient(timeout=30, headers=DEFAULT_HEADERS) as client:
-            try:
-                response = await client.get(sitemap_url)
-                if response.status_code == 200:
-                    return response.text
-            except Exception as e:
-                logger.warning(
-                    "Primary headers failed for sitemap from %s: %s", sitemap_url, e
-                )
-
-        # Try with fallback headers
-        async with httpx.AsyncClient(timeout=30, headers=FALLBACK_HEADERS) as client:
-            try:
-                response = await client.get(sitemap_url)
-                if response.status_code == 200:
-                    return response.text
-            except Exception as e:
-                logger.warning("Could not fetch sitemap from %s: %s", sitemap_url, e)
-        return ""
+        return await self._fetch_text(sitemap_url, "sitemap")
 
     async def _get_all_sitemap_content(self, base_url: str) -> tuple[str, list[str]]:
         """Get all sitemap content for AI analysis."""
@@ -301,6 +289,7 @@ Extract the URLs now:"""
                 raise ToolException(
                     "Error: Invalid base URL provided. Please provide a valid URL (e.g., https://example.com)"
                 )
+            await validate_fetch_url(base_url)
             context = self.get_context()
             if not context or not context.agent_id:
                 raise ToolException(

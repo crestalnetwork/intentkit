@@ -5,7 +5,8 @@ import httpx
 from langchain_core.tools import ArgsSchema, ToolException
 from pydantic import BaseModel, Field
 
-from intentkit.tools.http.base import HttpBaseTool, truncate_response, validate_url
+from intentkit.tools.http.base import HttpBaseTool, truncate_response
+from intentkit.utils.ssrf import httpx_request_guard
 
 logger = logging.getLogger(__name__)
 
@@ -68,8 +69,9 @@ class HttpGet(HttpBaseTool):
             str: The response content as text, or error message if request fails.
         """
         try:
-            validate_url(url)
-            async with httpx.AsyncClient() as client:
+            async with httpx.AsyncClient(
+                event_hooks={"request": [httpx_request_guard]}
+            ) as client:
                 response = await client.get(
                     url=url,
                     headers=headers,
@@ -83,6 +85,10 @@ class HttpGet(HttpBaseTool):
                 # Return response content
                 return f"Status: {response.status_code}\nContent: {truncate_response(response.text)}"
 
+        except ToolException:
+            # A blocked target already says exactly what went wrong;
+            # the catch-all below would bury it as "unexpected".
+            raise
         except httpx.TimeoutException as exc:
             raise ToolException(
                 f"Request to {url} timed out after {timeout} seconds"

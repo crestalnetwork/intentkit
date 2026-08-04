@@ -3,16 +3,16 @@
 from __future__ import annotations
 
 import asyncio
-import ipaddress
 import re
-import socket
 from datetime import datetime
 from html import escape
 from pathlib import Path
 from typing import Any
-from urllib.parse import urlparse
 
 from fastapi.responses import Response
+from langchain_core.tools.base import ToolException
+
+from intentkit.utils.ssrf import validate_fetch_url_sync
 
 _TEMPLATE_DIR = Path(__file__).parent / "templates"
 _POST_TEMPLATE = (_TEMPLATE_DIR / "post_pdf.html").read_text()
@@ -47,56 +47,23 @@ _VAR_PATTERN = re.compile(r"\{\{\s*(\w+)\s*\}\}")
 # Variables that contain pre-rendered HTML and should not be escaped
 _RAW_VARS = {"content"}
 
-# Allowed URL schemes for image fetching (blocks file://, data:, etc.)
-_ALLOWED_SCHEMES = {"http", "https"}
-
 # Empty stand-in returned for any blocked resource so rendering still succeeds.
 _BLOCKED_RESOURCE = {"string": b"", "mime_type": "image/png"}
-
-
-def _is_disallowed_address(hostname: str) -> bool:
-    """Return True if the hostname resolves to a non-public IP (SSRF guard).
-
-    Blocks loopback, private, link-local, reserved, multicast, and unspecified
-    ranges (e.g. 127.0.0.1, 10.0.0.0/8, 169.254.169.254) so server-side asset
-    fetching cannot reach internal services. Fails closed: a host that cannot be
-    resolved is treated as disallowed.
-    """
-    try:
-        infos = socket.getaddrinfo(hostname, None)
-    except (socket.gaierror, UnicodeError, ValueError):
-        return True
-
-    for info in infos:
-        try:
-            ip = ipaddress.ip_address(info[4][0])
-        except ValueError:
-            return True
-        if (
-            ip.is_private
-            or ip.is_loopback
-            or ip.is_link_local
-            or ip.is_reserved
-            or ip.is_multicast
-            or ip.is_unspecified
-        ):
-            return True
-    return False
 
 
 def _safe_url_fetcher(url: str, timeout: int = 10, ssl_context: Any = None) -> Any:
     """URL fetcher for WeasyPrint that blocks non-HTTP schemes and non-public
     hosts (SSRF prevention).
 
-    The host is resolved and rejected if it maps to a private/internal address.
-    This is the requested host only; it does not follow redirects, so a public
-    host that 3xx-redirects to an internal one is not covered here and should be
+    Rendering must still succeed when an asset is refused, so a blocked
+    resource becomes an empty stand-in rather than an exception. This covers
+    the requested host only; WeasyPrint's own fetch follows redirects, so a
+    public host that 3xx-redirects inward is not caught here and should be
     constrained at the network egress layer.
     """
-    parsed = urlparse(url)
-    if parsed.scheme not in _ALLOWED_SCHEMES:
-        return _BLOCKED_RESOURCE
-    if not parsed.hostname or _is_disallowed_address(parsed.hostname):
+    try:
+        validate_fetch_url_sync(url)
+    except ToolException:
         return _BLOCKED_RESOURCE
 
     from weasyprint import default_url_fetcher

@@ -22,6 +22,7 @@ from intentkit.models.chat import AUTONOMOUS_CHAT_PREFIX
 from intentkit.models.x402_order import X402Order, X402OrderCreate
 from intentkit.tools.onchain import IntentKitOnChainTool
 from intentkit.utils.alert import send_alert
+from intentkit.utils.ssrf import httpx_request_guard
 from intentkit.wallets import resolve_team_wallet
 from intentkit.wallets.privy import CHAIN_CONFIGS, PrivyClient, transfer_erc20_gasless
 
@@ -308,7 +309,9 @@ class X402BaseTool(IntentKitOnChainTool):
         request_kwargs: dict[str, Any],
         timeout: float,
     ) -> PaymentRequired | PaymentRequiredV1 | None:
-        async with httpx.AsyncClient(timeout=timeout) as client:
+        async with httpx.AsyncClient(
+            timeout=timeout, event_hooks={"request": [httpx_request_guard]}
+        ) as client:
             response = await client.request(method, **request_kwargs)
             if response.status_code != 402:
                 return None

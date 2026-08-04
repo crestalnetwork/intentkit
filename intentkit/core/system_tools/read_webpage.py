@@ -12,7 +12,7 @@ from langchain_core.tools.base import ToolException
 from pydantic import BaseModel, Field
 
 from intentkit.core.system_tools.base import SystemTool
-from intentkit.tools.http.base import validate_url
+from intentkit.utils.ssrf import httpx_request_guard, validate_fetch_url
 
 logger = logging.getLogger(__name__)
 
@@ -104,12 +104,6 @@ def _retry_delay(retry_after: str | None, attempt: int) -> float:
     return min(_CF_RETRY_BASE_DELAY * (2**attempt), _CF_MAX_RETRY_DELAY)
 
 
-async def _validate_request_url(request: httpx.Request) -> None:
-    """httpx request hook: re-check every hop so a redirect chain cannot
-    escape the SSRF guard applied to the original URL."""
-    validate_url(str(request.url))
-
-
 def _is_direct_content_type(content_type: str) -> bool:
     """True when the body is machine-readable text needing no rendering."""
     return content_type in _DIRECT_CONTENT_TYPES or content_type.endswith("+json")
@@ -168,7 +162,7 @@ class ReadWebpageCloudflareTool(SystemTool):
             The webpage content converted to markdown.
         """
         try:
-            validate_url(url)
+            await validate_fetch_url(url)
 
             # JSON APIs and other plain-text resources don't need browser
             # rendering or LLM cleaning; fetch them directly to save the
@@ -220,7 +214,7 @@ class ReadWebpageCloudflareTool(SystemTool):
                     timeout=_DIRECT_FETCH_TIMEOUT,
                     follow_redirects=True,
                     max_redirects=5,
-                    event_hooks={"request": [_validate_request_url]},
+                    event_hooks={"request": [httpx_request_guard]},
                 ) as client,
                 client.stream("GET", url) as response,
             ):

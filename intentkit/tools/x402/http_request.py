@@ -13,6 +13,7 @@ from intentkit.tools.onchain import WALLET_ADDRESS_ARG_DESCRIPTION
 from intentkit.tools.x402.base import X402BaseTool, format_prefund_web3_error
 from intentkit.tools.x402.httpx_compat import PaymentError, X402HttpxCompatClient
 from intentkit.utils.error import IntentKitAPIError
+from intentkit.utils.ssrf import httpx_request_guard
 
 logger = logging.getLogger(__name__)
 
@@ -109,6 +110,7 @@ class X402HttpRequest(X402BaseTool):
             )
             account = await self.get_signer(wallet_address)
             async with X402HttpxCompatClient(
+                event_hooks={"request": [httpx_request_guard]},
                 account=account,
                 timeout=timeout,
             ) as client:

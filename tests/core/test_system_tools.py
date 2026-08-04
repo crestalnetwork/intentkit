@@ -27,7 +27,6 @@ from intentkit.core.system_tools.read_webpage import (
     _DIRECT_MAX_BYTES,
     ReadWebpageCloudflareTool,
     _retry_delay,
-    _validate_request_url,
 )
 from intentkit.core.system_tools.recent_activities import RecentActivitiesTool
 from intentkit.core.system_tools.recent_posts import RecentPostsTool
@@ -41,6 +40,10 @@ from intentkit.models.chat import (
     ChatMessageAttachment,
     ChatMessageAttachmentType,
 )
+from intentkit.utils.ssrf import httpx_request_guard
+
+# read_webpage resolves its URL, and every redirect hop, before fetching.
+pytestmark = pytest.mark.usefixtures("stub_public_dns")
 
 
 @pytest.fixture
@@ -800,12 +803,27 @@ async def test_read_webpage_blocks_internal_url():
 
 
 @pytest.mark.asyncio
-async def test_read_webpage_redirect_hop_is_validated():
-    """The request hook re-checks every redirect hop against the SSRF guard."""
-    with pytest.raises(ToolException, match="Blocked request"):
-        await _validate_request_url(httpx.Request("GET", "http://10.0.0.1/steal"))
-    # Public hops pass
-    await _validate_request_url(httpx.Request("GET", "https://example.com/ok"))
+async def test_read_webpage_installs_the_hop_guard(monkeypatch):
+    """The direct-fetch client carries the shared per-hop SSRF guard."""
+    _no_cf_pacing(monkeypatch)
+    seen: dict[str, object] = {}
+
+    class _CapturingClient:
+        def __init__(self, **kwargs):
+            seen.update(kwargs)
+
+        async def __aenter__(self):
+            raise RuntimeError("stop before network")
+
+        async def __aexit__(self, *_):
+            return False
+
+    monkeypatch.setattr(
+        "intentkit.core.system_tools.read_webpage.httpx.AsyncClient", _CapturingClient
+    )
+    await ReadWebpageCloudflareTool()._try_direct_fetch("https://example.com/x.json")
+
+    assert httpx_request_guard in seen["event_hooks"]["request"]  # pyright: ignore[reportIndexIssue]
 
 
 @pytest.mark.asyncio
@@ -1270,7 +1288,7 @@ async def test_download_image_bytes_http_error_body_bounded(monkeypatch):
 )
 async def test_download_image_bytes_rejects_internal_targets(blocked_url):
     """SSRF guard rejects internal/reserved targets before any HTTP call."""
-    with pytest.raises(ValueError, match="Blocked|Only http"):
+    with pytest.raises(ToolException, match="Blocked request"):
         await download_image_bytes(blocked_url)
 
 
@@ -1283,7 +1301,7 @@ async def test_download_image_bytes_rejects_redirect_to_internal(monkeypatch):
         ),
     }
     _patch_httpx_stream_routes(monkeypatch, routes)
-    with pytest.raises(ValueError, match="Blocked internal"):
+    with pytest.raises(ToolException, match="Blocked request"):
         await download_image_bytes("https://evil.example.com/r")
 
 
