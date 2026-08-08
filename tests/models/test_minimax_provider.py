@@ -45,6 +45,10 @@ def test_minimax_catalog_covers_current_models_and_capabilities():
     m3 = models["minimax:MiniMax-M3"]
     assert m3.context_length == 1_000_000
     assert m3.output_length == 512_000
+    assert m3.input_price == Decimal("0.6")
+    assert m3.cached_input_price == Decimal("0.12")
+    assert m3.cache_write_price is None
+    assert m3.output_price == Decimal("2.4")
     assert m3.supports_image_input is True
     assert m3.supports_video_input is True
     assert m3.thinking_modes == ["adaptive", "disabled"]
@@ -60,35 +64,13 @@ def test_minimax_catalog_covers_current_models_and_capabilities():
     assert m27.cache_write_price == Decimal("0.375")
 
 
-def test_minimax_m3_preserves_input_length_and_service_tier_pricing():
+def test_minimax_m3_uses_target_pricing_for_costs():
     m3 = _load_minimax_catalog()["minimax:MiniMax-M3"]
 
-    assert m3.prices_for(512_000) == (
-        Decimal("0.3"),
-        Decimal("0.06"),
-        None,
-        Decimal("1.2"),
-    )
-    assert m3.prices_for(512_001) == (
-        Decimal("0.6"),
-        Decimal("0.12"),
-        None,
-        Decimal("2.4"),
-    )
-    assert m3.prices_for(512_000, "priority") == (
-        Decimal("0.45"),
-        Decimal("0.09"),
-        None,
-        Decimal("1.8"),
-    )
-    assert m3.prices_for(512_001, "priority") == (
-        Decimal("0.9"),
-        Decimal("0.18"),
-        None,
-        Decimal("3.6"),
-    )
     assert m3.cost_usd(600_000, 1_000_000) == Decimal("2.76")
-    assert m3.cost_usd(600_000, 1_000_000, service_tier="priority") == Decimal("4.14")
+    assert m3.cost_usd(
+        600_000, 1_000_000, cached_input_tokens=100_000
+    ) == Decimal("2.712")
 
 
 def test_minimax_endpoint_examples_cover_both_regions_and_protocols():

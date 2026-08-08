@@ -213,26 +213,6 @@ class LLMProvider(str, Enum):
         return display_names.get(self, self.value)
 
 
-class LLMPricingTier(BaseModel):
-    """Token pricing for one service tier and input-length range."""
-
-    service_tier: str = "standard"
-    input_tokens_lte: int | None = Field(default=None, ge=0)
-    input_tokens_gt: int | None = Field(default=None, ge=0)
-    input_price: Decimal
-    cached_input_price: Decimal | None = None
-    cache_write_price: Decimal | None = None
-    output_price: Decimal
-
-    def matches(self, input_tokens: int, service_tier: str) -> bool:
-        """Return whether this tier applies to the request."""
-        if self.service_tier != service_tier:
-            return False
-        if self.input_tokens_lte is not None and input_tokens > self.input_tokens_lte:
-            return False
-        return self.input_tokens_gt is None or input_tokens > self.input_tokens_gt
-
-
 class LLMModelInfo(BaseModel):
     """Information about an LLM model."""
 
@@ -251,7 +231,6 @@ class LLMModelInfo(BaseModel):
     cached_input_price: Decimal | None = None  # Price per 1M cached input tokens in USD
     cache_write_price: Decimal | None = None  # Price per 1M cache-write tokens in USD
     output_price: Decimal  # Price per 1M output tokens in USD
-    pricing_tiers: list[LLMPricingTier] = Field(default_factory=list)
     price_level: int | None = Field(
         default=None, ge=1, le=5
     )  # Price level rating from 1-5
@@ -354,43 +333,22 @@ class LLMModelInfo(BaseModel):
         """
         return list(AVAILABLE_MODELS.values())
 
-    def prices_for(
-        self, input_tokens: int, service_tier: str = "standard"
-    ) -> tuple[Decimal, Decimal | None, Decimal | None, Decimal]:
-        """Return prices for the matching service tier and input range."""
-        for tier in self.pricing_tiers:
-            if tier.matches(input_tokens, service_tier):
-                return (
-                    tier.input_price,
-                    tier.cached_input_price,
-                    tier.cache_write_price,
-                    tier.output_price,
-                )
-        return (
-            self.input_price,
-            self.cached_input_price,
-            self.cache_write_price,
-            self.output_price,
-        )
-
     async def calculate_cost(
         self,
         input_tokens: int,
         output_tokens: int,
         cached_input_tokens: int = 0,
-        service_tier: str = "standard",
     ) -> Decimal:
         """Calculate the cost for a given number of tokens."""
         global credit_per_usdc
         if not credit_per_usdc:
             credit_per_usdc = (await AppSetting.payment()).credit_per_usdc
 
-        input_price, cached_input_price, _, output_price = self.prices_for(
-            input_tokens, service_tier
-        )
         # Determine effective price for cached input tokens
         effective_cached_price = (
-            cached_input_price if cached_input_price is not None else input_price
+            self.cached_input_price
+            if self.cached_input_price is not None
+            else self.input_price
         )
         # Clamp cached to total input (defensive against provider inconsistencies)
         effective_cached = min(cached_input_tokens, input_tokens)
@@ -398,7 +356,10 @@ class LLMModelInfo(BaseModel):
         non_cached_input = input_tokens - effective_cached
 
         input_cost = (
-            credit_per_usdc * Decimal(non_cached_input) * input_price / Decimal(1000000)
+            credit_per_usdc
+            * Decimal(non_cached_input)
+            * self.input_price
+            / Decimal(1000000)
         ).quantize(FOURPLACES, rounding=ROUND_HALF_UP)
         cached_input_cost = (
             credit_per_usdc
@@ -407,7 +368,10 @@ class LLMModelInfo(BaseModel):
             / Decimal(1000000)
         ).quantize(FOURPLACES, rounding=ROUND_HALF_UP)
         output_cost = (
-            credit_per_usdc * Decimal(output_tokens) * output_price / Decimal(1000000)
+            credit_per_usdc
+            * Decimal(output_tokens)
+            * self.output_price
+            / Decimal(1000000)
         ).quantize(FOURPLACES, rounding=ROUND_HALF_UP)
         return (input_cost + cached_input_cost + output_cost).quantize(
             FOURPLACES, rounding=ROUND_HALF_UP
@@ -418,7 +382,6 @@ class LLMModelInfo(BaseModel):
         input_tokens: int,
         output_tokens: int,
         cached_input_tokens: int = 0,
-        service_tier: str = "standard",
     ) -> Decimal:
         """USD cost for a generation's token usage.
 
@@ -430,16 +393,15 @@ class LLMModelInfo(BaseModel):
         output_tokens = max(output_tokens, 0)
         cached = min(max(cached_input_tokens, 0), input_tokens)
         non_cached = input_tokens - cached
-        input_price, cached_input_price, _, output_price = self.prices_for(
-            input_tokens, service_tier
-        )
         cached_price = (
-            cached_input_price if cached_input_price is not None else input_price
+            self.cached_input_price
+            if self.cached_input_price is not None
+            else self.input_price
         )
         return (
-            Decimal(non_cached) * input_price
+            Decimal(non_cached) * self.input_price
             + Decimal(cached) * cached_price
-            + Decimal(output_tokens) * output_price
+            + Decimal(output_tokens) * self.output_price
         ) / Decimal(1000000)
 
 
@@ -518,12 +480,11 @@ class LLMModel(BaseModel):
         input_tokens: int,
         output_tokens: int,
         cached_input_tokens: int = 0,
-        service_tier: str = "standard",
     ) -> Decimal:
         """Calculate the cost for a given number of tokens."""
         info = await self.model_info()
         return await info.calculate_cost(
-            input_tokens, output_tokens, cached_input_tokens, service_tier
+            input_tokens, output_tokens, cached_input_tokens
         )
 
 
