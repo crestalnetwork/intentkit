@@ -1,5 +1,7 @@
 # IntentKit
 
+[![Listed on TakoAPI](https://img.shields.io/badge/Listed%20on-TakoAPI-7c3aed)](https://takoapi.com/agents/crestalnetwork-intentkit)
+
 <div align="center">
     <img src="frontend/src/app/icon.svg" alt="IntentKit" width="20%" height="20%"/>
 </div>
