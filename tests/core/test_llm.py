@@ -7,6 +7,12 @@ def test_minimax_catalog_contains_current_models():
     """The native MiniMax catalog mirrors the current subscription API lineup."""
     with patch("intentkit.models.llm.config") as mock_config:
         mock_config.minimax_plan_api_key = "test-key"
+        mock_config.openai_compatible_api_key = None
+        mock_config.openai_compatible_base_url = None
+        mock_config.openai_compatible_model = None
+        mock_config.anthropic_compatible_api_key = None
+        mock_config.anthropic_compatible_base_url = None
+        mock_config.anthropic_compatible_model = None
         models = load_default_llm_models()
 
     assert models["minimax:MiniMax-M3"].context_length == 1_000_000
