@@ -1,0 +1,5 @@
+id: coingecko-agent
+skills:
+  coingecko:
+    states:
+      crypto_price_checker: public
