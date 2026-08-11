@@ -1,0 +1,109 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "title": "fastCRW Web Scraping and Crawling",
+  "description": "Firecrawl-compatible web scraping and crawling via fastCRW (single binary; self-host or cloud at https://fastcrw.com)",
+  "x-icon": "/tools/crw/crw.png",
+  "x-tags": [
+    "Knowledge Base"
+  ],
+  "properties": {
+    "enabled": {
+      "type": "boolean",
+      "title": "Enabled",
+      "description": "Whether this tool is enabled",
+      "default": false
+    },
+    "states": {
+      "type": "object",
+      "properties": {
+        "crw_scrape": {
+          "type": "string",
+          "title": "fastCRW Scrape",
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner + All Users",
+            "Agent Owner Only"
+          ],
+          "description": "Scrape single web pages and REPLACE any existing indexed content for that URL. Unlike regular scrape, this prevents duplicate content when re-scraping the same page. Use this to refresh/update content from a previously scraped URL.",
+          "default": "disabled"
+        },
+        "crw_crawl": {
+          "type": "string",
+          "title": "fastCRW Crawl",
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner + All Users",
+            "Agent Owner Only"
+          ],
+          "description": "Crawl entire websites and extract content from multiple pages. Can follow links, handle JavaScript-rendered content, and extract structured data from entire websites.",
+          "default": "disabled"
+        },
+        "crw_query_indexed_content": {
+          "type": "string",
+          "title": "Query Indexed Content",
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner + All Users",
+            "Agent Owner Only"
+          ],
+          "description": "Query previously indexed fastCRW content to find relevant information and answer questions. Use this to search through content that was scraped and indexed using fastCRW tools.",
+          "default": "disabled"
+        },
+        "crw_clear_indexed_content": {
+          "type": "string",
+          "title": "Clear Indexed Content",
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner + All Users",
+            "Agent Owner Only"
+          ],
+          "description": "Clear all previously indexed fastCRW content from the vector store. This will permanently delete all indexed content and cannot be undone. Use this tool when you want to start fresh with new content.",
+          "default": "disabled"
+        }
+      },
+      "description": "States for each fastCRW tool (disabled, public, or private)"
+    },
+    "rate_limit_number": {
+      "type": "integer",
+      "title": "Rate Limit Number",
+      "description": "Number of requests allowed per time window",
+      "minimum": 1,
+      "maximum": 1000,
+      "default": 100
+    },
+    "rate_limit_minutes": {
+      "type": "integer",
+      "title": "Rate Limit Minutes",
+      "description": "Time window in minutes for rate limiting",
+      "minimum": 1,
+      "maximum": 1440,
+      "default": 60
+    }
+  },
+  "required": [
+    "states",
+    "enabled"
+  ],
+  "additionalProperties": true
+}
