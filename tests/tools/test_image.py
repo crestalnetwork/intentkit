@@ -167,10 +167,10 @@ async def test_openrouter_payload_uses_image_only_modalities():
     mock_send = AsyncMock(return_value=response)
     mock_client = MagicMock(chat=MagicMock(send_async=mock_send))
 
-    with patch("intentkit.tools.image.base.config") as mock_config:
+    with patch("intentkit.clients.openrouter.config") as mock_config:
         mock_config.openrouter_api_key = "test-key"
         with patch(
-            "intentkit.tools.image.base.openrouter.OpenRouter",
+            "intentkit.clients.openrouter.openrouter.OpenRouter",
             return_value=mock_client,
         ):
             result = await FluxPro()._generate_via_openrouter("a cat", None)
@@ -195,10 +195,10 @@ async def test_openrouter_gpt_image_uses_images_endpoint():
         chat=MagicMock(send_async=AsyncMock()),
     )
 
-    with patch("intentkit.tools.image.base.config") as mock_config:
+    with patch("intentkit.clients.openrouter.config") as mock_config:
         mock_config.openrouter_api_key = "test-key"
         with patch(
-            "intentkit.tools.image.base.openrouter.OpenRouter",
+            "intentkit.clients.openrouter.openrouter.OpenRouter",
             return_value=mock_client,
         ):
             # Text-to-image: no input references
@@ -234,10 +234,10 @@ async def test_openrouter_gpt_image_empty_response_raises():
         ),
     )
 
-    with patch("intentkit.tools.image.base.config") as mock_config:
+    with patch("intentkit.clients.openrouter.config") as mock_config:
         mock_config.openrouter_api_key = "test-key"
         with patch(
-            "intentkit.tools.image.base.openrouter.OpenRouter",
+            "intentkit.clients.openrouter.openrouter.OpenRouter",
             return_value=mock_client,
         ):
             with pytest.raises(ToolException, match="No image found"):

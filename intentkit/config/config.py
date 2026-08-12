@@ -256,6 +256,7 @@ class Config:
         self.venice_api_key: str | None = self.load("VENICE_API_KEY")
         self.coingecko_api_key: str | None = self.load("COINGECKO_API_KEY")
         self.opensea_api_key: str | None = self.load("OPENSEA_API_KEY")
+        self.xquik_api_key: str | None = self.load("XQUIK_API_KEY")
         # Composio — team links (external app accounts + hosted MCP tools).
         # The feature is disabled entirely when the API key is unset.
         self.composio_api_key: str | None = self.load("COMPOSIO_API_KEY")

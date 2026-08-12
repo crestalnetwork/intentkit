@@ -118,6 +118,7 @@ async def test_openrouter_pins_provider_when_origin_set(monkeypatch):
         return info
 
     monkeypatch.setattr(LLMModelInfo, "get", staticmethod(fake_get))
+    monkeypatch.setattr("intentkit.models.llm.config.openrouter_api_key", "or-test-key")
 
     llm = OpenRouterLLM(model_name=info.id, info=info)
     instance = await llm.create_instance()
@@ -138,6 +139,7 @@ async def test_openrouter_leaves_routing_open_without_origin(monkeypatch):
         return info
 
     monkeypatch.setattr(LLMModelInfo, "get", staticmethod(fake_get))
+    monkeypatch.setattr("intentkit.models.llm.config.openrouter_api_key", "or-test-key")
 
     llm = OpenRouterLLM(model_name=info.id, info=info)
     instance = await llm.create_instance()
