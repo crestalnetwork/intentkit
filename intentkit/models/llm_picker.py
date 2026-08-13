@@ -66,7 +66,7 @@ def pick_summarize_model() -> str:
         ("gemini-3.5-flash-lite", LLMProvider.GOOGLE),
         ("deepseek/deepseek-v4-flash-0731", LLMProvider.OPENROUTER),
         ("gpt-5.6-luna", LLMProvider.OPENAI),
-        ("grok-4.5", LLMProvider.XAI),
+        ("grok-4.6", LLMProvider.XAI),
         ("deepseek-v4-flash", LLMProvider.DEEPSEEK),
         ("MiniMax-M3", LLMProvider.MINIMAX),
         ("mimo-v2.5", LLMProvider.MIMO_PLAN),
@@ -85,7 +85,7 @@ def pick_default_model() -> str:
         ("MiniMax-M3", LLMProvider.MINIMAX),
         ("minimax/minimax-m3", LLMProvider.OPENROUTER),
         ("gpt-5.6-luna", LLMProvider.OPENAI),
-        ("grok-4.5", LLMProvider.XAI),
+        ("grok-4.6", LLMProvider.XAI),
         ("deepseek-v4-flash", LLMProvider.DEEPSEEK),
         ("mimo-v2.5", LLMProvider.MIMO_PLAN),
     ]
@@ -104,7 +104,7 @@ def pick_lead_model() -> str:
         ("deepseek/deepseek-v4-flash-0731", LLMProvider.OPENROUTER),
         ("gemini-3.6-flash", LLMProvider.GOOGLE),
         ("gpt-5.6-luna", LLMProvider.OPENAI),
-        ("grok-4.5", LLMProvider.XAI),
+        ("grok-4.6", LLMProvider.XAI),
         ("MiniMax-M3", LLMProvider.MINIMAX),
         ("mimo-v2.5", LLMProvider.MIMO_PLAN),
     ]
@@ -119,7 +119,7 @@ def pick_lite_model() -> str:
         ("deepseek-v4-flash", LLMProvider.DEEPSEEK),
         # Luna is OpenAI's cheapest tier; glm/deepseek above are still cheaper.
         ("gpt-5.6-luna", LLMProvider.OPENAI),
-        ("grok-4.5", LLMProvider.XAI),
+        ("grok-4.6", LLMProvider.XAI),
         ("MiniMax-M3", LLMProvider.MINIMAX),
         ("mimo-v2.5", LLMProvider.MIMO_PLAN),
     ]
@@ -134,7 +134,7 @@ def pick_smartest_model() -> str:
         ("anthropic/claude-opus-5", LLMProvider.OPENROUTER),
         ("gemini-3.1-pro-preview-customtools", LLMProvider.GOOGLE),
         ("gpt-5.6-sol", LLMProvider.OPENAI),
-        ("grok-4.5", LLMProvider.XAI),
+        ("grok-4.6", LLMProvider.XAI),
         ("deepseek-v4-pro", LLMProvider.DEEPSEEK),
         ("MiniMax-M3", LLMProvider.MINIMAX),
         ("mimo-v2.5-pro", LLMProvider.MIMO_PLAN),
@@ -148,7 +148,7 @@ def pick_fastest_model() -> str:
         ("gemini-3.5-flash-lite", LLMProvider.GOOGLE),
         ("qwen/qwen3.7-flash", LLMProvider.OPENROUTER),
         ("gpt-5.6-luna", LLMProvider.OPENAI),
-        ("grok-4.5", LLMProvider.XAI),
+        ("grok-4.6", LLMProvider.XAI),
         ("deepseek-v4-flash", LLMProvider.DEEPSEEK),
         ("MiniMax-M3", LLMProvider.MINIMAX),
         ("mimo-v2.5", LLMProvider.MIMO_PLAN),
@@ -166,7 +166,7 @@ def pick_multimodal_model() -> str:
         ("mimo-v2.5", LLMProvider.MIMO_PLAN),
         ("MiniMax-M3", LLMProvider.MINIMAX),
         ("gpt-5.6-terra", LLMProvider.OPENAI),
-        ("grok-4.5", LLMProvider.XAI),
+        ("grok-4.6", LLMProvider.XAI),
     ]
     return _first_configured(order, fallback=_DEFAULT_FALLBACK_MODEL)
 
@@ -179,7 +179,7 @@ def pick_writing_model() -> str:
         ("gpt-5.6-sol", LLMProvider.OPENAI),
         ("MiniMax-M3", LLMProvider.MINIMAX),
         ("deepseek-v4-pro", LLMProvider.DEEPSEEK),
-        ("grok-4.5", LLMProvider.XAI),
+        ("grok-4.6", LLMProvider.XAI),
         ("mimo-v2.5-pro", LLMProvider.MIMO_PLAN),
     ]
     return _first_configured(order, fallback=_DEFAULT_FALLBACK_MODEL)
@@ -188,13 +188,13 @@ def pick_writing_model() -> str:
 def pick_chinese_writing_model() -> str:
     """Pick the best model for Chinese writing (Chinese-native models first)."""
     order: list[tuple[str, LLMProvider]] = [
-        ("qwen/qwen3.7-max", LLMProvider.OPENROUTER),
+        ("qwen/qwen3.8-max", LLMProvider.OPENROUTER),
         ("MiniMax-M3", LLMProvider.MINIMAX),
         ("mimo-v2.5-pro", LLMProvider.MIMO_PLAN),
         ("deepseek-v4-pro", LLMProvider.DEEPSEEK),
         ("gemini-3.1-pro-preview-customtools", LLMProvider.GOOGLE),
         ("gpt-5.6-sol", LLMProvider.OPENAI),
-        ("grok-4.5", LLMProvider.XAI),
+        ("grok-4.6", LLMProvider.XAI),
     ]
     return _first_configured(order, fallback=_DEFAULT_FALLBACK_MODEL)
 
@@ -206,7 +206,7 @@ def pick_finance_model() -> str:
         ("deepseek-v4-pro", LLMProvider.DEEPSEEK),
         ("gemini-3.1-pro-preview-customtools", LLMProvider.GOOGLE),
         ("gpt-5.6-sol", LLMProvider.OPENAI),
-        ("grok-4.5", LLMProvider.XAI),
+        ("grok-4.6", LLMProvider.XAI),
         ("MiniMax-M3", LLMProvider.MINIMAX),
         ("mimo-v2.5-pro", LLMProvider.MIMO_PLAN),
     ]
@@ -216,10 +216,10 @@ def pick_finance_model() -> str:
 def pick_search_model() -> str:
     """Pick the best model for web/realtime search (native-search providers first)."""
     order: list[tuple[str, LLMProvider]] = [
-        ("grok-4.5", LLMProvider.XAI),
+        ("grok-4.6", LLMProvider.XAI),
         ("gemini-3.6-flash", LLMProvider.GOOGLE),
         ("gpt-5.6-terra", LLMProvider.OPENAI),
-        ("x-ai/grok-4.5", LLMProvider.OPENROUTER),
+        ("x-ai/grok-4.6", LLMProvider.OPENROUTER),
         ("deepseek-v4-flash", LLMProvider.DEEPSEEK),
         ("MiniMax-M3", LLMProvider.MINIMAX),
         ("mimo-v2.5", LLMProvider.MIMO_PLAN),
@@ -233,7 +233,7 @@ def pick_broadest_knowledge_model() -> str:
         ("anthropic/claude-opus-5", LLMProvider.OPENROUTER),
         ("gemini-3.1-pro-preview-customtools", LLMProvider.GOOGLE),
         ("gpt-5.6-sol", LLMProvider.OPENAI),
-        ("grok-4.5", LLMProvider.XAI),
+        ("grok-4.6", LLMProvider.XAI),
         ("deepseek-v4-pro", LLMProvider.DEEPSEEK),
         ("MiniMax-M3", LLMProvider.MINIMAX),
         ("mimo-v2.5-pro", LLMProvider.MIMO_PLAN),

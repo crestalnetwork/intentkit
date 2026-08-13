@@ -234,7 +234,7 @@ def test_model_id_index_suffix_and_legacy_matching():
                 assert key in index[legacy]
 
         # Explicit regression pin for one retirement.
-        assert index.get("x-ai/grok-4.3") == ["openrouter:x-ai/grok-4.5"]
+        assert index.get("x-ai/grok-4.3") == ["openrouter:x-ai/grok-4.6"]
 
 
 def test_catalog_legacy_ids_are_disjoint():

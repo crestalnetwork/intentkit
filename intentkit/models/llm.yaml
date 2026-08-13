@@ -70,22 +70,23 @@
   reasoning_levels: ["none", "minimal", "low", "medium", "high", "xhigh", "max"]
   timeout: 300
 
-- id: "qwen/qwen3.7-max"
-  name: "Qwen3.7 Max"
+- id: "qwen/qwen3.8-max"
+  name: "Qwen3.8 Max"
   provider: openrouter
   origin_provider: "alibaba"   # lock OpenRouter upstream
+  legacy_ids: ["qwen/qwen3.7-max"]
   enabled: true
-  input_price: "1.475"
-  cached_input_price: "0.295"
-  output_price: "4.425"
+  input_price: "2"
+  cached_input_price: "0.25"
+  output_price: "6"
   price_level: 3
   context_length: 1000000
   output_length: 131072
   intelligence: 5
   speed: 3
-  supports_image_input: false
+  supports_image_input: true
   supports_audio_input: false
-  supports_video_input: false
+  supports_video_input: true
   supports_file_input: false
   reasoning_effort: "high"
   reasoning_levels: ["none", "high"]
@@ -631,9 +632,9 @@
   reasoning_levels: ["none", "high", "max"]
   timeout: 300
 
-# OpenRouter lists the official 0731 build as a separate model (DeepSeek's own
-# API upgraded "deepseek-v4-flash" to it in place), so the preview listing id
-# routes here via legacy_ids.
+# OpenRouter lists official date builds as separate models (DeepSeek's own API
+# upgrades "deepseek-v4-flash"/"deepseek-v4-pro" in place), so the previous
+# listing ids route to the 0731/0813 entries via legacy_ids.
 - id: "deepseek/deepseek-v4-flash-0731"
   name: "Deepseek V4 Flash"
   provider: openrouter
@@ -676,10 +677,11 @@
   reasoning_levels: ["none", "high", "max"]
   timeout: 300
 
-- id: "deepseek/deepseek-v4-pro"
+- id: "deepseek/deepseek-v4-pro-0813"
   name: "Deepseek V4 Pro"
   provider: openrouter
   origin_provider: "deepseek"   # lock OpenRouter upstream
+  legacy_ids: ["deepseek/deepseek-v4-pro"]
   enabled: true
   input_price: "0.435"
   cached_input_price: "0.003625"
@@ -697,14 +699,16 @@
   reasoning_levels: ["none", "high", "max"]
   timeout: 300
 
-- id: "grok-4.5"
-  name: "Grok 4.5"
+# xAI bills prompts above 200k tokens at 2x on a long-context tier; the flat
+# prices here cover the standard tier only.
+- id: "grok-4.6"
+  name: "Grok 4.6"
   provider: xai
-  # grok-4.20 is older than 4.5 despite the version number (Musk-style numbering)
-  legacy_ids: ["grok-4.3", "grok-4.20-non-reasoning"]
+  # grok-4.20 is older than 4.5/4.6 despite the version number (Musk-style numbering)
+  legacy_ids: ["grok-4.5", "grok-4.3", "grok-4.20-non-reasoning"]
   enabled: true
   input_price: "2"
-  cached_input_price: "0.3"
+  cached_input_price: "0.5"
   output_price: "6"
   price_level: 3
   context_length: 500000
@@ -716,18 +720,18 @@
   supports_video_input: false
   supports_file_input: true
   reasoning_effort: "high"
-  reasoning_levels: ["low", "medium", "high"]
+  reasoning_levels: ["low", "medium", "high", "xhigh"]
   timeout: 180
 
-- id: "x-ai/grok-4.5"
-  name: "Grok 4.5"
+- id: "x-ai/grok-4.6"
+  name: "Grok 4.6"
   provider: openrouter
   origin_provider: "xai"   # lock OpenRouter upstream
-  # grok-4.20 is older than 4.5 despite the version number (Musk-style numbering)
-  legacy_ids: ["x-ai/grok-4.3", "x-ai/grok-4.20"]
+  # grok-4.20 is older than 4.5/4.6 despite the version number (Musk-style numbering)
+  legacy_ids: ["x-ai/grok-4.5", "x-ai/grok-4.3", "x-ai/grok-4.20"]
   enabled: true
   input_price: "2"
-  cached_input_price: "0.3"
+  cached_input_price: "0.5"
   output_price: "6"
   price_level: 3
   context_length: 500000
@@ -739,7 +743,7 @@
   supports_video_input: false
   supports_file_input: true
   reasoning_effort: "high"
-  reasoning_levels: ["low", "medium", "high"]
+  reasoning_levels: ["low", "medium", "high", "xhigh"]
   timeout: 180
 
 - id: "MiniMax-M3"
