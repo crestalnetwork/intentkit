@@ -1,9 +1,9 @@
-# Release v2.34.0
+# Release v2.34.1
 
-## Model Updates
+## Improvements
 
-- **Grok 4.6** — xAI's newest flagship replaces Grok 4.5, with stronger coding and knowledge performance and a new extra-deep reasoning level for the hardest problems. Available both via xAI directly and through OpenRouter.
-- **Qwen3.8 Max** — Alibaba's new flagship replaces Qwen3.7 Max and can now understand images and video, not just text.
-- **DeepSeek V4 Pro** — upgraded to the official general-availability build on OpenRouter.
+- Routine dependency maintenance across the whole platform: the AI provider SDKs, web framework, database drivers, management frontend, and messaging integrations were all brought up to their latest releases.
 
-Agents still set to the previous model versions are moved to the new ones automatically — no action needed.
+## Bug Fixes
+
+- Fixed bugs in the agent engine's error handling that surfaced with the latest OpenAI SDK update: brief network interruptions are reliably retried again, and requests that run out of time are now reported as timeouts instead of a generic internal error.
