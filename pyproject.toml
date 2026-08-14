@@ -18,11 +18,12 @@ dependencies = [
     "fastapi>=0.115.8",
     "starlette>=0.47.1",
     "httpx>=0.28.1",
-    # Only for the MCP transports: mcp 2.x is built on httpx2, so the client we
-    # hand to streamable_http_client has to be an httpx2 one. Everything else in
-    # the codebase stays on httpx.
-    "httpx2>=2.5.0",
     "httpcore>=1.0.9",
+    # The second HTTP stack: mcp 2.x and openai 3.x run on httpx2/httpcore2.
+    # We hand mcp an httpx2 client (clients/mcp) and classify both stacks'
+    # transport errors in utils/error.py; our own code otherwise stays on httpx.
+    "httpx2>=2.5.0",
+    "httpcore2>=2.10.0",
     "aiohttp>=3.14.0",
     # Database
     "psycopg>=3.2.9",
@@ -44,6 +45,10 @@ dependencies = [
     "langchain-deepseek>=1.0,<2",
     "langchain-google-genai>=4.2,<5",
     "langchain-anthropic>=1.4,<2",
+    # Declared only because utils/error.py imports APITimeoutError directly
+    # (deptry DEP003). langchain-anthropic pins the effective version — keep
+    # this floor loose so it can never outrank that pin.
+    "anthropic>=0.30.0",
     "langchain-openrouter>=0.2.5,<1",
     # Used directly for image generation (tools/image, core/avatar) and for its
     # typed error classes; chat and usage accounting go through
