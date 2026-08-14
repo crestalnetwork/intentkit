@@ -14,8 +14,6 @@ import traceback
 from contextlib import nullcontext
 from typing import Any
 
-import httpcore
-import httpx
 from epyxid import XID
 from langchain_core.messages import BaseMessage, HumanMessage
 from langchain_core.runnables import RunnableConfig
@@ -60,7 +58,11 @@ from intentkit.models.chat import (
 from intentkit.models.credit import CreditAccount, OwnerType
 from intentkit.models.llm import LLMModelInfo
 from intentkit.models.user import User
-from intentkit.utils.error import IntentKitAPIError, describe_provider_error
+from intentkit.utils.error import (
+    TRANSPORT_TIMEOUT_ERRORS,
+    IntentKitAPIError,
+    describe_provider_error,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -603,7 +605,7 @@ async def stream_agent_raw(
             )
         )
         return
-    except (TimeoutError, httpx.TimeoutException, httpcore.ReadTimeout):
+    except TRANSPORT_TIMEOUT_ERRORS:
         logger.error(
             f"Agent request timed out for {user_message.agent_id}",
             extra={"thread_id": thread_id},

@@ -1,4 +1,50 @@
-from intentkit.utils.error import format_validation_errors
+import anthropic
+import httpcore
+import httpcore2
+import httpx
+import httpx2
+import openai
+import pytest
+
+from intentkit.utils.error import (
+    TRANSPORT_TIMEOUT_ERRORS,
+    format_validation_errors,
+)
+
+
+class TestTransportTimeoutErrors:
+    """The tuple feeds plain ``except`` clauses (core/engine/stream.py), which
+    never walk ``__cause__`` — so both raw transport timeouts from either HTTP
+    stack and the SDK timeout wrappers must match directly."""
+
+    @pytest.mark.parametrize(
+        "exc",
+        [
+            TimeoutError("timed out"),
+            httpx.ReadTimeout("read timeout"),
+            httpx2.ReadTimeout("read timeout"),
+            httpcore.PoolTimeout("pool timeout"),
+            httpcore2.ConnectTimeout("connect timeout"),
+            openai.APITimeoutError(
+                request=httpx2.Request("POST", "https://api.example.com")
+            ),
+            anthropic.APITimeoutError(
+                request=httpx.Request("POST", "https://api.example.com")
+            ),
+        ],
+        ids=[
+            "builtin",
+            "httpx-read",
+            "httpx2-read",
+            "httpcore-pool",
+            "httpcore2-connect",
+            "openai-wrapper",
+            "anthropic-wrapper",
+        ],
+    )
+    def test_timeouts_classify_as_timeout(self, exc: Exception):
+        with pytest.raises(TRANSPORT_TIMEOUT_ERRORS):
+            raise exc
 
 
 def test_format_validation_errors_with_field_path_and_type():

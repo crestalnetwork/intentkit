@@ -7,7 +7,9 @@ runs instead of the failure being retried pointlessly.
 """
 
 import httpcore
+import httpcore2
 import httpx
+import httpx2
 import openai
 import pytest
 from anthropic import APIStatusError as AnthropicAPIStatusError
@@ -24,6 +26,12 @@ from intentkit.core.executor import (
 def _response(status_code: int) -> httpx.Response:
     request = httpx.Request("POST", "https://api.example.com/v1/messages")
     return httpx.Response(status_code, request=request)
+
+
+def _response2(status_code: int) -> httpx2.Response:
+    """httpx2 twin of ``_response`` — openai 3.x errors carry httpx2 objects."""
+    request = httpx2.Request("POST", "https://api.example.com/v1/messages")
+    return httpx2.Response(status_code, request=request)
 
 
 def _response_validation_error(
@@ -58,25 +66,34 @@ class TestShouldRetryModelFailure:
     def test_connection_and_timeout_errors_retry(self):
         assert _should_retry_model_failure(ConnectionError("reset"))
         assert _should_retry_model_failure(TimeoutError("timed out"))
-        assert _should_retry_model_failure(httpx.ConnectError("refused"))
+
+    # openai 3.x runs on httpx2/httpcore2, everything else on httpx/httpcore —
+    # transport errors from either stack must retry identically.
+    @pytest.mark.parametrize(
+        ("http_mod", "core_mod"),
+        [(httpx, httpcore), (httpx2, httpcore2)],
+        ids=["httpx", "httpx2"],
+    )
+    def test_transport_errors_retry(self, http_mod, core_mod):
+        assert _should_retry_model_failure(http_mod.ConnectError("refused"))
         # Mid-stream disconnect — the case SDK-level retries never cover.
         assert _should_retry_model_failure(
-            httpx.RemoteProtocolError("peer closed connection")
+            http_mod.RemoteProtocolError("peer closed connection")
         )
-        assert _should_retry_model_failure(httpcore.ReadTimeout("read timeout"))
         # Raw httpcore errors leak past httpx wrapping in practice.
-        assert _should_retry_model_failure(httpcore.ConnectError("refused"))
+        assert _should_retry_model_failure(core_mod.ReadTimeout("read timeout"))
+        assert _should_retry_model_failure(core_mod.ConnectError("refused"))
         assert _should_retry_model_failure(
-            httpcore.RemoteProtocolError("peer closed connection")
+            core_mod.RemoteProtocolError("peer closed connection")
         )
 
     def test_openai_transient_statuses_retry(self):
         rate_limited = openai.RateLimitError(
-            "rate limited", response=_response(429), body=None
+            "rate limited", response=_response2(429), body=None
         )
         assert _should_retry_model_failure(rate_limited)
         server_error = openai.InternalServerError(
-            "server error", response=_response(500), body=None
+            "server error", response=_response2(500), body=None
         )
         assert _should_retry_model_failure(server_error)
 
@@ -89,14 +106,14 @@ class TestShouldRetryModelFailure:
     @pytest.mark.parametrize("status", [408, 429, 500, 502, 503, 504, 529])
     def test_transient_status_codes_retry(self, status: int):
         exc = openai.APIStatusError(
-            f"status {status}", response=_response(status), body=None
+            f"status {status}", response=_response2(status), body=None
         )
         assert _should_retry_model_failure(exc)
 
     def test_permanent_statuses_do_not_retry(self):
         for status in (400, 401, 403, 404, 422):
             exc = openai.APIStatusError(
-                f"status {status}", response=_response(status), body=None
+                f"status {status}", response=_response2(status), body=None
             )
             assert not _should_retry_model_failure(exc), status
 
@@ -113,26 +130,28 @@ class TestShouldRetryModelFailure:
     def test_wrapped_connection_error_found_on_cause(self):
         # openai/anthropic APIConnectionError carries the httpx error as cause.
         wrapper = openai.APIConnectionError(
-            request=httpx.Request("POST", "https://api.example.com")
+            request=httpx2.Request("POST", "https://api.example.com")
         )
-        wrapper.__cause__ = httpx.ConnectError("refused")
+        wrapper.__cause__ = httpx2.ConnectError("refused")
         assert _should_retry_model_failure(wrapper)
 
-    def test_implicit_context_chain_is_walked(self):
+    @pytest.mark.parametrize("http_mod", [httpx, httpx2], ids=["httpx", "httpx2"])
+    def test_implicit_context_chain_is_walked(self, http_mod):
         # `raise Y` inside an except block sets __context__, not __cause__.
         with pytest.raises(RuntimeError) as exc_info:
             try:
-                raise httpx.ConnectError("refused")
-            except httpx.ConnectError:
+                raise http_mod.ConnectError("refused")
+            except http_mod.ConnectError:
                 raise RuntimeError("wrapped without from")
         assert _should_retry_model_failure(exc_info.value)
 
-    def test_suppressed_context_is_not_walked(self):
+    @pytest.mark.parametrize("http_mod", [httpx, httpx2], ids=["httpx", "httpx2"])
+    def test_suppressed_context_is_not_walked(self, http_mod):
         # `raise Y from None` explicitly severs the chain.
         with pytest.raises(RuntimeError) as exc_info:
             try:
-                raise httpx.ConnectError("refused")
-            except httpx.ConnectError:
+                raise http_mod.ConnectError("refused")
+            except http_mod.ConnectError:
                 raise RuntimeError("wrapped from None") from None
         assert not _should_retry_model_failure(exc_info.value)
 

@@ -14,8 +14,6 @@ from collections.abc import Sequence
 from datetime import UTC, datetime, timedelta
 from typing import Any
 
-import httpcore
-import httpx
 from langchain_core.tools import BaseTool
 from langchain_core.tools.base import ToolException
 from langgraph.checkpoint.memory import InMemorySaver
@@ -35,6 +33,7 @@ from intentkit.models.llm import LLMProvider, create_llm_model
 from intentkit.models.llm_picker import pick_summarize_model
 from intentkit.tools.base import IntentKitTool
 from intentkit.utils.error import (
+    TRANSIENT_TRANSPORT_ERRORS,
     IntentKitAPIError,
     http_status_candidates,
     iter_exception_chain,
@@ -70,24 +69,15 @@ def _should_retry_model_failure(exc: Exception) -> bool:
     retrying; permanent errors (auth, invalid request, context overflow,
     content policy) are not — they propagate to the engine's error handling.
 
-    The chain walk and status duck-typing live in ``utils.error`` (shared
-    with the engine's error logging). OpenRouter needs the explicit
+    The chain walk, status duck-typing, and transport-error classification
+    live in ``utils.error`` (shared with the engine's error handling).
+    OpenRouter needs the explicit
     ``ResponseValidationError`` case below on top of the status filter: a
     stream truncated mid-body surfaces as a would-be parse failure that
     status alone cannot tell apart from a genuine, permanent schema mismatch.
     """
     for cause in iter_exception_chain(exc):
-        if isinstance(
-            cause,
-            (
-                ConnectionError,
-                TimeoutError,
-                httpx.TransportError,
-                httpcore.TimeoutException,
-                httpcore.NetworkError,
-                httpcore.ProtocolError,
-            ),
-        ):
+        if isinstance(cause, TRANSIENT_TRANSPORT_ERRORS):
             return True
         # A 2xx whose body stopped mid-JSON — the upstream stream dropped.
         # The SDK's own retries never see it: parsing happens after the

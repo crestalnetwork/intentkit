@@ -2,6 +2,12 @@ import logging
 from collections.abc import Iterator, Sequence
 from typing import Any, override
 
+import anthropic
+import httpcore
+import httpcore2
+import httpx
+import httpx2
+import openai
 from fastapi.exceptions import RequestValidationError
 from fastapi.utils import is_body_allowed_for_status_code
 from langchain_core.tools.base import ToolException
@@ -11,6 +17,42 @@ from starlette.responses import JSONResponse, Response
 from starlette.status import HTTP_422_UNPROCESSABLE_CONTENT
 
 logger = logging.getLogger(__name__)
+
+# Two HTTP stacks coexist in the dependency tree: most SDKs run on
+# httpx/httpcore, while openai 3.x and mcp 2.x run on httpx2/httpcore2. The
+# hierarchies are fully disjoint (httpx2.TransportError is not a subclass of
+# httpx.TransportError), so transient-failure classification must list both.
+
+# Transport-level failures that mean a transient network problem — safe to
+# retry. Raw httpcore(2) errors are listed because they leak past httpx(2)
+# wrapping in practice.
+TRANSIENT_TRANSPORT_ERRORS = (
+    ConnectionError,
+    TimeoutError,
+    httpx.TransportError,
+    httpx2.TransportError,
+    httpcore.TimeoutException,
+    httpcore.NetworkError,
+    httpcore.ProtocolError,
+    httpcore2.TimeoutException,
+    httpcore2.NetworkError,
+    httpcore2.ProtocolError,
+)
+
+# Everything that reads as "the request timed out", for user-facing error
+# classification. Unlike the retry predicate, its consumers are plain
+# ``except`` clauses that never walk ``__cause__`` — so the SDK wrappers are
+# listed too: openai/anthropic surface timeouts as ``APITimeoutError`` with
+# the transport error only as the cause.
+TRANSPORT_TIMEOUT_ERRORS = (
+    TimeoutError,
+    httpx.TimeoutException,
+    httpx2.TimeoutException,
+    httpcore.TimeoutException,
+    httpcore2.TimeoutException,
+    openai.APITimeoutError,
+    anthropic.APITimeoutError,
+)
 
 
 def iter_exception_chain(exc: BaseException) -> Iterator[BaseException]:

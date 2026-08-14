@@ -9,6 +9,7 @@ does, and must never raise or break the single-line log format.
 """
 
 import httpx
+import httpx2
 import openai
 from openrouter.errors import OpenRouterError
 
@@ -40,7 +41,7 @@ class TestDescribeProviderError:
         body = {"code": 502, "message": "Provider returned error"}
         exc = openai.APIError(
             "Provider returned error",
-            httpx.Request("POST", "https://openrouter.ai/api/v1/chat/completions"),
+            httpx2.Request("POST", "https://openrouter.ai/api/v1/chat/completions"),
             body=body,
         )
         detail = describe_provider_error(exc)
@@ -50,7 +51,7 @@ class TestDescribeProviderError:
     def test_non_numeric_code_is_not_labeled_status(self):
         exc = openai.APIError(
             "quota exceeded",
-            httpx.Request("POST", "https://api.openai.com/v1/chat/completions"),
+            httpx2.Request("POST", "https://api.openai.com/v1/chat/completions"),
             body={"code": "insufficient_quota"},
         )
         detail = describe_provider_error(exc)
