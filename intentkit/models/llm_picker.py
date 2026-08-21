@@ -81,6 +81,9 @@ def pick_default_model() -> str:
     crash — it falls back to a reasonable model when nothing is configured.
     """
     order: list[tuple[str, LLMProvider]] = [
+        # Temporary trial: OpenRouter's free stealth preview heads the list
+        # while it costs nothing. Drop it back out once the trial ends.
+        ("stealth/ox-alpha", LLMProvider.OPENROUTER),
         ("gemini-3.6-flash", LLMProvider.GOOGLE),
         ("MiniMax-M3", LLMProvider.MINIMAX),
         ("minimax/minimax-m3", LLMProvider.OPENROUTER),

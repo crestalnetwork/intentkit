@@ -82,6 +82,21 @@ def test_resolve_never_clamps_positive_request_to_none():
     assert info.resolve_reasoning_effort("none") == "none"
 
 
+def test_resolve_sparse_levels_round_up_between_gaps():
+    # Ox Alpha shape: reasoning always on, only low/high/max exist. Requests
+    # that fall in a gap round up, and "none" lands on the weakest level.
+    info = _info(
+        LLMProvider.OPENROUTER,
+        reasoning_effort="high",
+        reasoning_levels=["low", "high", "max"],
+    )
+    assert info.resolve_reasoning_effort("none") == "low"
+    assert info.resolve_reasoning_effort("minimal") == "low"
+    assert info.resolve_reasoning_effort("medium") == "high"
+    assert info.resolve_reasoning_effort("xhigh") == "max"
+    assert info.resolve_reasoning_effort(None) == "high"
+
+
 def test_resolve_single_level_model():
     # Kimi K3 shape: thinking always on, "max" is the only level.
     info = _info(

@@ -185,6 +185,13 @@ def test_pick_lead_model_on_google():
         assert pick_default_model() == "gemini-3.6-flash"
 
 
+def test_pick_default_model_on_openrouter_is_trial_model():
+    """The free Ox Alpha trial heads the default list on OpenRouter-only
+    deployments. Delete this test together with the trial entry."""
+    with mock_llm_config(openrouter_api_key="or-key"):
+        assert pick_default_model() == "stealth/ox-alpha"
+
+
 # ── pick_long_context_model ──────────────────────────────────────────
 
 

@@ -50,6 +50,29 @@
   reasoning_levels: ["minimal", "high"]
   timeout: 300
 
+- id: "stealth/ox-alpha"
+  name: "Ox Alpha (Free)"
+  provider: openrouter
+  origin_provider: "stealth"   # lock OpenRouter upstream
+  enabled: true
+  input_price: "0"
+  cached_input_price: null
+  output_price: "0"
+  price_level: 1
+  context_length: 1048576
+  output_length: 131072
+  intelligence: 4
+  speed: 3
+  supports_image_input: true
+  supports_audio_input: false
+  supports_video_input: true
+  supports_file_input: false
+  # Reasoning is mandatory on this model; OpenRouter defaults to "max", but
+  # "high" keeps chat latency sane for the agent default.
+  reasoning_effort: "high"
+  reasoning_levels: ["low", "high", "max"]
+  timeout: 300
+
 - id: "openrouter/free"
   name: "OpenRouter Free"
   provider: openrouter
