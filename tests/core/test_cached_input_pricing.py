@@ -195,11 +195,12 @@ def test_csv_loads_cached_input_price_for_claude():
 
 
 def test_csv_cached_input_price_for_deepseek():
-    """DeepSeek V4 Flash cache-hit pricing is 0.0028/1M on both providers.
+    """DeepSeek V4 Flash bills 0.007/1M on cache hits and 0.22/1M otherwise.
 
-    The pinned DeepSeek endpoint on OpenRouter bills the same 0.0028 as the
-    direct API; the catalog once wrongly recorded 0.028 there (a third-party
-    endpoint's rate). Pin both so neither regresses.
+    The pinned DeepSeek endpoint on OpenRouter bills the same as the direct
+    API. These rows have twice recorded someone else's numbers -- a
+    third-party endpoint's cache rate, then prices matching MiMo's rows --
+    so pin both providers against the real DeepSeek rate.
     """
     with patch("intentkit.models.llm.config") as mock_config:
         mock_config.openai_api_key = None
@@ -217,15 +218,23 @@ def test_csv_cached_input_price_for_deepseek():
 
         models = load_default_llm_models()
 
-    deepseek = models.get("deepseek:deepseek-v4-flash")
+    deepseek = models.get("deepseek:deepseek-v4-flash-vision-exp")
     assert deepseek is not None
-    assert deepseek.cached_input_price == Decimal("0.0028")
-    assert deepseek.input_price == Decimal("0.14")
+    assert deepseek.cached_input_price == Decimal("0.007")
+    assert deepseek.input_price == Decimal("0.22")
 
-    deepseek_or = models.get("openrouter:deepseek/deepseek-v4-flash-0731")
+    deepseek_or = models.get("openrouter:deepseek/deepseek-v4-flash-vision-exp")
     assert deepseek_or is not None
-    assert deepseek_or.cached_input_price == Decimal("0.0028")
-    assert deepseek_or.input_price == Decimal("0.14")
+    assert deepseek_or.cached_input_price == Decimal("0.007")
+    assert deepseek_or.input_price == Decimal("0.22")
+
+    # Pro drifted the same way and by more; pin it on both providers too.
+    for key in ("deepseek:deepseek-v4-pro", "openrouter:deepseek/deepseek-v4-pro-0813"):
+        pro = models.get(key)
+        assert pro is not None, key
+        assert pro.cached_input_price == Decimal("0.022")
+        assert pro.input_price == Decimal("0.66")
+        assert pro.output_price == Decimal("1.98")
 
 
 def test_csv_cached_input_price_for_grok4():

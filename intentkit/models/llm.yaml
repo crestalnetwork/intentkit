@@ -644,19 +644,28 @@
   reasoning_levels: ["none", "low", "medium", "high", "xhigh", "max"]
   timeout: 180
 
-- id: "deepseek-v4-flash"
+# DeepSeek doubles every price 01:00-04:00 and 06:00-10:00 UTC. All four
+# DeepSeek rows below carry the off-peak (standard) rate only, the way the
+# xAI rows ignore the >200k long-context tier.
+#
+# vision-exp is DeepSeek's experimental multimodal V4 Flash build: base-model
+# text quality and price plus image input (billed as up to 384 tokens/image).
+# Its pricing page calls the build non-thinking-only, but a live probe of
+# DeepSeek's own endpoint returned reasoning content, so the levels stay.
+- id: "deepseek-v4-flash-vision-exp"
   name: "Deepseek V4 Flash"
   provider: deepseek
+  legacy_ids: ["deepseek-v4-flash"]
   enabled: true
-  input_price: "0.14"
-  cached_input_price: "0.0028"
-  output_price: "0.28"
+  input_price: "0.22"
+  cached_input_price: "0.007"
+  output_price: "0.66"
   price_level: 1
   context_length: 1048576
   output_length: 384000
   intelligence: 4
   speed: 4
-  supports_image_input: false
+  supports_image_input: true
   supports_audio_input: false
   supports_video_input: false
   supports_file_input: false
@@ -664,24 +673,24 @@
   reasoning_levels: ["none", "high", "max"]
   timeout: 300
 
-# OpenRouter lists official date builds as separate models (DeepSeek's own API
-# upgrades "deepseek-v4-flash"/"deepseek-v4-pro" in place), so the previous
-# listing ids route to the 0731/0813 entries via legacy_ids.
-- id: "deepseek/deepseek-v4-flash-0731"
+# OpenRouter lists each official build separately (DeepSeek's own API upgrades
+# "deepseek-v4-flash"/"deepseek-v4-pro" in place), so the superseded listing
+# ids route to the live build via legacy_ids.
+- id: "deepseek/deepseek-v4-flash-vision-exp"
   name: "Deepseek V4 Flash"
   provider: openrouter
   origin_provider: "deepseek"   # lock OpenRouter upstream
-  legacy_ids: ["deepseek/deepseek-v4-flash"]
+  legacy_ids: ["deepseek/deepseek-v4-flash", "deepseek/deepseek-v4-flash-0731"]
   enabled: true
-  input_price: "0.14"
-  cached_input_price: "0.0028"
-  output_price: "0.28"
+  input_price: "0.22"
+  cached_input_price: "0.007"
+  output_price: "0.66"
   price_level: 1
   context_length: 1048576
   output_length: 384000
   intelligence: 4
   speed: 4
-  supports_image_input: false
+  supports_image_input: true
   supports_audio_input: false
   supports_video_input: false
   supports_file_input: false
@@ -693,9 +702,9 @@
   name: "Deepseek V4 Pro"
   provider: deepseek
   enabled: true
-  input_price: "0.435"
-  cached_input_price: "0.003625"
-  output_price: "0.87"
+  input_price: "0.66"
+  cached_input_price: "0.022"
+  output_price: "1.98"
   price_level: 2
   context_length: 1048576
   output_length: 384000
@@ -715,9 +724,9 @@
   origin_provider: "deepseek"   # lock OpenRouter upstream
   legacy_ids: ["deepseek/deepseek-v4-pro"]
   enabled: true
-  input_price: "0.435"
-  cached_input_price: "0.003625"
-  output_price: "0.87"
+  input_price: "0.66"
+  cached_input_price: "0.022"
+  output_price: "1.98"
   price_level: 2
   context_length: 1048576
   output_length: 384000

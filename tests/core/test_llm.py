@@ -233,8 +233,11 @@ def test_model_id_index_suffix_and_legacy_matching():
                 assert legacy not in live_ids
                 assert key in index[legacy]
 
-        # Explicit regression pin for one retirement.
+        # Explicit regression pins for retirements.
         assert index.get("x-ai/grok-4.3") == ["openrouter:x-ai/grok-4.6"]
+        assert index.get("deepseek/deepseek-v4-flash-0731") == [
+            "openrouter:deepseek/deepseek-v4-flash-vision-exp"
+        ]
 
 
 def test_catalog_legacy_ids_are_disjoint():

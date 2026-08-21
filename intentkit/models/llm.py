@@ -32,7 +32,7 @@ def load_default_llm_models() -> dict[str, "LLMModelInfo"]:
     """Load default LLM models from the bundled ``llm.yaml`` catalog.
 
     Models are keyed by ``{provider}:{id}`` so that the same model ID from
-    different providers (e.g. ``deepseek-v4-flash`` via DeepSeek *and* OpenRouter)
+    different providers (e.g. ``MiniMax-M3`` via MiniMax *and* OpenRouter)
     is preserved as separate entries.
     """
 
