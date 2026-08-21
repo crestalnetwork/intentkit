@@ -1,9 +1,6 @@
-# Release v2.34.1
+# Release v2.35.0
 
-## Improvements
+## Model Updates
 
-- Routine dependency maintenance across the whole platform: the AI provider SDKs, web framework, database drivers, management frontend, and messaging integrations were all brought up to their latest releases.
-
-## Bug Fixes
-
-- Fixed bugs in the agent engine's error handling that surfaced with the latest OpenAI SDK update: brief network interruptions are reliably retried again, and requests that run out of time are now reported as timeouts instead of a generic internal error.
+- **Ox Alpha (Free)** — a new preview model from OpenRouter is now available to every team, free of charge while the preview lasts. It is a reasoning model built for coding and long-running agent work, understands images and video as well as text, and handles a million tokens of context. Note that as a preview offering it runs slower than the production models in the catalog, and the provider retains prompts and completions (they are not used for training).
+- **Ox Alpha is the default model for new agents** during this trial period. Existing agents keep whatever model they were configured with; the model picker still lists every other option.
