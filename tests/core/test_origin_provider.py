@@ -67,6 +67,15 @@ def test_origin_provider_loaded_from_catalog():
     assert grok is not None
     assert grok.origin_provider == "xai"
 
+    for gemini_id in ("google/gemini-3.7-flash", "google/gemini-3.5-flash-lite"):
+        gemini = models.get(f"openrouter:{gemini_id}")
+        assert gemini is not None
+        assert gemini.origin_provider == "google-vertex/global"
+
+    glm = models.get("openrouter:z-ai/glm-5.3")
+    assert glm is not None
+    assert glm.origin_provider == "z-ai"
+
     # Unlocked OpenRouter models (no first-party endpoint) leave routing
     # to OpenRouter.
     glm_flash = models.get("openrouter:z-ai/glm-4.7-flash")

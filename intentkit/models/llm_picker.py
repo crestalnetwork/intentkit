@@ -84,7 +84,7 @@ def pick_default_model() -> str:
         # Temporary trial: OpenRouter's free stealth preview heads the list
         # while it costs nothing. Drop it back out once the trial ends.
         ("stealth/ox-alpha", LLMProvider.OPENROUTER),
-        ("gemini-3.6-flash", LLMProvider.GOOGLE),
+        ("gemini-3.7-flash", LLMProvider.GOOGLE),
         ("MiniMax-M3", LLMProvider.MINIMAX),
         ("minimax/minimax-m3", LLMProvider.OPENROUTER),
         ("gpt-5.6-luna", LLMProvider.OPENAI),
@@ -105,7 +105,7 @@ def pick_lead_model() -> str:
     order: list[tuple[str, LLMProvider]] = [
         ("deepseek-v4-flash", LLMProvider.DEEPSEEK),
         ("deepseek/deepseek-v4-flash-0731", LLMProvider.OPENROUTER),
-        ("gemini-3.6-flash", LLMProvider.GOOGLE),
+        ("gemini-3.7-flash", LLMProvider.GOOGLE),
         ("gpt-5.6-luna", LLMProvider.OPENAI),
         ("grok-4.6", LLMProvider.XAI),
         ("MiniMax-M3", LLMProvider.MINIMAX),
@@ -164,8 +164,8 @@ def pick_fastest_model() -> str:
 def pick_multimodal_model() -> str:
     """Pick the best model that accepts image/audio/video input."""
     order: list[tuple[str, LLMProvider]] = [
-        ("gemini-3.6-flash", LLMProvider.GOOGLE),
-        ("google/gemini-3.6-flash", LLMProvider.OPENROUTER),
+        ("gemini-3.7-flash", LLMProvider.GOOGLE),
+        ("google/gemini-3.7-flash", LLMProvider.OPENROUTER),
         ("mimo-v2.5", LLMProvider.MIMO_PLAN),
         ("MiniMax-M3", LLMProvider.MINIMAX),
         ("gpt-5.6-terra", LLMProvider.OPENAI),
@@ -220,7 +220,7 @@ def pick_search_model() -> str:
     """Pick the best model for web/realtime search (native-search providers first)."""
     order: list[tuple[str, LLMProvider]] = [
         ("grok-4.6", LLMProvider.XAI),
-        ("gemini-3.6-flash", LLMProvider.GOOGLE),
+        ("gemini-3.7-flash", LLMProvider.GOOGLE),
         ("gpt-5.6-terra", LLMProvider.OPENAI),
         ("x-ai/grok-4.6", LLMProvider.OPENROUTER),
         ("deepseek-v4-flash", LLMProvider.DEEPSEEK),

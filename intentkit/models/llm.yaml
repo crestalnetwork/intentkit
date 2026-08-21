@@ -311,11 +311,13 @@
   reasoning_levels: ["none", "high"]
   timeout: 300
 
-- id: "z-ai/glm-5.2"
-  name: "GLM 5.2"
+- id: "z-ai/glm-5.3"
+  name: "GLM 5.3"
   provider: openrouter
-  origin_provider: "z-ai/fp8"   # lock OpenRouter upstream
-  legacy_ids: ["z-ai/glm-5.1"]
+  # Bare slug: it matches Z.ai's quant-suffixed endpoint (z-ai/fp8 today) and
+  # keeps working if they swap quantization, as Moonshot did for K3.
+  origin_provider: "z-ai"   # lock OpenRouter upstream
+  legacy_ids: ["z-ai/glm-5.1", "z-ai/glm-5.2"]
   enabled: true
   input_price: "1.4"
   cached_input_price: "0.26"
@@ -329,8 +331,9 @@
   supports_audio_input: false
   supports_video_input: false
   supports_file_input: false
+  # Z.ai dropped thinking.type=disabled in 5.3; only low/high/max remain.
   reasoning_effort: "high"
-  reasoning_levels: ["none", "minimal", "low", "medium", "high", "xhigh", "max"]
+  reasoning_levels: ["low", "high", "max"]
   timeout: 300
 
 - id: "anthropic/claude-sonnet-5"
@@ -402,6 +405,7 @@
 - id: "google/gemini-3.1-pro-preview-customtools"
   name: "Gemini 3.1 Pro"
   provider: openrouter
+  # The customtools alias has no Vertex endpoint on OpenRouter (as of 2026-08).
   origin_provider: "google-ai-studio"   # lock OpenRouter upstream
   enabled: true
   input_price: "2"
@@ -444,7 +448,8 @@
 - id: "google/gemini-3.5-flash-lite"
   name: "Gemini 3.5 Flash Lite"
   provider: openrouter
-  origin_provider: "google-ai-studio"   # lock OpenRouter upstream
+  # Vertex and AI Studio bill the same here; Vertex for parity with 3.7 Flash.
+  origin_provider: "google-vertex/global"   # lock OpenRouter upstream
   legacy_ids: ["google/gemini-3.1-flash-lite-preview", "google/gemini-3.1-flash-lite"]
   enabled: true
   input_price: "0.3"
@@ -463,15 +468,17 @@
   reasoning_levels: ["minimal", "low", "medium", "high"]
   timeout: 300
 
-- id: "gemini-3.6-flash"
-  name: "Gemini 3.6 Flash"
+# Google prices 3.7 Flash at half the 3.6 launch rate through 2026-12-31
+# (1.5/0.15/7.5 from 2027-01-01). 3.7 drops the "minimal" thinking level.
+- id: "gemini-3.7-flash"
+  name: "Gemini 3.7 Flash"
   provider: google
-  legacy_ids: ["gemini-3-flash-preview", "gemini-3.5-flash"]
+  legacy_ids: ["gemini-3-flash-preview", "gemini-3.5-flash", "gemini-3.6-flash"]
   enabled: true
-  input_price: "1.5"
-  cached_input_price: "0.15"
-  output_price: "7.5"
-  price_level: 3
+  input_price: "0.75"
+  cached_input_price: "0.075"
+  output_price: "3.75"
+  price_level: 2
   context_length: 1048576
   output_length: 65536
   intelligence: 5
@@ -481,19 +488,21 @@
   supports_video_input: true
   supports_file_input: true
   reasoning_effort: "high"
-  reasoning_levels: ["minimal", "low", "medium", "high"]
+  reasoning_levels: ["low", "medium", "high"]
   timeout: 300
 
-- id: "google/gemini-3.6-flash"
-  name: "Gemini 3.6 Flash"
+# OpenRouter's Vertex endpoint bills 0.375/1.875: half of its AI Studio
+# endpoint and a quarter of Google's 1.5/7.5 list (promo, as of 2026-08-21).
+- id: "google/gemini-3.7-flash"
+  name: "Gemini 3.7 Flash"
   provider: openrouter
-  origin_provider: "google-ai-studio"   # lock OpenRouter upstream
-  legacy_ids: ["google/gemini-3-flash-preview", "google/gemini-3.5-flash"]
+  origin_provider: "google-vertex/global"   # lock OpenRouter upstream
+  legacy_ids: ["google/gemini-3-flash-preview", "google/gemini-3.5-flash", "google/gemini-3.6-flash"]
   enabled: true
-  input_price: "1.5"
-  cached_input_price: "0.15"
-  output_price: "7.5"
-  price_level: 3
+  input_price: "0.375"
+  cached_input_price: "0.0375"
+  output_price: "1.875"
+  price_level: 2
   context_length: 1048576
   output_length: 65536
   intelligence: 5
@@ -503,7 +512,7 @@
   supports_video_input: true
   supports_file_input: true
   reasoning_effort: "high"
-  reasoning_levels: ["minimal", "low", "medium", "high"]
+  reasoning_levels: ["low", "medium", "high"]
   timeout: 300
 
 - id: "gpt-5.6-sol"

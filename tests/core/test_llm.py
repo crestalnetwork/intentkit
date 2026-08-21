@@ -293,3 +293,27 @@ def test_model_id_index_legacy_collision_ignored():
     assert index["other-vendor/live-model"] == ["openai:usurper"]
     # ...and the genuinely retired id routes to the successor.
     assert index["gone-model"] == ["openai:usurper"]
+
+
+def test_catalog_reasoning_effort_within_levels():
+    """Every catalog default effort must be one of that model's own levels.
+
+    A model bump that drops a level (3.7 Flash lost "minimal") would otherwise
+    leave a default the clamp has to silently rewrite on every request.
+    """
+    from pathlib import Path
+
+    import yaml as pyyaml
+
+    import intentkit.models.llm as llm_module
+
+    rows = pyyaml.safe_load(
+        (Path(llm_module.__file__).with_name("llm.yaml")).read_text(encoding="utf-8")
+    )
+    for row in rows:
+        levels = row.get("reasoning_levels")
+        effort = row.get("reasoning_effort")
+        if levels and effort is not None:
+            assert effort in levels, (
+                f"{row['id']}: reasoning_effort {effort!r} not in {levels}"
+            )

@@ -7,8 +7,12 @@ agent. That is how ``temperature:`` sat in these files long after the field was
 removed.
 """
 
-import pytest
+from pathlib import Path
 
+import pytest
+import yaml as pyyaml
+
+import intentkit.models.llm as llm_module
 from intentkit.core.public_agents import (
     PUBLIC_AGENTS_DIR,
     parse_agent_markdown,
@@ -16,6 +20,12 @@ from intentkit.core.public_agents import (
 from intentkit.models.agent.user_input import AgentUpdate
 
 AGENT_FILES = sorted(PUBLIC_AGENTS_DIR.rglob("*.md"))
+LIVE_MODEL_IDS = {
+    row["id"]
+    for row in pyyaml.safe_load(
+        Path(llm_module.__file__).with_name("llm.yaml").read_text(encoding="utf-8")
+    )
+}
 
 
 def test_definitions_are_present():
@@ -36,6 +46,11 @@ def test_definition_parses_and_validates(path):
     )
     assert agent.description, f"{path.name}: description is shown in listings"
     assert agent.system_prompt, f"{path.name}: body is empty"
+    # legacy_ids routing would keep a retired id working, but every sync
+    # would then re-mint the agent with it; pin definitions to live ids.
+    assert agent.model in LIVE_MODEL_IDS, (
+        f"{path.name}: model {agent.model!r} is not a live catalog id"
+    )
 
 
 @pytest.mark.parametrize("path", AGENT_FILES, ids=lambda p: p.stem)

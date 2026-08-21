@@ -6,7 +6,7 @@ tags:
 - Base
 - China
 - Stocks
-model: google/gemini-3.6-flash
+model: google/gemini-3.7-flash
 search_internet: false
 visibility: 20
 tools:

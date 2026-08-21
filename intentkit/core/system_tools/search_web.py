@@ -6,7 +6,7 @@ without a native search tool still get reliable web search:
 1. A random pick between **Tavily** and **Jina** (only those configured and not
    in a Redis cool-down). On a quota / rate-limit error the backend is put into
    cool-down and the other one is tried.
-2. **Gemini** (``gemini-3.6-flash`` with Google Search grounding) as a fallback.
+2. **Gemini** (``gemini-3.7-flash`` with Google Search grounding) as a fallback.
 3. **Z.AI** MCP web search as the last resort.
 
 If none of the four backends is configured, a ``ToolException`` is raised.
@@ -29,7 +29,7 @@ logger = logging.getLogger(__name__)
 
 _TAVILY_API_URL = "https://api.tavily.com/search"
 _JINA_SEARCH_URL = "https://s.jina.ai/"
-_GEMINI_SEARCH_MODEL = "gemini-3.6-flash"
+_GEMINI_SEARCH_MODEL = "gemini-3.7-flash"
 
 # Cool-down window (seconds) applied to a metered backend after it reports a
 # quota / rate-limit error, so we stop hammering it. Stored in Redis and shared
@@ -245,7 +245,7 @@ class WebSearchTool(SystemTool):
     async def _search_gemini(
         self, query: str, max_results: int, tool_call_id: str | None
     ) -> str:
-        """Search via gemini-3.6-flash with Google Search grounding."""
+        """Search via gemini-3.7-flash with Google Search grounding."""
         from intentkit.models.llm import create_llm_model
 
         # Collecting and formatting search results needs little reasoning;
