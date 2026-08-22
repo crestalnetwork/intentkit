@@ -2,6 +2,7 @@
 
 import logging
 from abc import ABCMeta
+from collections import OrderedDict
 from collections.abc import Callable
 from decimal import Decimal
 from functools import lru_cache
@@ -25,6 +26,8 @@ from intentkit.models.tool import (
     ChatToolDataCreate,
 )
 from intentkit.utils.error import RateLimitExceeded
+
+logger = logging.getLogger(__name__)
 
 
 class NoArgsSchema(BaseModel):
@@ -426,3 +429,72 @@ def get_tool_price(name: str) -> Decimal:
     if not _registry_built:
         build_tool_prices()
     return _TOOL_PRICES.get(name, _DEFAULT_PRICE)
+
+
+# Metered tools: cost known only after the call
+#
+# ``price`` is a class field, so it can only express a flat per-call charge.
+# Video generation is billed by the provider on the actual output (model,
+# resolution, duration) and OpenRouter reports that figure on the finished
+# job, so a flat price would over- or undercharge every call. Such a tool
+# reports the provider's figure here against its own ``tool_call_id``, in USD
+# — the credit unit belongs to the billing layer, not to a leaf tool. The
+# engine's billing step (core/engine/chunks.py) converts and spends it in
+# place of the static price, with platform/agent fees applying on top exactly
+# as they do for a flat price.
+#
+# Why a registry rather than the tool charging directly: only chunks.py holds
+# the ``message_id`` that ``expense_tool`` needs, and only chunks.py can write
+# the resulting ``credit_event_id``/``credit_cost`` back onto the tool call.
+# (``expense_tool_internal_llm`` bills from inside a tool precisely by giving
+# up both.)
+#
+# Bounded because a run cancelled between the tool returning and chunks.py
+# billing never drains its entry.
+_METERED_COST_LIMIT = 256
+_metered_tool_costs: OrderedDict[str, Decimal] = OrderedDict()
+
+
+def report_tool_cost_usd(tool_call_id: str | None, usd: Decimal) -> None:
+    """Record what the provider charged for one tool call, in USD.
+
+    Repeat reports for the same ``tool_call_id`` accumulate rather than
+    overwrite. ToolRetryMiddleware reuses the id across attempts, so if a
+    caller ever surfaces a retryable failure after reaching the provider, both
+    attempts were charged and the call owes the sum. (Today's only caller
+    wraps everything in ToolException, which is never retried — this keeps the
+    registry correct without depending on that.) ``tool_call_id`` is what
+    LangChain injects via ``InjectedToolCallId``; it is absent only when the
+    tool runs outside a model turn, where there is no credit event to attach
+    to.
+    """
+    if not tool_call_id:
+        logger.warning(
+            "metered cost %s reported with no tool_call_id; "
+            "the call will be billed at its flat price",
+            usd,
+        )
+        return
+    _metered_tool_costs[tool_call_id] = (
+        _metered_tool_costs.get(tool_call_id, Decimal("0")) + usd
+    )
+    if len(_metered_tool_costs) > _METERED_COST_LIMIT:
+        evicted_id, evicted_usd = _metered_tool_costs.popitem(last=False)
+        # Silent undercharge if it ever happens: the evicted call gets billed
+        # at its flat price instead of what the provider charged.
+        logger.warning(
+            "metered cost registry full; evicting unbilled %s (%s USD)",
+            evicted_id,
+            evicted_usd,
+        )
+
+
+def take_tool_cost_usd(tool_call_id: str | None) -> Decimal | None:
+    """Pop the reported USD cost for a tool call, or None if it was not metered.
+
+    Popping is deliberate: the cost belongs to exactly one credit event, and
+    callers must drain even calls they do not bill so nothing is left behind.
+    """
+    if not tool_call_id:
+        return None
+    return _metered_tool_costs.pop(tool_call_id, None)

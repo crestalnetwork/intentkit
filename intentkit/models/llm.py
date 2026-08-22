@@ -562,17 +562,25 @@ def get_search_price(provider: LLMProvider) -> Decimal | None:
     return _SEARCH_PRICE_BY_PROVIDER.get(provider)
 
 
+async def usd_to_credits(usd: Decimal) -> Decimal:
+    """Convert a USD amount to credits at the configured rate.
+
+    The single place that knows the credit unit, for costs a provider reports
+    in dollars (metered tool calls, per-call search pricing). Uses the same
+    process-lifetime rate cache as token pricing above.
+    """
+    global credit_per_usdc
+    if not credit_per_usdc:
+        credit_per_usdc = (await AppSetting.payment()).credit_per_usdc
+    return (credit_per_usdc * usd).quantize(FOURPLACES, rounding=ROUND_HALF_UP)
+
+
 async def calculate_search_cost(provider: LLMProvider, search_count: int) -> Decimal:
     """Calculate credit cost for web search calls based on provider pricing."""
     price = get_search_price(provider)
     if not price or search_count <= 0:
         return Decimal("0")
-    global credit_per_usdc
-    if not credit_per_usdc:
-        credit_per_usdc = (await AppSetting.payment()).credit_per_usdc
-    return (credit_per_usdc * Decimal(search_count) * price).quantize(
-        FOURPLACES, rounding=ROUND_HALF_UP
-    )
+    return await usd_to_credits(Decimal(search_count) * price)
 
 
 class LLMModel(BaseModel):

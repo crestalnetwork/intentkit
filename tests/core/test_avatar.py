@@ -360,10 +360,10 @@ class TestProviderFunctions:
         *,
         send_side_effect: BaseException | None = None,
     ) -> tuple[Any, AsyncMock]:
-        """Patch ``openrouter.OpenRouter`` as seen by intentkit.core.avatar.
+        """Patch the shared client factory as seen by intentkit.core.avatar.
 
         Returns ``(patch_ctx, mock_send)``. The mock client returned by the
-        patched constructor has ``.chat.send_async`` set to ``mock_send``.
+        patched factory has ``.chat.send_async`` set to ``mock_send``.
         """
         mock_send = AsyncMock()
         if send_side_effect is not None:
@@ -376,7 +376,7 @@ class TestProviderFunctions:
         mock_client = MagicMock(chat=mock_chat)
 
         patch_ctx = patch(
-            "intentkit.core.avatar.openrouter.OpenRouter", return_value=mock_client
+            "intentkit.core.avatar.get_openrouter_client", return_value=mock_client
         )
         return patch_ctx, mock_send
 

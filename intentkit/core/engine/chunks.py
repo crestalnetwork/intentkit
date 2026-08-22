@@ -24,8 +24,8 @@ from intentkit.models.chat import (
     ChatMessageCreate,
     ChatMessageToolCall,
 )
-from intentkit.models.llm import LLMModelInfo, calculate_search_cost
-from intentkit.tools.base import get_tool_price
+from intentkit.models.llm import LLMModelInfo, calculate_search_cost, usd_to_credits
+from intentkit.tools.base import get_tool_price, take_tool_cost_usd
 
 logger = logging.getLogger(__name__)
 
@@ -299,9 +299,20 @@ async def handle_tools_chunk(
             tool_message_create.credit_cost = message_payment_event.total_amount
         # 2. Per-tool credit events
         for tool_call in tool_calls:
+            # Drain before the success check: a metered tool that reported a
+            # cost and then failed downstream must not leave its entry behind
+            # for the bounded registry to evict later.
+            metered_usd = take_tool_cost_usd(tool_call.get("id"))
             if not tool_call.get("success"):
                 continue
-            tool_price = get_tool_price(tool_call["name"])
+            # Metered tools (video generation) report what the provider
+            # actually charged; everything else is a flat per-call price. Fees
+            # apply on top either way.
+            tool_price = (
+                await usd_to_credits(metered_usd)
+                if metered_usd is not None
+                else get_tool_price(tool_call["name"])
+            )
             payment_event = await expense_tool(
                 session,
                 team_id=payer or "",

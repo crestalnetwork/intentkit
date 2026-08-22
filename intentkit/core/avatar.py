@@ -4,12 +4,12 @@ import logging
 from typing import Any
 
 import httpx
-import openrouter
 from google import genai
 from google.genai import types
 from openai import AsyncOpenAI
 from PIL import Image
 
+from intentkit.clients.openrouter import get_openrouter_client
 from intentkit.clients.s3 import store_image_bytes
 from intentkit.config.config import config
 
@@ -88,13 +88,7 @@ async def generate_image_openrouter(prompt: str) -> bytes | None:
     so we ask for `["image"]` which is accepted by all image-output models.
     """
     try:
-        client = openrouter.OpenRouter(
-            api_key=config.openrouter_api_key,
-            http_referer="https://github.com/crestalnetwork/intentkit",
-            x_open_router_title="IntentKit",
-            x_open_router_categories="cloud-agent",
-            timeout_ms=120_000,
-        )
+        client = get_openrouter_client()
         response = await client.chat.send_async(
             model=OPENROUTER_IMAGE_MODEL,
             modalities=["image"],

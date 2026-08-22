@@ -58,3 +58,49 @@ def test_real_tools_match_their_field_defaults():
 def test_unknown_tool_falls_back_to_default():
     _rebuild_registry()
     assert get_tool_price("definitely_not_a_real_tool_name_xyz") == Decimal("1")
+
+
+class TestMeteredCostRegistry:
+    """The handoff that lets a tool bill what the provider actually charged.
+
+    ``price`` is a class field and can only express a flat charge; metered
+    tools report the provider's USD figure against their ``tool_call_id`` and
+    core/engine/chunks.py spends that instead.
+    """
+
+    def setup_method(self):
+        tool_base._metered_tool_costs.clear()
+
+    teardown_method = setup_method
+
+    def test_cost_is_consumed_once(self):
+        """The cost belongs to exactly one credit event."""
+        tool_base.report_tool_cost_usd("call-once", Decimal("0.5"))
+        assert tool_base.take_tool_cost_usd("call-once") == Decimal("0.5")
+        assert tool_base.take_tool_cost_usd("call-once") is None
+
+    def test_unreported_call_is_not_metered(self):
+        assert tool_base.take_tool_cost_usd("never-reported") is None
+
+    def test_repeat_reports_accumulate(self):
+        """ToolRetryMiddleware reuses the tool_call_id across attempts, and a
+        retry that reached the provider was charged for separately — so the
+        call owes the sum, not just the last attempt."""
+        tool_base.report_tool_cost_usd("call-retried", Decimal("0.25"))
+        tool_base.report_tool_cost_usd("call-retried", Decimal("0.25"))
+        assert tool_base.take_tool_cost_usd("call-retried") == Decimal("0.50")
+
+    def test_missing_call_id_is_dropped(self):
+        tool_base.report_tool_cost_usd(None, Decimal("0.5"))
+        assert not tool_base._metered_tool_costs
+
+    def test_registry_is_bounded(self):
+        """A run cancelled between the tool returning and billing never drains
+        its entry, so the registry must not grow without limit."""
+        limit = tool_base._METERED_COST_LIMIT
+        for i in range(limit + 10):
+            tool_base.report_tool_cost_usd(f"leak-{i}", Decimal("1"))
+        assert len(tool_base._metered_tool_costs) == limit
+        # Oldest evicted, newest kept.
+        assert tool_base.take_tool_cost_usd("leak-0") is None
+        assert tool_base.take_tool_cost_usd(f"leak-{limit + 9}") == Decimal("1")

@@ -13,10 +13,12 @@ from langchain_core.tools import ArgsSchema
 from langchain_core.tools.base import ToolException
 from pydantic import BaseModel, Field
 
+from intentkit.clients.openrouter import get_openrouter_client
 from intentkit.clients.s3 import get_cdn_url, store_image_bytes
 from intentkit.config.config import config
 from intentkit.models.chat import ChatMessageAttachment, ChatMessageAttachmentType
 from intentkit.tools.base import IntentKitTool
+from intentkit.utils.media import to_data_url
 from intentkit.utils.ssrf import httpx_request_guard
 
 logger = logging.getLogger(__name__)
@@ -93,17 +95,10 @@ class ImageBaseTool(IntentKitTool, metaclass=ABCMeta):
         ``openrouter_images_api`` set go to the dedicated images endpoint;
         the rest go through chat completions with image output modality.
         """
-        key = config.openrouter_api_key
-        if not key:
-            raise ToolException("OpenRouter API key is not configured")
-
-        client = openrouter.OpenRouter(
-            api_key=key,
-            http_referer="https://github.com/crestalnetwork/intentkit",
-            x_open_router_title="IntentKit",
-            x_open_router_categories="cloud-agent",
-            timeout_ms=120_000,
-        )
+        try:
+            client = get_openrouter_client()
+        except ValueError as e:
+            raise ToolException(str(e))
         if self.openrouter_images_api:
             return await self._openrouter_images_request(client, prompt, images)
         return await self._openrouter_chat_request(client, prompt, images)
@@ -218,17 +213,10 @@ class ImageBaseTool(IntentKitTool, metaclass=ABCMeta):
         ), [attachment]
 
 
-def _to_data_url(image: bytes) -> str:
-    """Encode raw image bytes as a base64 data URL with the detected MIME."""
-    kind = filetype.guess(image)
-    mime = kind.mime if kind else "image/png"
-    return f"data:{mime};base64,{base64.b64encode(image).decode()}"
-
-
 def _image_references(images: list[bytes] | None) -> list[dict[str, Any]]:
     """Build image_url content parts from raw input images."""
     return [
-        {"type": "image_url", "image_url": {"url": _to_data_url(img)}}
+        {"type": "image_url", "image_url": {"url": to_data_url(img)}}
         for img in images or []
     ]
 

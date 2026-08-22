@@ -1,18 +1,16 @@
-"""Video generation tools across multiple providers."""
+"""Video generation tools, all served through OpenRouter."""
 
 from collections.abc import Callable
 
 from intentkit.config.config import config as system_config
 from intentkit.tools.meta import ToolsetMeta
 from intentkit.tools.video.base import VideoBaseTool
-from intentkit.tools.video.gemini import VeoVideo, VeoVideoFast
-from intentkit.tools.video.gpt import SoraVideo, SoraVideoPro
-from intentkit.tools.video.grok import GrokVideo
 from intentkit.tools.video.minimax import HailuoVideo
+from intentkit.tools.video.seedance import SeedanceMiniVideo, SeedanceVideo
 
 toolset = ToolsetMeta(
     title="Video Generation",
-    description="Generate videos from text prompts or images using multiple AI providers. Supports Grok, Sora, and Veo models.",
+    description="Generate videos from text prompts or images using Seedance and MiniMax models.",
     tags=["Media", "AI"],
     icon="/tools/video/video.svg",
 )
@@ -22,11 +20,8 @@ toolset = ToolsetMeta(
 _cache: dict[str, VideoBaseTool] = {}
 
 _TOOL_NAME_TO_CLASS: dict[str, Callable[[], VideoBaseTool]] = {
-    "video_grok": GrokVideo,
-    "video_sora": SoraVideo,
-    "video_sora_pro": SoraVideoPro,
-    "video_veo": VeoVideo,
-    "video_veo_fast": VeoVideoFast,
+    "video_seedance_mini": SeedanceMiniVideo,
+    "video_seedance": SeedanceVideo,
     "video_hailuo": HailuoVideo,
 }
 
@@ -59,9 +54,4 @@ def get_video_tool(tool_name: str) -> VideoBaseTool | None:
 
 def available() -> bool:
     """Check if this toolset is available based on system config."""
-    return bool(
-        system_config.openai_api_key
-        or system_config.google_api_key
-        or system_config.xai_api_key
-        or system_config.minimax_plan_api_key
-    )
+    return bool(system_config.openrouter_api_key)
