@@ -13,7 +13,18 @@ import httpx2
 import openai
 import pytest
 from anthropic import APIStatusError as AnthropicAPIStatusError
+from langchain_core.exceptions import (
+    ContextOverflowError,
+    ModelAPIError,
+    ModelAuthenticationError,
+    ModelConnectionError,
+    ModelInvalidRequestError,
+    ModelNotFoundError,
+    ModelRateLimitError,
+    ModelTimeoutError,
+)
 from langchain_core.tools.base import ToolException
+from langchain_google_genai.chat_models import GoogleRateLimitError
 from openrouter.errors import OpenRouterError, ResponseValidationError
 from pydantic import BaseModel, ValidationError
 
@@ -21,6 +32,7 @@ from intentkit.core.executor import (
     _should_retry_model_failure,
     _should_retry_tool_failure,
 )
+from intentkit.utils.error import http_status_candidates
 
 
 def _response(status_code: int) -> httpx.Response:
@@ -184,6 +196,75 @@ class TestShouldRetryModelFailure:
         a.__cause__ = b
         b.__cause__ = a
         assert not _should_retry_model_failure(a)
+
+
+class TestStandardModelExceptions:
+    """langchain-core 1.6 gave integrations a shared exception vocabulary.
+
+    ``ModelError.is_retryable`` is set by the provider from the condition it
+    actually saw, so it beats the status duck-typing — and it is the only
+    signal for integrations that drop the status on the floor.
+    """
+
+    @pytest.mark.parametrize(
+        "exc",
+        [
+            ModelRateLimitError("rate limited"),
+            ModelAPIError("provider 5xx"),
+            ModelConnectionError("provider unreachable"),
+            ModelTimeoutError("timed out"),
+        ],
+        ids=["rate-limit", "api", "connection", "timeout"],
+    )
+    def test_retryable_model_errors_retry(self, exc: Exception):
+        # Integrations raise subclasses that also inherit the SDK's own error
+        # (OpenAIRateLimitError is an openai.RateLimitError), so putting this
+        # branch first changes which check answers, never the answer.
+        assert _should_retry_model_failure(exc)
+
+    @pytest.mark.parametrize(
+        "exc",
+        [
+            ModelAuthenticationError("bad key"),
+            ModelInvalidRequestError("malformed request"),
+            ModelNotFoundError("no such model"),
+            ContextOverflowError("input exceeds the context window"),
+        ],
+        ids=["auth", "invalid-request", "not-found", "context-overflow"],
+    )
+    def test_permanent_model_errors_do_not_retry(self, exc: Exception):
+        assert not _should_retry_model_failure(exc)
+
+    def test_google_rate_limit_retries_without_any_status(self):
+        # GoogleRateLimitError carries no status_code, code, or response at
+        # all — before the standard vocabulary the 429 survived only if the
+        # raw ClientError happened to still be on the chain.
+        exc = GoogleRateLimitError("Error calling model 'gemini': quota exceeded")
+        assert not any(http_status_candidates(exc))
+        assert _should_retry_model_failure(exc)
+
+    def test_permanent_condition_beats_a_retryable_status(self):
+        # langchain-openai raises OpenAIAPIContextOverflowError off a generic
+        # openai.APIError, which can carry a 5xx-shaped status. Retrying it
+        # burns every attempt on input that will never fit.
+        class ServerShapedOverflow(ContextOverflowError):
+            status_code = 503
+
+        assert not _should_retry_model_failure(
+            ServerShapedOverflow("exceeds the context window")
+        )
+
+    def test_transport_cause_under_a_permanent_model_error_does_not_retry(self):
+        # The outermost classified verdict wins: a provider that calls the
+        # request invalid means it, whatever noise is further down the chain.
+        exc = ModelInvalidRequestError("malformed request")
+        exc.__cause__ = httpx.ConnectError("refused")
+        assert not _should_retry_model_failure(exc)
+
+    def test_model_error_on_the_cause_is_still_found(self):
+        wrapper = RuntimeError("model call failed")
+        wrapper.__cause__ = ModelRateLimitError("rate limited")
+        assert _should_retry_model_failure(wrapper)
 
 
 class TestOpenRouterResponseFailures:

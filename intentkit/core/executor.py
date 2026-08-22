@@ -14,6 +14,7 @@ from collections.abc import Sequence
 from datetime import UTC, datetime, timedelta
 from typing import Any
 
+from langchain_core.exceptions import ModelError
 from langchain_core.tools import BaseTool
 from langchain_core.tools.base import ToolException
 from langgraph.checkpoint.memory import InMemorySaver
@@ -77,6 +78,18 @@ def _should_retry_model_failure(exc: Exception) -> bool:
     status alone cannot tell apart from a genuine, permanent schema mismatch.
     """
     for cause in iter_exception_chain(exc):
+        # langchain-core 1.6 gave integrations a shared exception vocabulary
+        # whose is_retryable flag the provider sets from the condition it
+        # actually saw, so it wins over the status filter below in both
+        # directions — langchain-google-genai's GoogleRateLimitError carries no
+        # status at all. Integrations still subclass their SDK's own error, so
+        # nothing below stops matching, and providers without the vocabulary
+        # (openrouter) fall through unchanged. Trusting the flag in the negative
+        # direction too — a classified failure ends the walk rather than getting
+        # a second opinion from the status filter — is deliberate, and is what
+        # ModelRetryMiddleware's own default_retry_on does.
+        if isinstance(cause, ModelError):
+            return cause.is_retryable
         if isinstance(cause, TRANSIENT_TRANSPORT_ERRORS):
             return True
         # A 2xx whose body stopped mid-JSON — the upstream stream dropped.

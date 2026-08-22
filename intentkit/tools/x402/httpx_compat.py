@@ -264,6 +264,16 @@ def _build_x402_client(
 ) -> x402Client:
     wrapped_selector = _wrap_selector(payment_requirements_selector, hooks)
     client = x402Client(payment_requirements_selector=wrapped_selector)
+    # x402 2.20 turned client spend controls on by default: only assets in the
+    # SDK's own default table, capped at $1 per payment, enforced during
+    # selection before any policy runs. Both defaults override what the caller
+    # chose — x402_pay takes max_value in base units straight from the agent, so
+    # a 2 USDC payment under a 10 USDC max_value would be refused, and an agent
+    # may legitimately pay in a token the SDK's table doesn't list. Turn them
+    # off so max_value stays the cap. Note x402_http_request passes no
+    # max_value, so it registers no policy and stays uncapped — as it was
+    # before 2.20; the SDK default is not the place to fix that.
+    _ = client.set_spend_controls(False)
     policies = [max_amount(max_value)] if max_value is not None else None
     adapter = IntentKitEvmSignerAdapter(signer)
     _ = register_exact_evm_client(client, adapter, policies=policies)

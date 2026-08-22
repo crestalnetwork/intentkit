@@ -39,11 +39,16 @@ dependencies = [
     # LangChain & LLM
     "langchain>=1.3,<2",
     "langchain-community>=0.4,<1",
-    "langchain-core>=1.4,<2",
+    # 1.6 added the provider-neutral ModelError vocabulary (is_retryable),
+    # which core/executor.py and utils/error.py classify against.
+    "langchain-core>=1.6,<2",
     "langchain-openai>=1.2,<2",
     "langchain-text-splitters>=1.1,<2",
     "langchain-deepseek>=1.0,<2",
-    "langchain-google-genai>=4.2,<5",
+    # 4.3.5 is the release that adopted langchain-core 1.6's ModelError
+    # mixins (GoogleRateLimitError etc.); the Gemini path carries no HTTP
+    # status of its own, so below that the retry predicate is blind to it.
+    "langchain-google-genai>=4.3.5,<5",
     "langchain-anthropic>=1.4,<2",
     # Declared only because utils/error.py imports APITimeoutError directly
     # (deptry DEP003). langchain-anthropic pins the effective version — keep
@@ -71,7 +76,10 @@ dependencies = [
     "eth-typing>=6.0.0",
     "eth-utils>=2.1.0",
     "hexbytes>=1.3.1",
-    "x402>=2.0.0",
+    # 2.20 turned client spend controls on by default ($1/payment, SDK
+    # default assets only); tools/x402 disables them via set_spend_controls,
+    # which only exists from 2.20 on.
+    "x402>=2.20.0",
     # Social platforms
     "slack-sdk>=3.34.0",
     # Utilities

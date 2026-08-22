@@ -10,6 +10,7 @@ import httpx2
 import openai
 from fastapi.exceptions import RequestValidationError
 from fastapi.utils import is_body_allowed_for_status_code
+from langchain_core.exceptions import ModelTimeoutError
 from langchain_core.tools.base import ToolException
 from starlette.exceptions import HTTPException
 from starlette.requests import Request
@@ -25,7 +26,10 @@ logger = logging.getLogger(__name__)
 
 # Transport-level failures that mean a transient network problem — safe to
 # retry. Raw httpcore(2) errors are listed because they leak past httpx(2)
-# wrapping in practice.
+# wrapping in practice. Deliberately no langchain ``ModelConnectionError`` /
+# ``ModelAPIError``: core.executor's retry predicate reads ``ModelError.
+# is_retryable`` before it consults this tuple, and that branch owns the
+# provider-neutral vocabulary. Add them here if that branch ever goes away.
 TRANSIENT_TRANSPORT_ERRORS = (
     ConnectionError,
     TimeoutError,
@@ -43,7 +47,9 @@ TRANSIENT_TRANSPORT_ERRORS = (
 # classification. Unlike the retry predicate, its consumers are plain
 # ``except`` clauses that never walk ``__cause__`` — so the SDK wrappers are
 # listed too: openai/anthropic surface timeouts as ``APITimeoutError`` with
-# the transport error only as the cause.
+# the transport error only as the cause — plus ``ModelTimeoutError``,
+# langchain's provider-neutral twin (langchain-core 1.6), for integrations that
+# adopt the vocabulary without an SDK timeout class of their own.
 TRANSPORT_TIMEOUT_ERRORS = (
     TimeoutError,
     httpx.TimeoutException,
@@ -52,6 +58,7 @@ TRANSPORT_TIMEOUT_ERRORS = (
     httpcore2.TimeoutException,
     openai.APITimeoutError,
     anthropic.APITimeoutError,
+    ModelTimeoutError,
 )
 
 

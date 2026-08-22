@@ -5,6 +5,7 @@ import httpx
 import httpx2
 import openai
 import pytest
+from langchain_core.exceptions import ModelTimeoutError
 
 from intentkit.utils.error import (
     TRANSPORT_TIMEOUT_ERRORS,
@@ -31,6 +32,7 @@ class TestTransportTimeoutErrors:
             anthropic.APITimeoutError(
                 request=httpx.Request("POST", "https://api.example.com")
             ),
+            ModelTimeoutError("model request timed out"),
         ],
         ids=[
             "builtin",
@@ -40,6 +42,7 @@ class TestTransportTimeoutErrors:
             "httpcore2-connect",
             "openai-wrapper",
             "anthropic-wrapper",
+            "langchain-standard",
         ],
     )
     def test_timeouts_classify_as_timeout(self, exc: Exception):
