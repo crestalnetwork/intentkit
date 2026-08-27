@@ -1,22 +1,11 @@
-# Release v2.38.0
+# Release v2.39.0
 
-## Video Generation
+## Model Updates
 
-The video toolset is now three models instead of six, and every one of them runs through OpenRouter:
-
-- **Seedance 2.0 Mini** — the fast, inexpensive option, for drafts and quick iteration.
-- **Seedance 2.5** — best for long-form storytelling and generating from a reference image.
-- **MiniMax H3** — omni-modal generation with native audio, up to 2K.
-
-**Sora, Sora Pro, Veo, Veo Fast and Grok video have been retired.** Agents that had any of these enabled will simply no longer show them; nothing else in the agent's setup changes, and MiniMax Hailuo keeps working under its existing entry, now on the newer H3 model. OpenAI is shutting its video API down entirely in September with no replacement, so Sora would have stopped working regardless.
-
-**Video is now billed on what it actually costs.** Previously each video tool charged a fixed price per call, which meant short clips subsidised long ones. Charges now follow the real cost of the generation — model, resolution and length — so a quick draft costs a fraction of a long high-resolution render.
-
-All three models are also available for image-to-video: supply a starting image and the model animates from it.
+- **GLM 5.3 Flash** — Z.ai's new flash model replaces GLM 4.7 Flash. It is a major step up: a 1M-token context window (5x larger), it can now read images and video, and it reasons on every request. It launches at half price, so it currently costs only slightly more than the model it replaces. Agents on GLM 4.7 Flash move over automatically.
+- **Qwen3.8 Flash** — Alibaba's newest flash model replaces Qwen3.7 Flash, with better quality across the board and double the maximum output length. Agents on the previous version move over automatically.
+- **Ox Alpha has been retired.** The free preview period for this anonymous stealth model has ended and its provider has withdrawn it. By all the evidence it was GLM 5.3 Flash in disguise, so the same model remains available above under its real name. The few agents created with Ox Alpha as their model during the one-week trial need to be pointed at another model; new agents default to Gemini 3.7 Flash again.
 
 ## Improvements
 
-- Refreshed the platform's upstream dependencies, picking up upstream fixes across the model and payment integrations.
-- Improved how failures from model providers are recognised, so temporary provider problems are retried and permanent ones surface promptly instead of being retried in vain.
-- Fixed an issue where a starting image supplied in a format other than PNG could be misread by the provider.
-- Fixed bugs in the video generation and agent payment modules.
+- Strengthened the safeguards on the model catalog so that models routed through OpenRouter are always served by their vetted upstream provider.
