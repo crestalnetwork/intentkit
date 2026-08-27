@@ -72,15 +72,41 @@ def test_origin_provider_loaded_from_catalog():
         assert gemini is not None
         assert gemini.origin_provider == "google-vertex/global"
 
-    glm = models.get("openrouter:z-ai/glm-5.3")
-    assert glm is not None
-    assert glm.origin_provider == "z-ai"
+    for glm_id in ("z-ai/glm-5.3", "z-ai/glm-5.3-flash"):
+        glm = models.get(f"openrouter:{glm_id}")
+        assert glm is not None
+        assert glm.origin_provider == "z-ai"
 
-    # Unlocked OpenRouter models (no first-party endpoint) leave routing
+    # Unlocked OpenRouter models (no single upstream provider) leave routing
     # to OpenRouter.
-    glm_flash = models.get("openrouter:z-ai/glm-4.7-flash")
-    assert glm_flash is not None
-    assert glm_flash.origin_provider is None
+    free = models.get("openrouter:openrouter/free")
+    assert free is not None
+    assert free.origin_provider is None
+
+
+def test_all_openrouter_catalog_entries_pin_origin_provider():
+    """Every OpenRouter catalog row pins its upstream provider.
+
+    The only exception is openrouter/free — OpenRouter's own router meta-model
+    has no single upstream to pin. A new unpinned entry ships fallback routing
+    with unpredictable upstream quality and pricing; if that is ever deliberate,
+    add it to the expected list here.
+    """
+    from pathlib import Path
+
+    import yaml as pyyaml
+
+    import intentkit.models.llm as llm_module
+
+    rows = pyyaml.safe_load(
+        (Path(llm_module.__file__).with_name("llm.yaml")).read_text(encoding="utf-8")
+    )
+    unpinned = [
+        row["id"]
+        for row in rows
+        if row["provider"] == "openrouter" and not row.get("origin_provider")
+    ]
+    assert unpinned == ["openrouter/free"]
 
 
 @pytest.mark.asyncio

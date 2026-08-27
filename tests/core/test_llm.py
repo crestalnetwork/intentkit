@@ -238,6 +238,8 @@ def test_model_id_index_suffix_and_legacy_matching():
         assert index.get("deepseek/deepseek-v4-flash-0731") == [
             "openrouter:deepseek/deepseek-v4-flash-vision-exp"
         ]
+        assert index.get("qwen/qwen3.7-flash") == ["openrouter:qwen/qwen3.8-flash"]
+        assert index.get("z-ai/glm-4.7-flash") == ["openrouter:z-ai/glm-5.3-flash"]
 
 
 def test_catalog_legacy_ids_are_disjoint():

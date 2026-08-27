@@ -83,7 +83,7 @@ def test_resolve_never_clamps_positive_request_to_none():
 
 
 def test_resolve_sparse_levels_round_up_between_gaps():
-    # Ox Alpha shape: reasoning always on, only low/high/max exist. Requests
+    # GLM 5.3 shape: reasoning always on, only low/high/max exist. Requests
     # that fall in a gap round up, and "none" lands on the weakest level.
     info = _info(
         LLMProvider.OPENROUTER,

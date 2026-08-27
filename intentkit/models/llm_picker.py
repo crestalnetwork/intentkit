@@ -81,9 +81,6 @@ def pick_default_model() -> str:
     crash — it falls back to a reasonable model when nothing is configured.
     """
     order: list[tuple[str, LLMProvider]] = [
-        # Temporary trial: OpenRouter's free stealth preview heads the list
-        # while it costs nothing. Drop it back out once the trial ends.
-        ("stealth/ox-alpha", LLMProvider.OPENROUTER),
         ("gemini-3.7-flash", LLMProvider.GOOGLE),
         ("MiniMax-M3", LLMProvider.MINIMAX),
         ("minimax/minimax-m3", LLMProvider.OPENROUTER),
@@ -119,7 +116,7 @@ def pick_lite_model() -> str:
     """Pick the cheapest/fastest "lite" model — good enough for simple tasks."""
     order: list[tuple[str, LLMProvider]] = [
         ("gemini-3.5-flash-lite", LLMProvider.GOOGLE),
-        ("z-ai/glm-4.7-flash", LLMProvider.OPENROUTER),
+        ("z-ai/glm-5.3-flash", LLMProvider.OPENROUTER),
         ("deepseek-v4-flash-vision-exp", LLMProvider.DEEPSEEK),
         # Luna is OpenAI's cheapest tier; glm/deepseek above are still cheaper.
         ("gpt-5.6-luna", LLMProvider.OPENAI),
@@ -150,7 +147,7 @@ def pick_fastest_model() -> str:
     """Pick the lowest-latency model for snappy, simple interactions."""
     order: list[tuple[str, LLMProvider]] = [
         ("gemini-3.5-flash-lite", LLMProvider.GOOGLE),
-        ("qwen/qwen3.7-flash", LLMProvider.OPENROUTER),
+        ("qwen/qwen3.8-flash", LLMProvider.OPENROUTER),
         ("gpt-5.6-luna", LLMProvider.OPENAI),
         ("grok-4.6", LLMProvider.XAI),
         ("deepseek-v4-flash-vision-exp", LLMProvider.DEEPSEEK),

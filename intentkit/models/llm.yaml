@@ -8,6 +8,8 @@
 #   provider          which integration serves the model (see LLMProvider).
 #   origin_provider   OpenRouter-only. Pins the upstream provider on OpenRouter via
 #                     {"order": [origin_provider], "allow_fallbacks": false}.
+#                     Pin the bare provider slug, not a quant-suffixed tag: the
+#                     pin matches endpoint tags by prefix and survives quant swaps.
 #                     Omit to let OpenRouter pick the upstream provider.
 #   legacy_ids        Retired ids this model supersedes. Agents still storing one
 #                     of these are routed here at resolve time; never reuse a
@@ -48,29 +50,6 @@
   supports_file_input: false
   reasoning_effort: "high"
   reasoning_levels: ["minimal", "high"]
-  timeout: 300
-
-- id: "stealth/ox-alpha"
-  name: "Ox Alpha (Free)"
-  provider: openrouter
-  origin_provider: "stealth"   # lock OpenRouter upstream
-  enabled: true
-  input_price: "0"
-  cached_input_price: null
-  output_price: "0"
-  price_level: 1
-  context_length: 1048576
-  output_length: 131072
-  intelligence: 4
-  speed: 3
-  supports_image_input: true
-  supports_audio_input: false
-  supports_video_input: true
-  supports_file_input: false
-  # Reasoning is mandatory on this model; OpenRouter defaults to "max", but
-  # "high" keeps chat latency sane for the agent default.
-  reasoning_effort: "high"
-  reasoning_levels: ["low", "high", "max"]
   timeout: 300
 
 - id: "openrouter/free"
@@ -267,18 +246,18 @@
   reasoning_levels: ["max"]
   timeout: 300
 
-- id: "qwen/qwen3.7-flash"
-  name: "Qwen3.7 Flash"
+- id: "qwen/qwen3.8-flash"
+  name: "Qwen3.8 Flash"
   provider: openrouter
   origin_provider: "alibaba"   # lock OpenRouter upstream
-  legacy_ids: ["qwen/qwen3.6-flash"]
+  legacy_ids: ["qwen/qwen3.7-flash", "qwen/qwen3.6-flash"]
   enabled: true
-  input_price: "0.03"
-  cached_input_price: "0.006"
-  output_price: "0.13"
+  input_price: "0.16"
+  cached_input_price: "0.016"
+  output_price: "0.47"
   price_level: 1
   context_length: 1000000
-  output_length: 65536
+  output_length: 131072
   intelligence: 4
   speed: 5
   supports_image_input: true
@@ -289,26 +268,30 @@
   reasoning_levels: ["none", "high"]
   timeout: 300
 
-# No first-party z-ai endpoint on OpenRouter for glm-4.7-flash (as of
-# 2026-07: deepinfra/cloudflare/novita/venice only), so no upstream pin.
-- id: "z-ai/glm-4.7-flash"
-  name: "GLM 4.7 Flash"
+# Z.AI's first-party endpoint bills 0.075/0.015/0.25: a 50% launch discount
+# off its 0.15/0.03/0.5 list price (as of 2026-08-27).
+- id: "z-ai/glm-5.3-flash"
+  name: "GLM 5.3 Flash"
   provider: openrouter
+  origin_provider: "z-ai"   # lock OpenRouter upstream
+  legacy_ids: ["z-ai/glm-4.7-flash"]
   enabled: true
-  input_price: "0.06"
-  cached_input_price: "0.01"
-  output_price: "0.4"
+  input_price: "0.075"
+  cached_input_price: "0.015"
+  output_price: "0.25"
   price_level: 1
-  context_length: 202752
+  context_length: 1048576
   output_length: 131072
-  intelligence: 3
-  speed: 5
-  supports_image_input: false
+  intelligence: 4
+  speed: 4
+  supports_image_input: true
   supports_audio_input: false
-  supports_video_input: false
+  supports_video_input: true
   supports_file_input: false
-  reasoning_effort: "none"
-  reasoning_levels: ["none", "high"]
+  # Thinking cannot be disabled (see glm-5.3 below); "low" keeps latency
+  # and cost sane for the lite-model role.
+  reasoning_effort: "low"
+  reasoning_levels: ["low", "high", "max"]
   timeout: 300
 
 - id: "z-ai/glm-5.3"
