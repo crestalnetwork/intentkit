@@ -322,15 +322,30 @@ async def _build_autonomous_task_prompt(agent: Agent, context: AgentContext) -> 
         # Fallback if task not found
         return f"You are running an autonomous task. The task id is {task_id}. "
 
+    def _sanitize_task_field(value: str) -> str:
+        """Strip characters that could be used for prompt injection in task metadata fields."""
+        import re
+        # Remove ASCII control characters (newlines, tabs, etc.)
+        value = re.sub(r'[\x00-\x1f\x7f]', ' ', value)
+        # Remove common prompt-injection markers
+        value = re.sub(
+            r'(?i)(system:|###|<\|system\|>|\[INST\]|OVERRIDE:|ignore\s+previous)',
+            '[removed]',
+            value,
+        )
+        return value.strip()
+
     # Build detailed task info - always include task_id
     if autonomous_task.name:
-        task_info = f"You are running an autonomous task '{autonomous_task.name}' (ID: {task_id})"
+        safe_name = _sanitize_task_field(autonomous_task.name)
+        task_info = f"You are running an autonomous task '<task_name>{safe_name}</task_name>' (ID: {task_id})"
     else:
         task_info = f"You are running an autonomous task (ID: {task_id})"
 
-    # Add description if available
+    # Add description if available — sanitize before injection into system prompt
     if autonomous_task.description:
-        task_info += f": {autonomous_task.description}"
+        safe_desc = _sanitize_task_field(autonomous_task.description)
+        task_info += f": <task_description>{safe_desc}</task_description>"
 
     # Add schedule info (minutes field is deprecated)
     if autonomous_task.cron:
