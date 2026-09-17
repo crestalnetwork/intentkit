@@ -929,7 +929,7 @@ class MiniMaxLLM(LLMModel):
         kwargs: dict[str, Any] = {
             "model": info.api_id,
             "api_key": config.minimax_plan_api_key,
-            "base_url": "https://api.minimax.io/anthropic",
+            "base_url": config.minimax_anthropic_base_url,
             "timeout": info.timeout,
             "max_retries": 3,
         }
