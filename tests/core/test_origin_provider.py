@@ -104,7 +104,9 @@ def test_all_openrouter_catalog_entries_pin_origin_provider():
     unpinned = [
         row["id"]
         for row in rows
-        if row["provider"] == "openrouter" and not row.get("origin_provider")
+        if row["provider"] == "openrouter"
+        and row.get("selectable", True)
+        and not row.get("origin_provider")
     ]
     assert unpinned == ["openrouter/free"]
 
@@ -118,6 +120,7 @@ async def test_openrouter_pins_provider_when_origin_set(monkeypatch):
         return info
 
     monkeypatch.setattr(LLMModelInfo, "get", staticmethod(fake_get))
+    monkeypatch.setattr("intentkit.models.llm.config.openrouter_api_key", "test-key")
 
     llm = OpenRouterLLM(model_name=info.id, info=info)
     instance = await llm.create_instance()
@@ -138,6 +141,7 @@ async def test_openrouter_leaves_routing_open_without_origin(monkeypatch):
         return info
 
     monkeypatch.setattr(LLMModelInfo, "get", staticmethod(fake_get))
+    monkeypatch.setattr("intentkit.models.llm.config.openrouter_api_key", "test-key")
 
     llm = OpenRouterLLM(model_name=info.id, info=info)
     instance = await llm.create_instance()

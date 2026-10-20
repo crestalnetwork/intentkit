@@ -237,6 +237,7 @@ async def test_minimax_always_sends_thinking_toggle():
         patch.object(LLMModelInfo, "get", return_value=info),
     ):
         mock_config.minimax_plan_api_key = "test-key"
+        mock_config.minimax_base_url = "https://api.minimax.io/anthropic"
         on = await MiniMaxLLM(model_name=info.id, info=info).create_instance()
         off = await MiniMaxLLM(
             model_name=info.id, reasoning_effort="none", info=info

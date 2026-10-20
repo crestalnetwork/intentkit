@@ -242,6 +242,10 @@ class LLMModelInfo(BaseModel):
         ),
     )
     enabled: bool = Field(default=True)
+    selectable: bool = Field(
+        default=True,
+        description="Offer in model pickers; false retains explicit saved model requests.",
+    )
     input_price: Decimal  # Price per 1M input tokens in USD
     cached_input_price: Decimal | None = None  # Price per 1M cached input tokens in USD
     output_price: Decimal  # Price per 1M output tokens in USD
@@ -424,7 +428,7 @@ class LLMModelInfo(BaseModel):
 
         Kept ``async`` (despite no I/O) so the awaited call sites stay stable.
         """
-        return list(AVAILABLE_MODELS.values())
+        return [model for model in AVAILABLE_MODELS.values() if model.selectable]
 
     async def calculate_cost(
         self, input_tokens: int, output_tokens: int, cached_input_tokens: int = 0
@@ -846,9 +850,20 @@ class OpenRouterLLM(LLMModel):
             "app_categories": ["cloud-agent"],
         }
 
-        # Agent efforts use OpenRouter's own enum, so the clamped value goes on
-        # the wire as-is. "none" is deliberately forwarded: OpenRouter uses it
-        # to disable reasoning on hybrid upstream models.
+        # Flash always thinks; reject unsupported explicit values rather than
+        # silently turning a request for disabled thinking into a thinking run.
+        if (
+            info.api_id == "minimax/minimax-m3.1-flash:free"
+            and self.reasoning_effort
+            in {
+                "none",
+                "minimal",
+            }
+        ):
+            raise ValueError(
+                "MiniMax-M3.1-Flash requires low/medium/high/xhigh/max effort"
+            )
+        # Other models retain OpenRouter's normal effort clamping.
         effort = info.resolve_reasoning_effort(self.reasoning_effort)
         if effort is not None:
             kwargs["reasoning"] = {"effort": effort}
@@ -929,20 +944,26 @@ class MiniMaxLLM(LLMModel):
         kwargs: dict[str, Any] = {
             "model": info.api_id,
             "api_key": config.minimax_plan_api_key,
-            "base_url": "https://api.minimax.io/anthropic",
+            "base_url": config.minimax_base_url,
             "timeout": info.timeout,
             "max_retries": 3,
         }
 
-        # MiniMax's Anthropic-compatible endpoint defaults to thinking
-        # DISABLED (unlike its OpenAI-compatible one), so always send the
-        # toggle. It only understands "adaptive" and "disabled". Note the
-        # generic AnthropicCompatibleLLM below deliberately sends no thinking
-        # config: arbitrary endpoints disagree on the accepted shape.
-        effort = info.resolve_reasoning_effort(self.reasoning_effort)
-        kwargs["thinking"] = {
-            "type": "adaptive" if effort and effort != "none" else "disabled"
-        }
+        if info.api_id == "MiniMax-M3.1-Flash":
+            effort = self.reasoning_effort or info.reasoning_effort or "max"
+            if effort not in {"low", "medium", "high", "xhigh", "max"}:
+                raise ValueError(
+                    "MiniMax-M3.1-Flash requires low/medium/high/xhigh/max effort"
+                )
+            kwargs["thinking"] = {"type": "adaptive"}
+            kwargs["output_config"] = {"effort": effort}
+        elif info.api_id != "MiniMax-M2.7":
+            # M2.7 keeps its always-on default. M3 ignores effort depth;
+            # keep the saved M3 agent's thinking toggle.
+            effort = info.resolve_reasoning_effort(self.reasoning_effort)
+            kwargs["thinking"] = {
+                "type": "adaptive" if effort and effort != "none" else "disabled"
+            }
 
         return ChatAnthropic(**kwargs)
 

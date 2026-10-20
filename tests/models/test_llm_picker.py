@@ -232,9 +232,11 @@ def test_category_picker_different_providers_yield_different_models():
 # ── list_available_model_ids ─────────────────────────────────────────
 
 
-def test_list_available_model_ids_returns_sorted_unique_strings():
-    """Returns a sorted list of unique model-id strings (possibly empty)."""
+def test_list_available_model_ids_returns_ordered_unique_strings():
+    """Non-MiniMax choices keep alphabetical order; all IDs remain unique."""
     result = list_available_model_ids()
     assert isinstance(result, list)
     assert all(isinstance(mid, str) for mid in result)
-    assert result == sorted(set(result))
+    assert len(result) == len(set(result))
+    non_minimax = [mid for mid in result if "minimax" not in mid.lower()]
+    assert non_minimax == sorted(non_minimax)

@@ -133,12 +133,33 @@
   reasoning_levels: ["none", "high"]
   timeout: 300
 
+# Gateway metadata follows OpenRouter's Minimax endpoint, not direct API prices.
+# https://openrouter.ai/api/v1/models/minimax/minimax-m3.1-flash:free/endpoints
+- id: "minimax/minimax-flash:free"
+  api_id: "minimax/minimax-m3.1-flash:free"
+  name: "MiniMax M3.1 Flash (free)"
+  provider: openrouter
+  origin_provider: "minimax"
+  enabled: true
+  input_price: "0"
+  output_price: "0"
+  price_level: 1
+  context_length: 1000000
+  output_length: 524288
+  intelligence: 5
+  speed: 4
+  supports_image_input: true
+  supports_audio_input: false
+  supports_video_input: true
+  reasoning_effort: "max"
+  reasoning_levels: ["low", "medium", "high", "xhigh", "max"]
+  timeout: 300
+
 - id: "minimax/minimax"
   api_id: "minimax/minimax-m3"
   name: "MiniMax M3"
   provider: openrouter
   origin_provider: "minimax/fp8"   # lock OpenRouter upstream
-  legacy_ids: ["minimax/minimax-m2-her"]
   enabled: true
   input_price: "0.3"
   cached_input_price: "0.06"
@@ -848,10 +869,68 @@
   reasoning_levels: ["low", "medium", "high", "xhigh"]
   timeout: 180
 
+# https://platform.minimax.io/docs/api-reference/text-anthropic-api
+# https://platform.minimax.io/docs/pricing/overview
+- id: "minimax-flash"
+  api_id: "MiniMax-M3.1-Flash"
+  name: "MiniMax M3.1 Flash"
+  provider: minimax
+  enabled: true
+  input_price: "0.15"
+  cached_input_price: "0.015"
+  output_price: "0.60"
+  price_level: 1
+  context_length: 1000000
+  output_length: 524288
+  intelligence: 5
+  speed: 4
+  supports_image_input: true
+  supports_audio_input: false
+  supports_video_input: true
+  reasoning_effort: "max"
+  reasoning_levels: ["low", "medium", "high", "xhigh", "max"]
+  timeout: 300
+
+# Explicit legacy requests remain routable but are not ordinary picker choices.
+- id: "MiniMax-M2.7"
+  api_id: "MiniMax-M2.7"
+  name: "MiniMax M2.7 (legacy)"
+  provider: minimax
+  selectable: false
+  input_price: "0.3"
+  cached_input_price: "0.06"
+  output_price: "1.2"
+  context_length: 204800
+  output_length: 204800
+  intelligence: 4
+  speed: 4
+  supports_image_input: false
+  supports_audio_input: false
+  supports_video_input: false
+  timeout: 300
+
+- id: "minimax/minimax-m2-her"
+  api_id: "minimax/minimax-m2-her"
+  name: "MiniMax M2-her (legacy)"
+  provider: openrouter
+  selectable: false
+  input_price: "0.3"
+  cached_input_price: "0.03"
+  output_price: "1.2"
+  context_length: 65536
+  output_length: 2048
+  intelligence: 4
+  speed: 4
+  supports_image_input: false
+  supports_audio_input: false
+  supports_video_input: false
+  timeout: 300
+
 - id: "minimax"
   api_id: "MiniMax-M3"
   name: "MiniMax M3"
   provider: minimax
+  legacy_ids: ["minimax:MiniMax-M3"]
   enabled: true
   input_price: "0.3"
   cached_input_price: "0.06"

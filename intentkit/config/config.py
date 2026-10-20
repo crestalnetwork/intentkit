@@ -155,7 +155,13 @@ class Config:
         self.google_cloud_project: str | None = self.load("GOOGLE_CLOUD_PROJECT")
         self.deepseek_api_key: str | None = self.load("DEEPSEEK_API_KEY")
         self.xai_api_key: str | None = self.load("XAI_API_KEY")
-        self.minimax_plan_api_key: str | None = self.load("MINIMAX_PLAN_API_KEY")
+        self.minimax_base_url: str = self.load(
+            "MINIMAX_BASE_URL",
+            self.load("MINIMAX_PLAN_BASE_URL", "https://api.minimax.io/anthropic"),
+        )
+        self.minimax_plan_api_key: str | None = self.load(
+            "MINIMAX_API_KEY"
+        ) or self.load("MINIMAX_PLAN_API_KEY")
         self.mimo_plan_api_key: str | None = self.load("MIMO_PLAN_API_KEY")
         self.openrouter_api_key: str | None = self.load("OPENROUTER_API_KEY")
         # OpenAI Compatible provider

@@ -68,7 +68,7 @@ def pick_summarize_model() -> str:
         ("gpt-luna", LLMProvider.OPENAI),
         ("grok", LLMProvider.XAI),
         ("deepseek-flash", LLMProvider.DEEPSEEK),
-        ("minimax", LLMProvider.MINIMAX),
+        ("minimax-flash", LLMProvider.MINIMAX),
         ("mimo", LLMProvider.MIMO_PLAN),
     ]
     return _first_configured(order, lite_compatible=True)
@@ -82,8 +82,8 @@ def pick_default_model() -> str:
     """
     order: list[tuple[str, LLMProvider]] = [
         ("gemini-flash", LLMProvider.GOOGLE),
-        ("minimax", LLMProvider.MINIMAX),
-        ("minimax/minimax", LLMProvider.OPENROUTER),
+        ("minimax-flash", LLMProvider.MINIMAX),
+        ("minimax/minimax-flash:free", LLMProvider.OPENROUTER),
         ("gpt-luna", LLMProvider.OPENAI),
         ("grok", LLMProvider.XAI),
         ("deepseek-flash", LLMProvider.DEEPSEEK),
@@ -105,7 +105,7 @@ def pick_lead_model() -> str:
         ("gemini-flash", LLMProvider.GOOGLE),
         ("gpt-luna", LLMProvider.OPENAI),
         ("grok", LLMProvider.XAI),
-        ("minimax", LLMProvider.MINIMAX),
+        ("minimax-flash", LLMProvider.MINIMAX),
         ("mimo", LLMProvider.MIMO_PLAN),
     ]
     return _first_configured(order, fallback=_DEFAULT_FALLBACK_MODEL)
@@ -120,7 +120,7 @@ def pick_lite_model() -> str:
         # Luna is OpenAI's cheapest tier; glm/deepseek above are still cheaper.
         ("gpt-luna", LLMProvider.OPENAI),
         ("grok", LLMProvider.XAI),
-        ("minimax", LLMProvider.MINIMAX),
+        ("minimax-flash", LLMProvider.MINIMAX),
         ("mimo", LLMProvider.MIMO_PLAN),
     ]
     return _first_configured(
@@ -136,7 +136,7 @@ def pick_smartest_model() -> str:
         ("gpt-sol", LLMProvider.OPENAI),
         ("grok", LLMProvider.XAI),
         ("deepseek-pro", LLMProvider.DEEPSEEK),
-        ("minimax", LLMProvider.MINIMAX),
+        ("minimax-flash", LLMProvider.MINIMAX),
         ("mimo-pro", LLMProvider.MIMO_PLAN),
     ]
     return _first_configured(order, fallback=_DEFAULT_FALLBACK_MODEL)
@@ -150,7 +150,7 @@ def pick_fastest_model() -> str:
         ("gpt-luna", LLMProvider.OPENAI),
         ("grok", LLMProvider.XAI),
         ("deepseek-flash", LLMProvider.DEEPSEEK),
-        ("minimax", LLMProvider.MINIMAX),
+        ("minimax-flash", LLMProvider.MINIMAX),
         ("mimo", LLMProvider.MIMO_PLAN),
     ]
     return _first_configured(
@@ -178,7 +178,7 @@ def pick_writing_model() -> str:
         ("anthropic/claude-sonnet", LLMProvider.OPENROUTER),
         ("gemini-pro", LLMProvider.GOOGLE),
         ("gpt-sol", LLMProvider.OPENAI),
-        ("minimax", LLMProvider.MINIMAX),
+        ("minimax-flash", LLMProvider.MINIMAX),
         ("deepseek-pro", LLMProvider.DEEPSEEK),
         ("grok", LLMProvider.XAI),
         ("mimo-pro", LLMProvider.MIMO_PLAN),
@@ -190,7 +190,7 @@ def pick_chinese_writing_model() -> str:
     """Pick the best model for Chinese writing (Chinese-native models first)."""
     order: list[tuple[str, LLMProvider]] = [
         ("qwen/qwen-max", LLMProvider.OPENROUTER),
-        ("minimax", LLMProvider.MINIMAX),
+        ("minimax-flash", LLMProvider.MINIMAX),
         ("mimo-pro", LLMProvider.MIMO_PLAN),
         ("deepseek-pro", LLMProvider.DEEPSEEK),
         ("gemini-pro", LLMProvider.GOOGLE),
@@ -208,7 +208,7 @@ def pick_finance_model() -> str:
         ("gemini-pro", LLMProvider.GOOGLE),
         ("gpt-sol", LLMProvider.OPENAI),
         ("grok", LLMProvider.XAI),
-        ("minimax", LLMProvider.MINIMAX),
+        ("minimax-flash", LLMProvider.MINIMAX),
         ("mimo-pro", LLMProvider.MIMO_PLAN),
     ]
     return _first_configured(order, fallback=_DEFAULT_FALLBACK_MODEL)
@@ -222,7 +222,7 @@ def pick_search_model() -> str:
         ("gpt-terra", LLMProvider.OPENAI),
         ("x-ai/grok", LLMProvider.OPENROUTER),
         ("deepseek-flash", LLMProvider.DEEPSEEK),
-        ("minimax", LLMProvider.MINIMAX),
+        ("minimax-flash", LLMProvider.MINIMAX),
         ("mimo", LLMProvider.MIMO_PLAN),
     ]
     return _first_configured(order, fallback=_DEFAULT_FALLBACK_MODEL)
@@ -236,7 +236,7 @@ def pick_broadest_knowledge_model() -> str:
         ("gpt-sol", LLMProvider.OPENAI),
         ("grok", LLMProvider.XAI),
         ("deepseek-pro", LLMProvider.DEEPSEEK),
-        ("minimax", LLMProvider.MINIMAX),
+        ("minimax-flash", LLMProvider.MINIMAX),
         ("mimo-pro", LLMProvider.MIMO_PLAN),
     ]
     return _first_configured(order, fallback=_DEFAULT_FALLBACK_MODEL)
@@ -253,16 +253,24 @@ def pick_long_context_model() -> str:
         ("deepseek/deepseek-flash", LLMProvider.OPENROUTER),
         ("deepseek-flash", LLMProvider.DEEPSEEK),
         ("gpt-luna", LLMProvider.OPENAI),
-        ("minimax", LLMProvider.MINIMAX),
+        ("minimax-flash", LLMProvider.MINIMAX),
         ("mimo", LLMProvider.MIMO_PLAN),
     ]
     return _first_configured(order)
 
 
 def list_available_model_ids() -> list[str]:
-    """Return the sorted, distinct model IDs available in this deployment.
+    """Return distinct model IDs, alphabetically except MiniMax Flash before M3.
 
     Reflects the providers configured at process start (``AVAILABLE_MODELS``),
     which is fixed for the lifetime of a deployment.
     """
-    return sorted({model.id for model in AVAILABLE_MODELS.values()})
+    ids = sorted({model.id for model in AVAILABLE_MODELS.values() if model.selectable})
+    for flash, m3 in (
+        ("minimax-flash", "minimax"),
+        ("minimax/minimax-flash:free", "minimax/minimax"),
+    ):
+        if flash in ids and m3 in ids:
+            first, second = sorted((ids.index(flash), ids.index(m3)))
+            ids[first], ids[second] = flash, m3
+    return ids

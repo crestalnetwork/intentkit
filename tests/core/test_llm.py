@@ -351,7 +351,8 @@ def test_catalog_ids_are_versionless_series_ids():
 
     rows = _catalog_rows()
     for row in rows:
-        assert not re.search(r"\d", row["id"]), f"{row['id']} carries a version"
+        if row.get("selectable", True):
+            assert not re.search(r"\d", row["id"]), f"{row['id']} carries a version"
         api_id = row.get("api_id", row["id"])
         assert api_id, row["id"]
         if api_id.startswith("~"):
