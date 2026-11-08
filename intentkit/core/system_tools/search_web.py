@@ -3,13 +3,13 @@
 The ``web_search`` tool tries several backends in order so agents on providers
 without a native search tool still get reliable web search:
 
-1. A random pick between **Tavily** and **Jina** (only those configured and not
-   in a Redis cool-down). On a quota / rate-limit error the backend is put into
-   cool-down and the other one is tried.
+1. A random pick between **Tavily**, **Jina** and **Outcrawl** (only those
+   configured and not in a Redis cool-down). On a quota / rate-limit error the
+   backend is put into cool-down and the next one is tried.
 2. **Gemini** (``gemini-flash`` with Google Search grounding) as a fallback.
 3. **Z.AI** MCP web search as the last resort.
 
-If none of the four backends is configured, a ``ToolException`` is raised.
+If none of the five backends is configured, a ``ToolException`` is raised.
 """
 
 import logging
@@ -29,6 +29,7 @@ logger = logging.getLogger(__name__)
 
 _TAVILY_API_URL = "https://api.tavily.com/search"
 _JINA_SEARCH_URL = "https://s.jina.ai/"
+_OUTCRAWL_SEARCH_URL = "https://api.outcrawl.ai/v1/search"
 _GEMINI_SEARCH_MODEL = "gemini-flash"
 
 # Cool-down window (seconds) applied to a metered backend after it reports a
@@ -91,25 +92,29 @@ class WebSearchTool(SystemTool):
 
         has_tavily = bool(config.tavily_api_key)
         has_jina = bool(config.jina_api_key)
+        has_outcrawl = bool(config.outcrawl_api_key)
         has_gemini = bool(config.google_api_key)
         has_zai = bool(config.zai_plan_api_key)
 
-        if not (has_tavily or has_jina or has_gemini or has_zai):
+        if not (has_tavily or has_jina or has_outcrawl or has_gemini or has_zai):
             raise ToolException(
                 "No web search backend is configured. Set at least one of "
-                "TAVILY_API_KEY, JINA_API_KEY, GOOGLE_API_KEY, or ZAI_PLAN_API_KEY."
+                "TAVILY_API_KEY, JINA_API_KEY, OUTCRAWL_API_KEY, GOOGLE_API_KEY, "
+                "or ZAI_PLAN_API_KEY."
             )
 
         errors: list[str] = []
 
-        # 1. A random pick between Tavily / Jina. Cooldown is checked lazily as
-        #    each backend is reached, so a successful first call avoids the
-        #    second Redis round-trip.
+        # 1. A random pick between Tavily / Jina / Outcrawl. Cooldown is checked
+        #    lazily as each backend is reached, so a successful first call avoids
+        #    the second Redis round-trip.
         candidates: list[str] = []
         if has_tavily:
             candidates.append("tavily")
         if has_jina:
             candidates.append("jina")
+        if has_outcrawl:
+            candidates.append("outcrawl")
         random.shuffle(candidates)
 
         for backend in candidates:
@@ -119,6 +124,10 @@ class WebSearchTool(SystemTool):
                 if backend == "tavily":
                     return await self._search_tavily(
                         config.tavily_api_key, query, max_results
+                    )
+                if backend == "outcrawl":
+                    return await self._search_outcrawl(
+                        config.outcrawl_api_key, query, max_results
                     )
                 return await self._search_jina(config.jina_api_key, query, max_results)
             except _QuotaError as e:
@@ -239,6 +248,37 @@ class WebSearchTool(SystemTool):
                     "snippet": it.get("description") or it.get("content"),
                 }
                 for it in items
+            ],
+        )
+
+    async def _search_outcrawl(
+        self, api_key: str | None, query: str, max_results: int
+    ) -> str:
+        """Search via Outcrawl."""
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            response = await client.post(
+                _OUTCRAWL_SEARCH_URL,
+                headers={"Authorization": f"Bearer {api_key}"},
+                json={"query": query, "limit": max_results},
+            )
+
+        if response.status_code in _QUOTA_STATUS:
+            raise _QuotaError(f"status {response.status_code}")
+        if response.status_code != 200:
+            raise ToolException(
+                f"Outcrawl error {response.status_code}: {response.text}"
+            )
+
+        hits = response.json().get("hits", [])[:max_results]
+        return self._format_results(
+            query,
+            [
+                {
+                    "title": hit.get("title"),
+                    "url": hit.get("url"),
+                    "snippet": hit.get("snippet"),
+                }
+                for hit in hits
             ],
         )
 
