@@ -932,11 +932,12 @@ class _FakeAsyncClient:
 
 
 def _set_search_keys(
-    mock_config, *, tavily=None, jina=None, google=None, zai=None
+    mock_config, *, tavily=None, jina=None, outcrawl=None, google=None, zai=None
 ) -> None:
-    """Set the four web_search backend keys on a mocked config."""
+    """Set the five web_search backend keys on a mocked config."""
     mock_config.tavily_api_key = tavily
     mock_config.jina_api_key = jina
+    mock_config.outcrawl_api_key = outcrawl
     mock_config.google_api_key = google
     mock_config.zai_plan_api_key = zai
 
@@ -1108,6 +1109,101 @@ async def test_web_search_jina_quota_status_raises_quota_error():
     ):
         with pytest.raises(_QuotaError):
             await tool._search_jina("k", "query", 5)
+
+
+@pytest.mark.asyncio
+async def test_web_search_outcrawl_only_success():
+    """Only Outcrawl configured → its result is returned with the key."""
+    tool = WebSearchTool()
+    search = AsyncMock(return_value="outcrawl result")
+    with (
+        patch("intentkit.config.config.config") as mock_config,
+        patch.object(tool, "_in_cooldown", new=AsyncMock(return_value=False)),
+        patch.object(tool, "_search_outcrawl", new=search),
+    ):
+        _set_search_keys(mock_config, outcrawl="oc-key")
+        result = await tool._arun("query", max_results=3)
+    assert result == "outcrawl result"
+    search.assert_awaited_once_with("oc-key", "query", 3)
+
+
+@pytest.mark.asyncio
+async def test_web_search_outcrawl_quota_falls_back_to_jina():
+    """Outcrawl out of quota → cooldown recorded and Jina used instead."""
+    tool = WebSearchTool()
+    set_cooldown = AsyncMock()
+    with (
+        patch("intentkit.config.config.config") as mock_config,
+        # Pin the random order so Outcrawl is attempted first, deterministically.
+        patch(
+            "intentkit.core.system_tools.search_web.random.shuffle",
+            side_effect=lambda items: items.sort(key=lambda b: b != "outcrawl"),
+        ),
+        patch.object(tool, "_in_cooldown", new=AsyncMock(return_value=False)),
+        patch.object(tool, "_set_cooldown", new=set_cooldown),
+        patch.object(
+            tool, "_search_outcrawl", new=AsyncMock(side_effect=_QuotaError("429"))
+        ),
+        patch.object(tool, "_search_jina", new=AsyncMock(return_value="jina result")),
+    ):
+        _set_search_keys(mock_config, outcrawl="k", jina="k")
+        result = await tool._arun("query")
+    assert result == "jina result"
+    set_cooldown.assert_awaited_once_with("outcrawl")
+
+
+@pytest.mark.asyncio
+async def test_web_search_outcrawl_http_parsing():
+    """_search_outcrawl sends a bearer key and parses hits into the uniform format."""
+    tool = WebSearchTool()
+    response = _FakeSearchResponse(
+        200,
+        {
+            "hits": [
+                {
+                    "url": "https://o.com",
+                    "title": "O",
+                    "snippet": "outcrawl snippet",
+                    "rank": 1,
+                }
+            ]
+        },
+    )
+    client = _FakeAsyncClient(response)
+    with patch(
+        "intentkit.core.system_tools.search_web.httpx.AsyncClient",
+        return_value=client,
+    ):
+        result = await tool._search_outcrawl("k", "query", 5)
+    assert "https://o.com" in result
+    assert "outcrawl snippet" in result
+    assert "O" in result
+
+
+@pytest.mark.asyncio
+async def test_web_search_outcrawl_quota_status_raises_quota_error():
+    """A 429 from Outcrawl becomes a _QuotaError."""
+    tool = WebSearchTool()
+    response = _FakeSearchResponse(429, text="rate limited")
+    with patch(
+        "intentkit.core.system_tools.search_web.httpx.AsyncClient",
+        return_value=_FakeAsyncClient(response),
+    ):
+        with pytest.raises(_QuotaError):
+            await tool._search_outcrawl("k", "query", 5)
+
+
+@pytest.mark.asyncio
+async def test_web_search_outcrawl_error_status_raises_tool_exception():
+    """A non-quota error from Outcrawl becomes a ToolException."""
+    tool = WebSearchTool()
+    response = _FakeSearchResponse(500, text="boom")
+    with patch(
+        "intentkit.core.system_tools.search_web.httpx.AsyncClient",
+        return_value=_FakeAsyncClient(response),
+    ):
+        with pytest.raises(ToolException, match="Outcrawl error 500"):
+            await tool._search_outcrawl("k", "query", 5)
 
 
 def test_web_search_format_results_empty():
