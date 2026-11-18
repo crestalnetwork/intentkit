@@ -1,11 +1,14 @@
 """Tests for image generation tools."""
 
 import base64
+import json
 from decimal import Decimal
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock, patch
 
+import httpx
 import pytest
+from langchain_core.tools.base import ToolException
 from pydantic import ValidationError
 
 from intentkit.tools.image import available, get_tools
@@ -17,6 +20,7 @@ from intentkit.tools.image.gemini import (
 )
 from intentkit.tools.image.gpt import GPTImageFlagship, GPTImageMini
 from intentkit.tools.image.grok import GrokImage
+from intentkit.tools.image.minimax import MiniMaxH3Image, MiniMaxH3Input
 from intentkit.tools.image.openrouter import FluxPro, Riverflow
 
 
@@ -242,3 +246,76 @@ async def test_openrouter_gpt_image_empty_response_raises():
         ):
             with pytest.raises(ToolException, match="No image found"):
                 await GPTImageFlagship()._generate_via_openrouter("a cat", None)
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("name", "region", "host", "model"),
+    [
+        ("image_minimax_h3", "global", "api.minimax.io", "MiniMax-H3-Image"),
+        (
+            "image_minimax_h3_highspeed",
+            "cn",
+            "api.minimax.cn",
+            "MiniMax-H3-Image-Highspeed",
+        ),
+    ],
+)
+async def test_minimax_h3_generation(name: str, region: str, host: str, model: str):
+    tool, legacy = await get_tools([name, "image_minimax"])
+    assert legacy.native_model == "image-01"
+    assert tool.args_schema is MiniMaxH3Input
+    with pytest.raises(ValidationError):
+        MiniMaxH3Input.model_validate({"prompt": "draw a cat", "images": ["reference"]})
+
+    def respond(request: httpx.Request) -> httpx.Response:
+        assert str(request.url) == f"https://{host}/v1/images/generations"
+        assert request.method == "POST"
+        assert request.headers["authorization"] == "Bearer test"
+        assert json.loads(request.content) == {
+            "model": model,
+            "prompt": "draw a cat",
+            "response_format": "b64_json",
+        }
+        return httpx.Response(200, json={"data": [{"b64_json": "aW1hZ2U="}]})
+
+    client = httpx.AsyncClient(transport=httpx.MockTransport(respond))
+    with (
+        patch(
+            "intentkit.tools.image.minimax.config",
+            minimax_image_region=region,
+            minimax_plan_api_key="test",
+        ),
+        patch(
+            "intentkit.tools.image.minimax.httpx.AsyncClient", return_value=client
+        ) as make_client,
+    ):
+        assert await tool._generate_native("draw a cat", None) == b"image"
+    assert make_client.call_args.kwargs["timeout"] >= 600
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("data", "message"),
+    [
+        ([{"error": {"code": "1027", "message": "image blocked"}}], "image blocked"),
+        ([{"b64_json": "invalid!"}], "invalid base64"),
+        ([], "contained no image"),
+    ],
+)
+async def test_minimax_h3_rejects_failed_image(data: list, message: str):
+    client = httpx.AsyncClient(
+        transport=httpx.MockTransport(
+            lambda _: httpx.Response(200, json={"data": data})
+        )
+    )
+    with (
+        patch(
+            "intentkit.tools.image.minimax.config",
+            minimax_image_region="cn",
+            minimax_plan_api_key="test",
+        ),
+        patch("intentkit.tools.image.minimax.httpx.AsyncClient", return_value=client),
+        pytest.raises(ToolException, match=message),
+    ):
+        await MiniMaxH3Image()._generate_native("draw a cat", None)

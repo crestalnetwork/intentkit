@@ -1,12 +1,15 @@
 """MiniMax image generation tools."""
 
 import base64
+import binascii
 import logging
 from decimal import Decimal
 from typing import override
 
 import httpx
+from langchain_core.tools import ArgsSchema
 from langchain_core.tools.base import ToolException
+from pydantic import BaseModel, ConfigDict, Field
 
 from intentkit.config.config import config
 from intentkit.tools.image.base import ImageBaseTool
@@ -92,3 +95,82 @@ class MiniMaxImage(MiniMaxImageBase):
     )
     price: Decimal = Decimal("30")
     native_model: str = "image-01"
+
+
+class MiniMaxH3Input(BaseModel):
+    """Arguments for H3 text-to-image generation."""
+
+    model_config = ConfigDict(extra="forbid")
+    prompt: str = Field(description="Text description of the image to generate")
+
+
+class MiniMaxH3Image(MiniMaxImageBase):
+    """Generate one image through the regional MiniMax H3 generations API."""
+
+    name: str = "image_minimax_h3"
+    title: str = "MiniMax H3 Image"
+    description: str = "Generate an image from a text prompt using MiniMax H3 Image."
+    native_model: str = "MiniMax-H3-Image"
+    args_schema: ArgsSchema | None = MiniMaxH3Input
+    price: Decimal = Decimal("30")
+
+    @override
+    async def _generate_native(self, prompt: str, images: list[bytes] | None) -> bytes:
+        if images:
+            raise ToolException(
+                "MiniMax H3 image generation only accepts text prompts."
+            )
+        base_url = {"global": _MINIMAX_BASE_URL, "cn": "https://api.minimax.cn/v1"}.get(
+            config.minimax_image_region
+        )
+        if not base_url:
+            raise ToolException("MINIMAX_IMAGE_REGION must be global or cn.")
+
+        # A generation can take ten minutes. Retrying after a disconnect can bill twice.
+        async with httpx.AsyncClient(timeout=610) as client:
+            response = await client.post(
+                f"{base_url}/images/generations",
+                headers={"Authorization": f"Bearer {config.minimax_plan_api_key}"},
+                json={
+                    "model": self.native_model,
+                    "prompt": prompt,
+                    "response_format": "b64_json",
+                },
+            )
+        response.raise_for_status()
+        payload = response.json()
+        entries = payload.get("data") if isinstance(payload, dict) else None
+        if (
+            not isinstance(entries, list)
+            or not entries
+            or not isinstance(entries[0], dict)
+        ):
+            raise ToolException("MiniMax H3 response contained no image.")
+        item = entries[
+            0
+        ]  # n defaults to one, matching ImageBaseTool's single attachment.
+        error = item.get("error")
+        if isinstance(error, dict):
+            raise ToolException(
+                f"MiniMax H3 image generation failed: {error.get('message', 'Unknown error')}"
+            )
+        encoded = item.get("b64_json")
+        if not isinstance(encoded, str) or not encoded:
+            raise ToolException("MiniMax H3 response contained no image.")
+        try:
+            return base64.b64decode(encoded, validate=True)
+        except (binascii.Error, ValueError) as exc:
+            raise ToolException(
+                "MiniMax H3 response contained invalid base64 image data."
+            ) from exc
+
+
+class MiniMaxH3ImageHighspeed(MiniMaxH3Image):
+    """Highspeed variant of the MiniMax H3 text-to-image tool."""
+
+    name: str = "image_minimax_h3_highspeed"
+    title: str = "MiniMax H3 Image Highspeed"
+    description: str = (
+        "Generate an image from a text prompt using MiniMax H3 Image Highspeed."
+    )
+    native_model: str = "MiniMax-H3-Image-Highspeed"

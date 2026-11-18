@@ -11,7 +11,11 @@ from intentkit.tools.image.gemini import (
 )
 from intentkit.tools.image.gpt import GPTImageFlagship, GPTImageMini
 from intentkit.tools.image.grok import GrokImage
-from intentkit.tools.image.minimax import MiniMaxImage
+from intentkit.tools.image.minimax import (
+    MiniMaxH3Image,
+    MiniMaxH3ImageHighspeed,
+    MiniMaxImage,
+)
 from intentkit.tools.image.openrouter import FluxPro, Riverflow
 from intentkit.tools.meta import ToolsetMeta
 
@@ -36,6 +40,8 @@ _TOOL_NAME_TO_CLASS: dict[str, Callable[[], ImageBaseTool]] = {
     "image_flux_pro": FluxPro,
     "image_riverflow": Riverflow,
     "image_minimax": MiniMaxImage,
+    "image_minimax_h3": MiniMaxH3Image,
+    "image_minimax_h3_highspeed": MiniMaxH3ImageHighspeed,
 }
 
 
